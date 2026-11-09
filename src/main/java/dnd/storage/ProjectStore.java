@@ -57,6 +57,9 @@ public final class ProjectStore {
     private final Set<String> dirtySpells = new HashSet<>();
     private int namesVersion;
     private boolean projectDirty;
+    private boolean savedThisSession;
+    /** Why an item's file could not be read (item id -> file and message); the file itself is left untouched. */
+    private final Map<String, String> loadErrors = new HashMap<>();
 
     /** The kinds of item that are plain "one JSON file each" entries (see ProjectEntry). */
     private final List<Kind<?>> kinds = new ArrayList<>();
@@ -157,7 +160,7 @@ public final class ProjectStore {
         try {
             b = Json.readFile(p, Board.class);
         } catch (IOException e) {
-            e.printStackTrace();
+            loadFailed(id, p, e);
             return null;
         }
         cache.put(id, b);
@@ -218,7 +221,7 @@ public final class ProjectStore {
         try {
             c = Json.readFile(p, Card.class);
         } catch (IOException e) {
-            e.printStackTrace();
+            loadFailed(id, p, e);
             return null;
         }
         cardCache.put(id, c);
@@ -312,7 +315,7 @@ public final class ProjectStore {
         try {
             e = Json.readFile(p, Encounter.class);
         } catch (IOException ex) {
-            ex.printStackTrace();
+            loadFailed(id, p, ex);
             return null;
         }
         encounterCache.put(id, e);
@@ -380,7 +383,7 @@ public final class ProjectStore {
         try {
             s = Json.readFile(p, Spell.class);
         } catch (IOException ex) {
-            ex.printStackTrace();
+            loadFailed(id, p, ex);
             return null;
         }
         s.id = id;
@@ -475,7 +478,7 @@ public final class ProjectStore {
             try {
                 t = Json.readFile(p, type);
             } catch (IOException ex) {
-                ex.printStackTrace();
+                loadFailed(id, p, ex);
                 return null;
             }
             t.id = id;
@@ -645,7 +648,7 @@ public final class ProjectStore {
         try {
             m = Json.readFile(p, BattleMap.class);
         } catch (IOException e) {
-            e.printStackTrace();
+            loadFailed(id, p, e);
             return null;
         }
         mapCache.put(id, m);
@@ -870,8 +873,31 @@ public final class ProjectStore {
         onDirty.run();
     }
 
+    private void loadFailed(String id, Path file, IOException ex) {
+        ex.printStackTrace();
+        loadErrors.put(id, file + " (" + ex.getMessage() + ")");
+    }
+
+    /** Why the item's file could not be read, or null if it loaded (or was never tried). */
+    public String loadError(String id) {
+        return loadErrors.get(id);
+    }
+
+    /** True if anything has been written to disk since this project was opened. */
+    public boolean savedThisSession() {
+        return savedThisSession;
+    }
+
+    private boolean hasUnsavedChanges() {
+        if (projectDirty || !dirtyBoards.isEmpty() || !dirtyMaps.isEmpty() || !dirtyCards.isEmpty()
+                || !dirtyEncounters.isEmpty() || !dirtySpells.isEmpty()) return true;
+        for (Kind<?> k : kinds) if (!k.dirty.isEmpty()) return true;
+        return false;
+    }
+
     /** Writes everything that changed since the last flush. */
     public void flush() {
+        if (hasUnsavedChanges()) savedThisSession = true;
         try {
             for (String id : new ArrayList<>(dirtyBoards)) {
                 Board b = cache.get(id);

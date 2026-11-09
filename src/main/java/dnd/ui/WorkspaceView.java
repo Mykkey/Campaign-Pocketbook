@@ -260,13 +260,31 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
 
     // ================================================================ lifecycle
 
+    private boolean saveFailureShown;
+
     private void save() {
         try {
             store.flush();
+            saveFailureShown = false;
         } catch (RuntimeException ex) {
             ex.printStackTrace();
-            Platform.runLater(() -> new Alert(Alert.AlertType.ERROR, "Could not save: " + ex.getMessage()).show());
+            if (!saveFailureShown) { // say it once, not on every autosave attempt
+                saveFailureShown = true;
+                Platform.runLater(() -> new Alert(Alert.AlertType.ERROR, "Could not save: " + ex.getMessage()
+                        + "\nThe app will keep trying; your last good copy is on disk.").show());
+            }
         }
+    }
+
+    /** The message for an item that would not open: "damaged file" if the file was unreadable, else "not found". */
+    private void couldNotOpen(String id, String notFound) {
+        String err = store.loadError(id);
+        if (err == null) {
+            new Alert(Alert.AlertType.WARNING, notFound).show();
+            return;
+        }
+        new Alert(Alert.AlertType.WARNING, "\"" + store.itemName(id) + "\" could not be opened: its file looks damaged.\n\n" + err
+                + "\n\nYour other items are not affected, and the file has been left as it is. A backup (Import backup... on the project list) may have a good copy.").show();
     }
 
     /** Saves everything immediately (called when the window closes or the project is left). */
@@ -277,6 +295,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         if (v != null) v.requestFocus(); // forces any in-place text edit to commit
         store.onDirty = () -> { };
         save();
+        dnd.storage.ProjectBackups.backup(store, false); // a copy of the campaign as it is now (skipped if nothing changed)
     }
 
     private void exit() {
@@ -341,56 +360,56 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             if (store.isBattleMap(id)) {
                 dnd.model.BattleMap m = store.battleMap(id);
                 if (m == null) {
-                    new Alert(Alert.AlertType.WARNING, "That battlemap could not be found.").show();
+                    couldNotOpen(id, "That battlemap could not be found.");
                     return;
                 }
                 view = new MapEditor(m, store, this::openItem, this::refreshTree);
             } else if (store.isCard(id)) {
                 dnd.model.Card c = store.card(id);
                 if (c == null) {
-                    new Alert(Alert.AlertType.WARNING, "That card could not be found.").show();
+                    couldNotOpen(id, "That card could not be found.");
                     return;
                 }
                 view = new CardEditor(c, store, newName -> renameFromEditor(id, newName));
             } else if (store.isSpell(id)) {
                 dnd.model.Spell sp = store.spell(id);
                 if (sp == null) {
-                    new Alert(Alert.AlertType.WARNING, "That spell could not be found.").show();
+                    couldNotOpen(id, "That spell could not be found.");
                     return;
                 }
                 view = new SpellEditor(sp, store, newName -> renameFromEditor(id, newName));
             } else if (store.isMagicItem(id)) {
                 dnd.model.MagicItem mi = store.magicItem(id);
                 if (mi == null) {
-                    new Alert(Alert.AlertType.WARNING, "That magic item could not be found.").show();
+                    couldNotOpen(id, "That magic item could not be found.");
                     return;
                 }
                 view = new MagicItemEditor(mi, store, newName -> renameFromEditor(id, newName));
             } else if (store.isQuest(id)) {
                 dnd.model.Quest qu = store.quest(id);
                 if (qu == null) {
-                    new Alert(Alert.AlertType.WARNING, "That quest could not be found.").show();
+                    couldNotOpen(id, "That quest could not be found.");
                     return;
                 }
                 view = new QuestEditor(qu, store, newName -> renameFromEditor(id, newName), this::openItem, () -> pickBoard("Add to the quest..."), () -> pickCard("Who gave this quest?"));
             } else if (store.isSession(id)) {
                 dnd.model.Session se = store.session(id);
                 if (se == null) {
-                    new Alert(Alert.AlertType.WARNING, "That session could not be found.").show();
+                    couldNotOpen(id, "That session could not be found.");
                     return;
                 }
                 view = new SessionEditor(se, store, newName -> renameFromEditor(id, newName), this::openItem, () -> pickBoard("Add to the session..."));
             } else if (store.isEncounter(id)) {
                 dnd.model.Encounter en = store.encounter(id);
                 if (en == null) {
-                    new Alert(Alert.AlertType.WARNING, "That encounter could not be found.").show();
+                    couldNotOpen(id, "That encounter could not be found.");
                     return;
                 }
                 view = new EncounterEditor(en, store, newName -> renameFromEditor(id, newName), this::openItem);
             } else {
                 Board b = store.board(id);
                 if (b == null) {
-                    new Alert(Alert.AlertType.WARNING, "That whiteboard could not be found.").show();
+                    couldNotOpen(id, "That whiteboard could not be found.");
                     return;
                 }
                 view = new BoardView(b, store, ts, this);
@@ -987,6 +1006,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         a.setHeaderText("Delete " + (n.folder ? "folder" : n.isBattleMap() ? "battlemap" : n.isCard() ? "card" : n.isEncounter() ? "encounter" : n.isSpell() ? "spell" : n.isMagicItem() ? "magic item" : n.isQuest() ? "quest" : n.isSession() ? "session" : "whiteboard"));
         Optional<ButtonType> r = a.showAndWait();
         if (r.isEmpty() || r.get() != ButtonType.OK) return;
+        dnd.storage.ProjectBackups.beforeDelete(store); // a way back if it was a mistake
 
         List<TreeNode> boards = new ArrayList<>();
         n.collectItems(boards);

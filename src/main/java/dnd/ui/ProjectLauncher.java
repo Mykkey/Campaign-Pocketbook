@@ -229,6 +229,8 @@ public class ProjectLauncher extends VBox {
     private void importBackup() {
         javafx.stage.FileChooser fc = new javafx.stage.FileChooser();
         fc.setTitle("Choose a campaign backup");
+        Path autoBackups = dnd.storage.ProjectBackups.root(base);
+        if (Files.isDirectory(autoBackups)) fc.setInitialDirectory(autoBackups.toFile()); // the automatic backups are kept there
         fc.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("Campaign backup (*.zip)", "*.zip"));
         java.io.File source = fc.showOpenDialog(getScene().getWindow());
         if (source == null) return;

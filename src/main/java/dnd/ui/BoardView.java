@@ -1,0 +1,1209 @@
+package dnd.ui;
+
+import dnd.model.Board;
+import dnd.model.BoardObject;
+import dnd.model.BoardObject.Type;
+import dnd.storage.Json;
+import dnd.storage.ProjectStore;
+import javafx.application.Platform;
+import javafx.embed.swing.SwingFXUtils;
+import javafx.geometry.Bounds;
+import javafx.geometry.VPos;
+import javafx.scene.Cursor;
+import javafx.scene.Node;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.TextArea;
+import javafx.scene.image.Image;
+import javafx.scene.input.*;
+import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.StrokeLineCap;
+import javafx.scene.shape.StrokeLineJoin;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
+import javafx.stage.FileChooser;
+
+import javax.imageio.ImageIO;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
+
+/**
+ * The whiteboard editor for one {@link Board}: an infinite canvas with pan/zoom, selection,
+ * drawing tools, in-place text editing, undo/redo and object links.
+ */
+public class BoardView extends Pane {
+
+    /** What the board needs from the surrounding workspace. */
+    public interface Host {
+        void openBoard(String boardId);
+
+        Optional<String> pickBoard(String title);
+    }
+
+    private enum Mode { NONE, PAN, MOVE, MARQUEE, RESIZE, DRAW, SHAPE, ERASE }
+
+    private static final Color SELECT_COLOR = Color.web("#2563eb");
+    private static final String DEFAULT_STICKY = "#FFF2A8";
+    private static final Set<String> IMAGE_EXT = Set.of("png", "jpg", "jpeg", "gif", "bmp");
+
+    // shared between all boards so copy/paste works across tabs
+    private static final Map<Path, Image> IMAGES = new HashMap<>();
+    private static final Map<String, Color> COLORS = new HashMap<>();
+    private static String clipboardJson;
+    private static boolean preferInternal;
+    private static int pasteCount;
+
+    private final Board board;
+    private final ProjectStore store;
+    private final ToolState ts;
+    private final Host host;
+
+    private final Canvas canvas = new Canvas();
+    private final Set<String> selected = new LinkedHashSet<>();
+    private final Deque<String> undoStack = new ArrayDeque<>();
+    private final Deque<String> redoStack = new ArrayDeque<>();
+    private final Map<String, Object[]> wrapCache = new HashMap<>();
+    private final ContextMenu menu = new ContextMenu();
+
+    private Mode mode = Mode.NONE;
+    private boolean gestureCheckpointed, dragStarted, spaceDown;
+    private double pressSX, pressSY, lastSX, lastSY, pressWX, pressWY, resizeRatio = 1;
+    private double mqX0, mqY0, mqX1, mqY1;
+    private double ctxWX, ctxWY;
+    private BoardObject tmp;
+
+    private TextArea editor;
+    private BoardObject editing;
+    private boolean editingNew;
+
+    public BoardView(Board board, ProjectStore store, ToolState ts, Host host) {
+        this.board = board;
+        this.store = store;
+        this.ts = ts;
+        this.host = host;
+
+        getChildren().add(canvas);
+        setMinSize(0, 0);
+        setFocusTraversable(true);
+        for (BoardObject o : board.objects) measure(o);
+
+        setOnMousePressed(this::onPressed);
+        setOnMouseDragged(this::onDragged);
+        setOnMouseReleased(this::onReleased);
+        setOnScroll(this::onScroll);
+        setOnKeyPressed(this::onKeyPressed);
+        setOnKeyReleased(e -> {
+            if (e.getCode() == KeyCode.SPACE) {
+                spaceDown = false;
+                refreshCursor();
+            }
+        });
+        setOnContextMenuRequested(this::onContextMenu);
+        setOnDragOver(e -> {
+            if (e.getDragboard().hasFiles()) e.acceptTransferModes(TransferMode.COPY);
+            e.consume();
+        });
+        setOnDragDropped(this::onFilesDropped);
+        refreshCursor();
+    }
+
+    public Board board() { return board; }
+
+    // ================================================================ layout & coordinates
+
+    @Override
+    protected void layoutChildren() {
+        super.layoutChildren();
+        canvas.setWidth(Math.max(1, getWidth()));
+        canvas.setHeight(Math.max(1, getHeight()));
+        redraw();
+    }
+
+    private double zoom() { return board.zoom; }
+
+    private double wx(double sx) { return (sx - board.offsetX) / board.zoom; }
+
+    private double wy(double sy) { return (sy - board.offsetY) / board.zoom; }
+
+    private double viewCenterX() { return wx(getWidth() / 2); }
+
+    private double viewCenterY() { return wy(getHeight() / 2); }
+
+    public void refreshCursor() {
+        Tool t = ts.tool.get();
+        Cursor c;
+        if (spaceDown || t == Tool.HAND) c = Cursor.OPEN_HAND;
+        else if (t == Tool.TEXT) c = Cursor.TEXT;
+        else if (t == Tool.SELECT || t == Tool.STICKY) c = Cursor.DEFAULT;
+        else c = Cursor.CROSSHAIR;
+        setCursor(c);
+    }
+
+    // ================================================================ rendering
+
+    private static Color col(String css) {
+        return COLORS.computeIfAbsent(css == null ? "#000000" : css, s -> {
+            try {
+                return Color.web(s);
+            } catch (IllegalArgumentException e) {
+                return Color.BLACK;
+            }
+        });
+    }
+
+    static String hex(Color c) {
+        return String.format("#%02X%02X%02X%02X",
+                (int) Math.round(c.getRed() * 255), (int) Math.round(c.getGreen() * 255),
+                (int) Math.round(c.getBlue() * 255), (int) Math.round(c.getOpacity() * 255));
+    }
+
+    static Font fontFor(BoardObject o) {
+        return Font.font("System", o.bold ? FontWeight.BOLD : FontWeight.NORMAL,
+                o.italic ? FontPosture.ITALIC : FontPosture.REGULAR, o.fontSize);
+    }
+
+    /** Recomputes the size of a TEXT object from its content. */
+    static void measure(BoardObject o) {
+        if (o.type != Type.TEXT) return;
+        Text t = new Text(o.text.isEmpty() ? " " : o.text);
+        t.setFont(fontFor(o));
+        Bounds b = t.getLayoutBounds();
+        o.w = Math.max(10, b.getWidth());
+        o.h = Math.max(o.fontSize * 1.3, b.getHeight());
+    }
+
+    private List<String> wrappedLines(BoardObject o) {
+        double width = o.w - 20;
+        String key = o.text + "|" + width + "|" + o.fontSize + o.bold + o.italic;
+        Object[] cached = wrapCache.get(o.id);
+        if (cached != null && cached[0].equals(key)) {
+            @SuppressWarnings("unchecked") List<String> l = (List<String>) cached[1];
+            return l;
+        }
+        List<String> out = new ArrayList<>();
+        Text probe = new Text();
+        probe.setFont(fontFor(o));
+        for (String para : o.text.split("\n", -1)) {
+            StringBuilder line = new StringBuilder();
+            for (String word : para.split(" ", -1)) {
+                String test = line.length() == 0 ? word : line + " " + word;
+                probe.setText(test);
+                if (probe.getLayoutBounds().getWidth() > width && line.length() > 0) {
+                    out.add(line.toString());
+                    line = new StringBuilder(word);
+                } else {
+                    line = new StringBuilder(test);
+                }
+            }
+            out.add(line.toString());
+        }
+        wrapCache.put(o.id, new Object[]{key, out});
+        return out;
+    }
+
+    private Image image(BoardObject o) {
+        if (o.image == null) return null;
+        Path p = store.imagePath(o.image);
+        if (!Files.isRegularFile(p)) return null;
+        return IMAGES.computeIfAbsent(p, k -> new Image(k.toUri().toString()));
+    }
+
+    public void redraw() {
+        GraphicsContext g = canvas.getGraphicsContext2D();
+        double W = canvas.getWidth(), H = canvas.getHeight();
+        g.setTransform(1, 0, 0, 1, 0, 0);
+        g.setFill(Color.web("#fbfaf6"));
+        g.fillRect(0, 0, W, H);
+        drawGrid(g, W, H);
+
+        g.setTransform(zoom(), 0, 0, zoom(), board.offsetX, board.offsetY);
+        g.setLineCap(StrokeLineCap.ROUND);
+        g.setLineJoin(StrokeLineJoin.ROUND);
+
+        double vl = wx(0) - 50, vt = wy(0) - 50, vr = wx(W) + 50, vb = wy(H) + 50;
+        for (BoardObject o : board.objects) {
+            if (o.right() < vl || o.left() > vr || o.bottom() < vt || o.top() > vb) continue;
+            drawObject(g, o);
+        }
+        if (tmp != null) drawObject(g, tmp);
+
+        // selection
+        g.setStroke(SELECT_COLOR);
+        g.setLineWidth(1.5 / zoom());
+        g.setLineDashes(6 / zoom(), 4 / zoom());
+        for (String id : selected) {
+            BoardObject o = board.find(id);
+            if (o == null) continue;
+            double pad = 4 / zoom() + (o.type == Type.TEXT || o.type == Type.STICKY || o.type == Type.IMAGE ? 0 : o.strokeWidth / 2);
+            g.strokeRect(o.left() - pad, o.top() - pad, o.right() - o.left() + 2 * pad, o.bottom() - o.top() + 2 * pad);
+        }
+        g.setLineDashes((double[]) null);
+        BoardObject single = singleResizable();
+        if (single != null) {
+            double s = 10 / zoom();
+            double hx = handleX(single), hy = handleY(single);
+            g.setFill(Color.WHITE);
+            g.fillRect(hx - s / 2, hy - s / 2, s, s);
+            g.strokeRect(hx - s / 2, hy - s / 2, s, s);
+        }
+        if (mode == Mode.MARQUEE) {
+            g.setFill(Color.web("#2563eb33"));
+            g.setStroke(SELECT_COLOR);
+            g.setLineWidth(1 / zoom());
+            double l = Math.min(mqX0, mqX1), t = Math.min(mqY0, mqY1);
+            g.fillRect(l, t, Math.abs(mqX1 - mqX0), Math.abs(mqY1 - mqY0));
+            g.strokeRect(l, t, Math.abs(mqX1 - mqX0), Math.abs(mqY1 - mqY0));
+        }
+    }
+
+    private void drawGrid(GraphicsContext g, double W, double H) {
+        double step = 40 * zoom();
+        while (step < 14) step *= 2;
+        double startX = ((board.offsetX % step) + step) % step;
+        double startY = ((board.offsetY % step) + step) % step;
+        g.setFill(Color.web("#d6d3c8"));
+        for (double x = startX; x < W; x += step) {
+            for (double y = startY; y < H; y += step) {
+                g.fillRect(x - 1, y - 1, 2, 2);
+            }
+        }
+    }
+
+    private void drawObject(GraphicsContext g, BoardObject o) {
+        switch (o.type) {
+            case TEXT -> {
+                if (o != editing) {
+                    g.setFont(fontFor(o));
+                    g.setFill(col(o.color));
+                    g.setTextBaseline(VPos.TOP);
+                    g.setTextAlign(TextAlignment.LEFT);
+                    g.fillText(o.text, o.x, o.y);
+                }
+                if (o.link != null) {
+                    g.setStroke(col(linkOk(o) ? "#2563eb" : "#dc2626"));
+                    g.setLineWidth(1.5);
+                    g.strokeLine(o.x, o.y + o.h, o.x + o.w, o.y + o.h);
+                }
+            }
+            case STICKY -> {
+                g.setFill(Color.web("#00000026"));
+                g.fillRoundRect(o.x + 3, o.y + 4, o.w, o.h, 6, 6);
+                g.setFill(col(o.fill != null ? o.fill : DEFAULT_STICKY));
+                g.fillRoundRect(o.x, o.y, o.w, o.h, 6, 6);
+                if (o != editing) {
+                    g.setFont(fontFor(o));
+                    g.setFill(col(o.color));
+                    g.setTextBaseline(VPos.TOP);
+                    g.setTextAlign(TextAlignment.LEFT);
+                    double lh = o.fontSize * 1.3, y = o.y + 10;
+                    for (String line : wrappedLines(o)) {
+                        if (y + lh > o.y + o.h) break;
+                        g.fillText(line, o.x + 10, y);
+                        y += lh;
+                    }
+                }
+            }
+            case IMAGE -> {
+                Image img = image(o);
+                if (img != null && img.getWidth() > 0) {
+                    g.drawImage(img, o.x, o.y, o.w, o.h);
+                } else {
+                    g.setFill(Color.web("#e5e7eb"));
+                    g.fillRect(o.x, o.y, o.w, o.h);
+                    g.setStroke(Color.GRAY);
+                    g.setLineWidth(1);
+                    g.strokeRect(o.x, o.y, o.w, o.h);
+                    g.setFill(Color.GRAY);
+                    g.setFont(Font.font(14));
+                    g.setTextBaseline(VPos.TOP);
+                    g.fillText("(missing image)", o.x + 6, o.y + 6);
+                }
+            }
+            case RECT -> {
+                if (o.fill != null) {
+                    g.setFill(col(o.fill));
+                    g.fillRect(o.x, o.y, o.w, o.h);
+                }
+                g.setStroke(col(o.color));
+                g.setLineWidth(o.strokeWidth);
+                g.strokeRect(o.x, o.y, o.w, o.h);
+            }
+            case ELLIPSE -> {
+                if (o.fill != null) {
+                    g.setFill(col(o.fill));
+                    g.fillOval(o.x, o.y, o.w, o.h);
+                }
+                g.setStroke(col(o.color));
+                g.setLineWidth(o.strokeWidth);
+                g.strokeOval(o.x, o.y, o.w, o.h);
+            }
+            case LINE, ARROW -> {
+                g.setStroke(col(o.color));
+                g.setLineWidth(o.strokeWidth);
+                double ex = o.x + o.w, ey = o.y + o.h;
+                g.strokeLine(o.x, o.y, ex, ey);
+                if (o.type == Type.ARROW && (o.w != 0 || o.h != 0)) {
+                    double ang = Math.atan2(o.h, o.w), len = 10 + 3 * o.strokeWidth;
+                    g.strokeLine(ex, ey, ex - len * Math.cos(ang - 0.45), ey - len * Math.sin(ang - 0.45));
+                    g.strokeLine(ex, ey, ex - len * Math.cos(ang + 0.45), ey - len * Math.sin(ang + 0.45));
+                }
+            }
+            case STROKE -> {
+                int n = o.points.size() / 2;
+                if (n > 0) {
+                    double[] xs = new double[n], ys = new double[n];
+                    for (int i = 0; i < n; i++) {
+                        xs[i] = o.points.get(2 * i);
+                        ys[i] = o.points.get(2 * i + 1);
+                    }
+                    g.setStroke(col(o.color));
+                    g.setLineWidth(o.strokeWidth);
+                    g.strokePolyline(xs, ys, n);
+                }
+            }
+        }
+        if (o.link != null) drawLinkBadge(g, o);
+    }
+
+    private boolean linkOk(BoardObject o) {
+        return o.link != null && store.boardExists(o.link);
+    }
+
+    private void drawLinkBadge(GraphicsContext g, BoardObject o) {
+        double z = zoom(), r = 9 / z;
+        double cx = o.right(), cy = o.top();
+        boolean ok = linkOk(o);
+        g.setFill(col(ok ? "#2563eb" : "#dc2626"));
+        g.fillOval(cx - r, cy - r, 2 * r, 2 * r);
+        g.setStroke(Color.WHITE);
+        g.setLineWidth(1.6 / z);
+        if (ok) {
+            g.strokeLine(cx - 4 / z, cy, cx + 4 / z, cy);
+            g.strokeLine(cx + 1 / z, cy - 3.5 / z, cx + 4 / z, cy);
+            g.strokeLine(cx + 1 / z, cy + 3.5 / z, cx + 4 / z, cy);
+        } else {
+            g.strokeLine(cx - 3 / z, cy - 3 / z, cx + 3 / z, cy + 3 / z);
+            g.strokeLine(cx - 3 / z, cy + 3 / z, cx + 3 / z, cy - 3 / z);
+        }
+    }
+
+    // ================================================================ hit testing
+
+    private BoardObject hit(double px, double py) {
+        double tol = 6 / zoom();
+        List<BoardObject> l = board.objects;
+        for (int i = l.size() - 1; i >= 0; i--) {
+            if (hits(l.get(i), px, py, tol)) return l.get(i);
+        }
+        return null;
+    }
+
+    private static boolean hits(BoardObject o, double px, double py, double tol) {
+        switch (o.type) {
+            case LINE:
+            case ARROW:
+                return distToSegment(px, py, o.x, o.y, o.x + o.w, o.y + o.h) <= tol + o.strokeWidth / 2;
+            case STROKE: {
+                List<Double> p = o.points;
+                if (p.size() == 2) return Math.hypot(px - p.get(0), py - p.get(1)) <= tol + o.strokeWidth / 2;
+                for (int i = 0; i + 3 < p.size(); i += 2) {
+                    if (distToSegment(px, py, p.get(i), p.get(i + 1), p.get(i + 2), p.get(i + 3)) <= tol + o.strokeWidth / 2) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            case RECT: {
+                double l = o.left(), t = o.top(), r = o.right(), b = o.bottom();
+                boolean outer = px >= l - tol && px <= r + tol && py >= t - tol && py <= b + tol;
+                if (!outer) return false;
+                if (o.fill != null) return true;
+                boolean inner = px > l + tol && px < r - tol && py > t + tol && py < b - tol;
+                return !inner;
+            }
+            case ELLIPSE: {
+                double cx = (o.left() + o.right()) / 2, cy = (o.top() + o.bottom()) / 2;
+                double a = (o.right() - o.left()) / 2, b = (o.bottom() - o.top()) / 2;
+                double outer = sq((px - cx) / (a + tol)) + sq((py - cy) / (b + tol));
+                if (outer > 1) return false;
+                if (o.fill != null || a - tol <= 0 || b - tol <= 0) return true;
+                return sq((px - cx) / (a - tol)) + sq((py - cy) / (b - tol)) >= 1;
+            }
+            default:
+                return px >= o.left() - tol / 2 && px <= o.right() + tol / 2
+                        && py >= o.top() - tol / 2 && py <= o.bottom() + tol / 2;
+        }
+    }
+
+    private static double sq(double v) { return v * v; }
+
+    private static double distToSegment(double px, double py, double x1, double y1, double x2, double y2) {
+        double dx = x2 - x1, dy = y2 - y1;
+        double len2 = dx * dx + dy * dy;
+        double t = len2 == 0 ? 0 : Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / len2));
+        return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+    }
+
+    // ---- resize handle
+
+    private BoardObject singleResizable() {
+        if (selected.size() != 1 || editor != null) return null;
+        BoardObject o = board.find(selected.iterator().next());
+        return o == null || o.type == Type.TEXT ? null : o;
+    }
+
+    private double handleX(BoardObject o) { return o.lineLike() ? o.x + o.w : o.right(); }
+
+    private double handleY(BoardObject o) { return o.lineLike() ? o.y + o.h : o.bottom(); }
+
+    private boolean onHandle(BoardObject o, double px, double py) {
+        double s = 7 / zoom();
+        return Math.abs(px - handleX(o)) <= s && Math.abs(py - handleY(o)) <= s;
+    }
+
+    // ================================================================ undo / redo
+
+    private void checkpoint() {
+        undoStack.addLast(Json.write(board.objects));
+        if (undoStack.size() > 200) undoStack.removeFirst();
+        redoStack.clear();
+    }
+
+    /** Takes a snapshot the first time a gesture is about to change something. */
+    private void gestureCheckpoint() {
+        if (!gestureCheckpointed) {
+            checkpoint();
+            gestureCheckpointed = true;
+        }
+    }
+
+    public void undo() {
+        commitEdit();
+        if (undoStack.isEmpty()) return;
+        redoStack.addLast(Json.write(board.objects));
+        restore(undoStack.removeLast());
+    }
+
+    public void redo() {
+        commitEdit();
+        if (redoStack.isEmpty()) return;
+        undoStack.addLast(Json.write(board.objects));
+        restore(redoStack.removeLast());
+    }
+
+    private void restore(String snapshot) {
+        board.objects.clear();
+        board.objects.addAll(Json.readObjects(snapshot));
+        selected.removeIf(id -> board.find(id) == null);
+        changed();
+    }
+
+    private void changed() {
+        store.markDirty(board);
+        redraw();
+    }
+
+    // ================================================================ mouse
+
+    private boolean insideEditor(MouseEvent e) {
+        if (editor == null) return false;
+        Object t = e.getTarget();
+        Node n = t instanceof Node ? (Node) t : null;
+        while (n != null) {
+            if (n == editor) return true;
+            n = n.getParent();
+        }
+        return false;
+    }
+
+    private void onPressed(MouseEvent e) {
+        if (insideEditor(e)) return;
+        menu.hide();
+        requestFocus();
+        commitEdit();
+
+        lastSX = pressSX = e.getX();
+        lastSY = pressSY = e.getY();
+        pressWX = wx(pressSX);
+        pressWY = wy(pressSY);
+        gestureCheckpointed = false;
+        dragStarted = false;
+        mode = Mode.NONE;
+
+        if (e.getButton() == MouseButton.SECONDARY) return;
+        Tool tool = ts.tool.get();
+        if (e.getButton() == MouseButton.MIDDLE || (e.getButton() == MouseButton.PRIMARY && spaceDown)) {
+            mode = Mode.PAN;
+            setCursor(Cursor.CLOSED_HAND);
+            return;
+        }
+        if (e.getButton() != MouseButton.PRIMARY) return;
+
+        if (e.getClickCount() == 2 && (tool == Tool.SELECT || tool == Tool.HAND || tool == Tool.TEXT || tool == Tool.STICKY)) {
+            doubleClick(pressWX, pressWY);
+            return;
+        }
+
+        switch (tool) {
+            case HAND -> {
+                mode = Mode.PAN;
+                setCursor(Cursor.CLOSED_HAND);
+            }
+            case SELECT -> {
+                BoardObject single = singleResizable();
+                if (single != null && onHandle(single, pressWX, pressWY)) {
+                    mode = Mode.RESIZE;
+                    resizeRatio = single.w == 0 ? 1 : single.h / single.w;
+                    break;
+                }
+                BoardObject o = hit(pressWX, pressWY);
+                if (o != null) {
+                    if (e.isShiftDown()) {
+                        if (!selected.remove(o.id)) selected.add(o.id);
+                    } else if (!selected.contains(o.id)) {
+                        selected.clear();
+                        selected.add(o.id);
+                    }
+                    mode = Mode.MOVE;
+                } else {
+                    if (!e.isShiftDown()) selected.clear();
+                    mode = Mode.MARQUEE;
+                    mqX0 = mqX1 = pressWX;
+                    mqY0 = mqY1 = pressWY;
+                }
+            }
+            case TEXT -> {
+                createText(pressWX, pressWY, "");
+                ts.tool.set(Tool.SELECT);
+            }
+            case STICKY -> {
+                createSticky(pressWX, pressWY);
+                ts.tool.set(Tool.SELECT);
+            }
+            case PEN -> {
+                tmp = new BoardObject(Type.STROKE);
+                tmp.color = hex(ts.color.get());
+                tmp.strokeWidth = ts.width.get();
+                tmp.points.add(pressWX);
+                tmp.points.add(pressWY);
+                tmp.refreshStrokeBounds();
+                mode = Mode.DRAW;
+            }
+            case ERASER -> {
+                mode = Mode.ERASE;
+                eraseAt(pressWX, pressWY);
+            }
+            case RECT, ELLIPSE, LINE, ARROW -> {
+                Type type = Type.valueOf(tool.name());
+                tmp = new BoardObject(type);
+                tmp.x = pressWX;
+                tmp.y = pressWY;
+                tmp.color = hex(ts.color.get());
+                tmp.strokeWidth = ts.width.get();
+                if ((type == Type.RECT || type == Type.ELLIPSE) && ts.useFill.get()) tmp.fill = hex(ts.fill.get());
+                mode = Mode.SHAPE;
+            }
+        }
+        redraw();
+    }
+
+    private void onDragged(MouseEvent e) {
+        if (insideEditor(e) || mode == Mode.NONE) return;
+        double sx = e.getX(), sy = e.getY();
+        double px = wx(sx), py = wy(sy);
+        if (!dragStarted && Math.hypot(sx - pressSX, sy - pressSY) < 3) return;
+        dragStarted = true;
+
+        switch (mode) {
+            case PAN -> {
+                board.offsetX += sx - lastSX;
+                board.offsetY += sy - lastSY;
+            }
+            case MOVE -> {
+                gestureCheckpoint();
+                double dx = (sx - lastSX) / zoom(), dy = (sy - lastSY) / zoom();
+                for (String id : selected) {
+                    BoardObject o = board.find(id);
+                    if (o != null) o.move(dx, dy);
+                }
+                store.markDirty(board);
+            }
+            case MARQUEE -> {
+                mqX1 = px;
+                mqY1 = py;
+                double l = Math.min(mqX0, mqX1), r = Math.max(mqX0, mqX1);
+                double t = Math.min(mqY0, mqY1), b = Math.max(mqY0, mqY1);
+                selected.clear();
+                for (BoardObject o : board.objects) {
+                    if (o.right() >= l && o.left() <= r && o.bottom() >= t && o.top() <= b) selected.add(o.id);
+                }
+            }
+            case RESIZE -> resizeSelected(px, py);
+            case DRAW -> {
+                int n = tmp.points.size();
+                double lx = tmp.points.get(n - 2), ly = tmp.points.get(n - 1);
+                if (Math.hypot(px - lx, py - ly) > 1.5 / zoom()) {
+                    tmp.points.add(px);
+                    tmp.points.add(py);
+                    tmp.refreshStrokeBounds();
+                }
+            }
+            case SHAPE -> {
+                tmp.w = px - tmp.x;
+                tmp.h = py - tmp.y;
+            }
+            case ERASE -> eraseAt(px, py);
+            default -> { }
+        }
+        lastSX = sx;
+        lastSY = sy;
+        redraw();
+    }
+
+    private void onReleased(MouseEvent e) {
+        if (insideEditor(e)) return;
+        switch (mode) {
+            case PAN -> {
+                store.markDirty(board);
+                refreshCursor();
+            }
+            case DRAW -> {
+                if (tmp != null) {
+                    if (tmp.points.size() == 2) {
+                        tmp.points.add(tmp.points.get(0));
+                        tmp.points.add(tmp.points.get(1));
+                    }
+                    tmp.refreshStrokeBounds();
+                    checkpoint();
+                    board.objects.add(tmp);
+                    store.markDirty(board);
+                }
+            }
+            case SHAPE -> {
+                if (tmp != null && (Math.abs(tmp.w) >= 4 || Math.abs(tmp.h) >= 4)) {
+                    if (!tmp.lineLike()) {
+                        if (tmp.w < 0) { tmp.x += tmp.w; tmp.w = -tmp.w; }
+                        if (tmp.h < 0) { tmp.y += tmp.h; tmp.h = -tmp.h; }
+                    }
+                    checkpoint();
+                    board.objects.add(tmp);
+                    selected.clear();
+                    selected.add(tmp.id);
+                    store.markDirty(board);
+                    ts.tool.set(Tool.SELECT);
+                }
+            }
+            default -> { }
+        }
+        tmp = null;
+        mode = Mode.NONE;
+        gestureCheckpointed = false;
+        redraw();
+    }
+
+    private void resizeSelected(double px, double py) {
+        BoardObject o = singleResizable();
+        if (o == null) return;
+        gestureCheckpoint();
+        if (o.lineLike()) {
+            o.w = px - o.x;
+            o.h = py - o.y;
+        } else if (o.type == Type.STROKE) {
+            double nw = Math.max(10, px - o.x), nh = Math.max(10, py - o.y);
+            double sx = o.w > 0 ? nw / o.w : 1, sy = o.h > 0 ? nh / o.h : 1;
+            for (int i = 0; i + 1 < o.points.size(); i += 2) {
+                o.points.set(i, o.x + (o.points.get(i) - o.x) * sx);
+                o.points.set(i + 1, o.y + (o.points.get(i + 1) - o.y) * sy);
+            }
+            o.w = nw;
+            o.h = nh;
+        } else if (o.type == Type.IMAGE) {
+            o.w = Math.max(20, px - o.x);
+            o.h = o.w * resizeRatio;
+        } else {
+            o.w = Math.max(10, px - o.x);
+            o.h = Math.max(10, py - o.y);
+        }
+        store.markDirty(board);
+    }
+
+    private void eraseAt(double px, double py) {
+        // The eraser only removes freehand drawings, never text, stickies, images or shapes.
+        double tol = 6 / zoom();
+        List<BoardObject> l = board.objects;
+        for (int i = l.size() - 1; i >= 0; i--) {
+            BoardObject o = l.get(i);
+            if (o.type == Type.STROKE && hits(o, px, py, tol)) {
+                gestureCheckpoint();
+                l.remove(i);
+                selected.remove(o.id);
+                store.markDirty(board);
+                return;
+            }
+        }
+    }
+
+    private void onScroll(ScrollEvent e) {
+        if (e.getDeltaY() == 0) return;
+        double factor = Math.exp(e.getDeltaY() * 0.0015);
+        double nz = Math.max(0.1, Math.min(5, board.zoom * factor));
+        double sx = e.getX(), sy = e.getY();
+        double px = wx(sx), py = wy(sy);
+        board.zoom = nz;
+        board.offsetX = sx - px * nz;
+        board.offsetY = sy - py * nz;
+        store.markDirty(board);
+        if (editor != null) commitEdit();
+        redraw();
+        e.consume();
+    }
+
+    private void doubleClick(double px, double py) {
+        BoardObject o = hit(px, py);
+        if (o == null) {
+            createText(px, py, "");
+            return;
+        }
+        selected.clear();
+        selected.add(o.id);
+        if (o.link != null) {
+            if (store.boardExists(o.link)) {
+                host.openBoard(o.link);
+            } else {
+                Alert a = new Alert(Alert.AlertType.INFORMATION,
+                        "The whiteboard this object linked to no longer exists. Pick a new target?",
+                        javafx.scene.control.ButtonType.YES, javafx.scene.control.ButtonType.NO);
+                a.setHeaderText("Broken link");
+                Optional<javafx.scene.control.ButtonType> r = a.showAndWait();
+                if (r.isPresent() && r.get() == javafx.scene.control.ButtonType.YES) linkSelected();
+            }
+        } else if (o.type == Type.TEXT || o.type == Type.STICKY) {
+            startEdit(o, false);
+        }
+        redraw();
+    }
+
+    // ================================================================ keyboard & menu
+
+    private void onKeyPressed(KeyEvent e) {
+        if (editor != null) return;
+        KeyCode k = e.getCode();
+        if (k == KeyCode.SPACE) {
+            spaceDown = true;
+            refreshCursor();
+            e.consume();
+            return;
+        }
+        if (e.isShortcutDown()) {
+            switch (k) {
+                case Z -> { if (e.isShiftDown()) redo(); else undo(); }
+                case Y -> redo();
+                case C -> copy();
+                case X -> { copy(); deleteSelected(); }
+                case V -> paste(null, null);
+                case D -> { copy(); paste(null, null); }
+                case A -> { selected.clear(); for (BoardObject o : board.objects) selected.add(o.id); redraw(); }
+                case L -> linkSelected();
+                case DIGIT0 -> { board.zoom = 1; store.markDirty(board); redraw(); }
+                default -> { return; }
+            }
+            e.consume();
+            return;
+        }
+        switch (k) {
+            case DELETE, BACK_SPACE -> deleteSelected();
+            case ESCAPE -> { selected.clear(); ts.tool.set(Tool.SELECT); redraw(); }
+            case ENTER, F2 -> {
+                BoardObject o = selected.size() == 1 ? board.find(selected.iterator().next()) : null;
+                if (o != null && (o.type == Type.TEXT || o.type == Type.STICKY)) startEdit(o, false);
+            }
+            default -> { return; }
+        }
+        e.consume();
+    }
+
+    private void onContextMenu(ContextMenuEvent e) {
+        if (editor != null) return;
+        Point p = new Point(e.getX(), e.getY());
+        ctxWX = wx(p.x);
+        ctxWY = wy(p.y);
+        BoardObject o = hit(ctxWX, ctxWY);
+        if (o != null && !selected.contains(o.id)) {
+            selected.clear();
+            selected.add(o.id);
+        } else if (o == null) {
+            selected.clear();
+        }
+        redraw();
+
+        boolean has = !selected.isEmpty();
+        BoardObject single = selected.size() == 1 ? board.find(selected.iterator().next()) : null;
+        boolean anyLink = false;
+        for (String id : selected) {
+            BoardObject s = board.find(id);
+            if (s != null && s.link != null) anyLink = true;
+        }
+        menu.getItems().clear();
+        if (single != null && (single.type == Type.TEXT || single.type == Type.STICKY)) {
+            menu.getItems().add(item("Edit text", false, () -> startEdit(single, false)));
+        }
+        menu.getItems().add(item("Link to whiteboard...", !has, this::linkSelected));
+        menu.getItems().add(item("Remove link", !anyLink, this::unlinkSelected));
+        menu.getItems().add(new SeparatorMenuItem());
+        menu.getItems().add(item("Copy", !has, this::copy));
+        menu.getItems().add(item("Cut", !has, () -> { copy(); deleteSelected(); }));
+        menu.getItems().add(item("Paste here", false, () -> paste(ctxWX, ctxWY)));
+        menu.getItems().add(item("Duplicate", !has, () -> { copy(); paste(null, null); }));
+        menu.getItems().add(item("Delete", !has, this::deleteSelected));
+        menu.getItems().add(new SeparatorMenuItem());
+        menu.getItems().add(item("Bring to front", !has, () -> reorder(true)));
+        menu.getItems().add(item("Send to back", !has, () -> reorder(false)));
+        menu.getItems().add(new SeparatorMenuItem());
+        menu.getItems().add(item("Add text here", false, () -> createText(ctxWX, ctxWY, "")));
+        menu.getItems().add(item("Add sticky note here", false, () -> createSticky(ctxWX, ctxWY)));
+        menu.show(this, e.getScreenX(), e.getScreenY());
+        e.consume();
+    }
+
+    private record Point(double x, double y) { }
+
+    private static MenuItem item(String text, boolean disabled, Runnable r) {
+        MenuItem m = new MenuItem(text);
+        m.setDisable(disabled);
+        m.setOnAction(e -> r.run());
+        return m;
+    }
+
+    // ================================================================ editing operations
+
+    private BoardObject createText(double px, double py, String text) {
+        BoardObject t = new BoardObject(Type.TEXT);
+        t.x = px;
+        t.y = py;
+        t.text = text;
+        t.color = hex(ts.color.get());
+        t.fontSize = ts.fontSize.get();
+        t.bold = ts.bold.get();
+        t.italic = ts.italic.get();
+        measure(t);
+        checkpoint();
+        board.objects.add(t);
+        selected.clear();
+        selected.add(t.id);
+        startEdit(t, true);
+        return t;
+    }
+
+    private void createSticky(double px, double py) {
+        BoardObject s = new BoardObject(Type.STICKY);
+        s.x = px - 20;
+        s.y = py - 20;
+        s.w = 220;
+        s.h = 170;
+        s.fill = hex(ts.fill.get());
+        s.color = hex(ts.color.get());
+        s.fontSize = Math.min(ts.fontSize.get(), 28);
+        s.bold = ts.bold.get();
+        s.italic = ts.italic.get();
+        checkpoint();
+        board.objects.add(s);
+        selected.clear();
+        selected.add(s.id);
+        startEdit(s, true);
+    }
+
+    private void startEdit(BoardObject o, boolean isNew) {
+        commitEdit();
+        editing = o;
+        editingNew = isNew;
+        TextArea ta = new TextArea(o.text);
+        editor = ta;
+        double z = zoom();
+        ta.setFont(Font.font("System", o.bold ? FontWeight.BOLD : FontWeight.NORMAL,
+                o.italic ? FontPosture.ITALIC : FontPosture.REGULAR, Math.max(6, o.fontSize * z)));
+        String bg = o.type == Type.STICKY ? cssRgb(col(o.fill != null ? o.fill : DEFAULT_STICKY)) : "white";
+        ta.setStyle("-fx-control-inner-background: " + bg + "; -fx-text-fill: " + cssRgb(col(o.color)) + ";");
+        ta.setWrapText(o.type == Type.STICKY);
+        ta.setLayoutX(board.offsetX + o.x * z - 7);
+        ta.setLayoutY(board.offsetY + o.y * z - 5);
+        if (o.type == Type.STICKY) {
+            ta.setPrefSize(o.w * z + 14, o.h * z + 10);
+        } else {
+            ta.setPrefSize(Math.max(180, o.w * z + 60), Math.max(70, o.h * z + 30));
+        }
+        ta.focusedProperty().addListener((obs, was, is) -> {
+            if (!is) commitEdit();
+        });
+        ta.setOnKeyPressed(ev -> {
+            if (ev.getCode() == KeyCode.ESCAPE || (ev.getCode() == KeyCode.ENTER && ev.isShortcutDown())) {
+                commitEdit();
+                ev.consume();
+            }
+        });
+        getChildren().add(ta);
+        redraw();
+        Platform.runLater(() -> {
+            ta.requestFocus();
+            ta.positionCaret(ta.getText().length());
+        });
+    }
+
+    private static String cssRgb(Color c) {
+        return String.format("rgb(%d,%d,%d)", (int) Math.round(c.getRed() * 255),
+                (int) Math.round(c.getGreen() * 255), (int) Math.round(c.getBlue() * 255));
+    }
+
+    private void commitEdit() {
+        if (editor == null) return;
+        TextArea ta = editor;
+        BoardObject o = editing;
+        boolean isNew = editingNew;
+        editor = null;
+        editing = null;
+        getChildren().remove(ta);
+
+        String nt = ta.getText();
+        if (nt.isBlank()) {
+            if (isNew) {
+                undoStack.pollLast(); // discard the snapshot taken when the empty object was created
+            } else {
+                checkpoint();
+            }
+            board.objects.remove(o);
+            selected.remove(o.id);
+        } else if (!nt.equals(o.text)) {
+            if (!isNew) checkpoint();
+            o.text = nt;
+            measure(o);
+        }
+        changed();
+        requestFocus();
+    }
+
+    public void deleteSelected() {
+        if (selected.isEmpty()) return;
+        checkpoint();
+        board.objects.removeIf(o -> selected.contains(o.id));
+        selected.clear();
+        changed();
+    }
+
+    private void reorder(boolean toFront) {
+        if (selected.isEmpty()) return;
+        checkpoint();
+        List<BoardObject> picked = new ArrayList<>();
+        for (BoardObject o : board.objects) if (selected.contains(o.id)) picked.add(o);
+        board.objects.removeAll(picked);
+        if (toFront) board.objects.addAll(picked);
+        else board.objects.addAll(0, picked);
+        changed();
+    }
+
+    // ---- clipboard
+
+    private void copy() {
+        List<BoardObject> picked = new ArrayList<>();
+        for (BoardObject o : board.objects) if (selected.contains(o.id)) picked.add(o);
+        if (picked.isEmpty()) return;
+        clipboardJson = Json.write(picked);
+        preferInternal = true;
+        pasteCount = 0;
+    }
+
+    private void paste(Double atX, Double atY) {
+        Clipboard cb = Clipboard.getSystemClipboard();
+        if (!preferInternal || clipboardJson == null) {
+            if (cb.hasImage()) {
+                pasteSystemImage(cb.getImage(), atX, atY);
+                return;
+            }
+            if (clipboardJson == null) {
+                if (cb.hasString() && !cb.getString().isBlank()) {
+                    createText(atX != null ? atX : viewCenterX(), atY != null ? atY : viewCenterY(), cb.getString());
+                    commitEdit();
+                }
+                return;
+            }
+        }
+        List<BoardObject> list = Json.readObjects(clipboardJson);
+        if (list.isEmpty()) return;
+        double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
+        for (BoardObject o : list) {
+            minX = Math.min(minX, o.left());
+            minY = Math.min(minY, o.top());
+        }
+        pasteCount++;
+        double dx = atX != null ? atX - minX : 24.0 * pasteCount;
+        double dy = atY != null ? atY - minY : 24.0 * pasteCount;
+        checkpoint();
+        selected.clear();
+        for (BoardObject o : list) {
+            o.id = UUID.randomUUID().toString();
+            o.move(dx, dy);
+            board.objects.add(o);
+            selected.add(o.id);
+        }
+        changed();
+    }
+
+    private void pasteSystemImage(Image img, Double atX, Double atY) {
+        try {
+            Path tmpFile = Files.createTempFile("dndpaste", ".png");
+            ImageIO.write(SwingFXUtils.fromFXImage(img, null), "png", tmpFile.toFile());
+            String name = store.importImage(tmpFile);
+            Files.deleteIfExists(tmpFile);
+            addImage(name, atX != null ? atX : viewCenterX(), atY != null ? atY : viewCenterY());
+        } catch (IOException ex) {
+            error("Could not paste image: " + ex.getMessage());
+        }
+    }
+
+    // ---- images
+
+    public void addImageFromChooser() {
+        FileChooser fc = new FileChooser();
+        fc.setTitle("Choose an image");
+        fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("Images", "*.png", "*.jpg", "*.jpeg", "*.gif", "*.bmp"));
+        File f = fc.showOpenDialog(getScene().getWindow());
+        if (f != null) importImageFile(f, viewCenterX(), viewCenterY());
+    }
+
+    private void importImageFile(File f, double px, double py) {
+        try {
+            addImage(store.importImage(f.toPath()), px, py);
+        } catch (IOException ex) {
+            error("Could not import image: " + ex.getMessage());
+        }
+    }
+
+    private void addImage(String name, double cx, double cy) {
+        BoardObject o = new BoardObject(Type.IMAGE);
+        o.image = name;
+        Image img = image(o);
+        double iw = img != null && img.getWidth() > 0 ? img.getWidth() : 300;
+        double ih = img != null && img.getHeight() > 0 ? img.getHeight() : 200;
+        double scale = Math.min(1, 480 / Math.max(iw, ih));
+        o.w = iw * scale;
+        o.h = ih * scale;
+        o.x = cx - o.w / 2;
+        o.y = cy - o.h / 2;
+        checkpoint();
+        board.objects.add(o);
+        selected.clear();
+        selected.add(o.id);
+        changed();
+    }
+
+    private void onFilesDropped(DragEvent e) {
+        boolean ok = false;
+        if (e.getDragboard().hasFiles()) {
+            double px = wx(e.getX()), py = wy(e.getY());
+            for (File f : e.getDragboard().getFiles()) {
+                String n = f.getName().toLowerCase(Locale.ROOT);
+                int dot = n.lastIndexOf('.');
+                if (dot >= 0 && IMAGE_EXT.contains(n.substring(dot + 1))) {
+                    importImageFile(f, px, py);
+                    px += 30;
+                    py += 30;
+                    ok = true;
+                }
+            }
+        }
+        e.setDropCompleted(ok);
+        e.consume();
+    }
+
+    // ================================================================ links & styling
+
+    public void linkSelected() {
+        if (selected.isEmpty()) {
+            Alert a = new Alert(Alert.AlertType.INFORMATION, "Select an object first, then link it.");
+            a.setHeaderText(null);
+            a.showAndWait();
+            return;
+        }
+        host.pickBoard("Link to whiteboard").ifPresent(target -> {
+            checkpoint();
+            for (String id : selected) {
+                BoardObject o = board.find(id);
+                if (o != null) o.link = target;
+            }
+            changed();
+        });
+    }
+
+    public void unlinkSelected() {
+        boolean any = false;
+        for (String id : selected) {
+            BoardObject o = board.find(id);
+            if (o != null && o.link != null) any = true;
+        }
+        if (!any) return;
+        checkpoint();
+        for (String id : selected) {
+            BoardObject o = board.find(id);
+            if (o != null) o.link = null;
+        }
+        changed();
+    }
+
+    /** Applies one toolbar setting ("color", "fill", "width", "font") to the selected objects. */
+    public void applyStyle(String what) {
+        if (selected.isEmpty()) return;
+        checkpoint();
+        for (String id : selected) {
+            BoardObject o = board.find(id);
+            if (o == null) continue;
+            switch (what) {
+                case "color" -> o.color = hex(ts.color.get());
+                case "fill" -> {
+                    if (o.type == Type.STICKY) o.fill = hex(ts.fill.get());
+                    else if (o.type == Type.RECT || o.type == Type.ELLIPSE) o.fill = ts.useFill.get() ? hex(ts.fill.get()) : null;
+                }
+                case "width" -> {
+                    if (o.type != Type.TEXT && o.type != Type.STICKY && o.type != Type.IMAGE) o.strokeWidth = ts.width.get();
+                }
+                case "font" -> {
+                    if (o.type == Type.TEXT || o.type == Type.STICKY) {
+                        o.fontSize = ts.fontSize.get();
+                        o.bold = ts.bold.get();
+                        o.italic = ts.italic.get();
+                        measure(o);
+                    }
+                }
+                default -> { }
+            }
+        }
+        changed();
+    }
+
+    public boolean hasSelection() { return !selected.isEmpty(); }
+
+    /** Selects an object and scrolls the view so it is centred (used by search results & backlinks). */
+    public void focusObject(String objectId) {
+        BoardObject o = board.find(objectId);
+        if (o == null) return;
+        selected.clear();
+        selected.add(o.id);
+        board.offsetX = getWidth() / 2 - (o.left() + o.right()) / 2 * zoom();
+        board.offsetY = getHeight() / 2 - (o.top() + o.bottom()) / 2 * zoom();
+        store.markDirty(board);
+        redraw();
+    }
+
+    private void error(String msg) {
+        Alert a = new Alert(Alert.AlertType.ERROR, msg);
+        a.showAndWait();
+    }
+}

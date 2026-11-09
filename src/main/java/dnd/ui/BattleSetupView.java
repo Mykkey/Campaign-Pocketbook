@@ -22,13 +22,15 @@ import java.util.*;
 final class BattleSetupView extends VBox {
     private final BattleContext ctx;
     private final Runnable onAdd;
+    private final Runnable onLoadEncounter;
     private final Runnable onStart;
     private final Random random = new Random();
     private final Set<String> ticked = new LinkedHashSet<>();
 
-    BattleSetupView(BattleContext ctx, Runnable onAdd, Runnable onStart) {
+    BattleSetupView(BattleContext ctx, Runnable onAdd, Runnable onLoadEncounter, Runnable onStart) {
         this.ctx = ctx;
         this.onAdd = onAdd;
+        this.onLoadEncounter = onLoadEncounter;
         this.onStart = onStart;
         setSpacing(8);
         setPadding(new Insets(12));
@@ -49,6 +51,10 @@ final class BattleSetupView extends VBox {
         Button add = new Button("+ Add creatures...");
         add.setStyle("-fx-font-weight: bold;");
         add.setOnAction(e -> onAdd.run());
+        Button load = new Button("Load encounter...");
+        load.setTooltip(new Tooltip("Add every creature of a saved encounter at once"));
+        load.setDisable(ctx.store().allEncounterIds().isEmpty());
+        load.setOnAction(e -> onLoadEncounter.run());
         List<Slot> missing = BattleEngine.missingInitiative(b);
         boolean canRollSome = missing.stream().anyMatch(s -> s.members.stream().anyMatch(c -> c.side != Side.PLAYER));
         Button rollAll = new Button("Roll enemies and allies");
@@ -59,7 +65,7 @@ final class BattleSetupView extends VBox {
             BattleEngine.rollMissing(ctx.battle(), false, random);
             ctx.changed();
         });
-        HBox actions = new HBox(8, add, rollAll);
+        HBox actions = new HBox(8, add, load, rollAll);
         actions.setAlignment(Pos.CENTER_LEFT);
         getChildren().add(actions);
 

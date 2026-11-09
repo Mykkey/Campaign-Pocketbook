@@ -29,10 +29,24 @@ public class CardEditor extends BorderPane implements ItemView {
     private final StatBlockView preview;
     private final ImageView portraitView = new ImageView();
 
+    private final Runnable saver;
+    private final boolean portraits;
+
     public CardEditor(Card card, ProjectStore store, Consumer<String> onRename) {
+        this(card, store, onRename, () -> store.markCardDirty(card), true);
+    }
+
+    /**
+     * @param saver     what to do after every edit (save the card somewhere)
+     * @param portraits whether a portrait can be chosen (not for shared library creatures, whose images would not
+     *                  exist in other projects)
+     */
+    public CardEditor(Card card, ProjectStore store, Consumer<String> onRename, Runnable saver, boolean portraits) {
         this.card = card;
         this.store = store;
         this.onRename = onRename;
+        this.saver = saver;
+        this.portraits = portraits;
         this.preview = new StatBlockView(store);
 
         VBox form = new VBox(14);
@@ -58,7 +72,7 @@ public class CardEditor extends BorderPane implements ItemView {
     // ================================================================ helpers
 
     private void changed() {
-        store.markCardDirty(card);
+        saver.run();
         preview.refresh(card);
     }
 
@@ -166,6 +180,8 @@ public class CardEditor extends BorderPane implements ItemView {
             changed();
         });
         VBox portraitBox = new VBox(4, portraitView, row(choose, clear));
+        portraitBox.setVisible(portraits);
+        portraitBox.setManaged(portraits);
 
         VBox left = new VBox(8, labelled("Name (press Enter to apply)", name),
                 row(labelled("Kind", kind), labelled("Size", size),

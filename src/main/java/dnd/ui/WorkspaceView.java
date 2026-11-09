@@ -68,7 +68,10 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Button newCard = new Button("+ Card");
         newCard.setTooltip(new Tooltip("Create a character or creature card (stat block)"));
         newCard.setOnAction(e -> newCard(selectedFolder()));
-        FlowPane treeButtons = new FlowPane(6, 6, newBoard, newMap, newCard, newFolder);
+        Button newEncounter = new Button("+ Encounter");
+        newEncounter.setTooltip(new Tooltip("Plan a fight: pick creatures and see how hard it is for your party"));
+        newEncounter.setOnAction(e -> newEncounter(selectedFolder()));
+        FlowPane treeButtons = new FlowPane(6, 6, newBoard, newMap, newCard, newEncounter, newFolder);
         tree.setCellFactory(v -> createTreeCell(true));
         tree.setOnMouseClicked(e -> {
             if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2) {
@@ -266,7 +269,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
                     new Alert(Alert.AlertType.WARNING, "That battlemap could not be found.").show();
                     return;
                 }
-                view = new MapEditor(m, store, this::openItem);
+                view = new MapEditor(m, store, this::openItem, this::refreshTree);
             } else if (store.isCard(id)) {
                 dnd.model.Card c = store.card(id);
                 if (c == null) {
@@ -274,6 +277,13 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
                     return;
                 }
                 view = new CardEditor(c, store, newName -> renameFromEditor(id, newName));
+            } else if (store.isEncounter(id)) {
+                dnd.model.Encounter en = store.encounter(id);
+                if (en == null) {
+                    new Alert(Alert.AlertType.WARNING, "That encounter could not be found.").show();
+                    return;
+                }
+                view = new EncounterEditor(en, store, newName -> renameFromEditor(id, newName), this::openItem);
             } else {
                 Board b = store.board(id);
                 if (b == null) {
@@ -481,7 +491,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             @Override
             protected void updateItem(TreeNode n, boolean empty) {
                 super.updateItem(n, empty);
-                setText(empty || n == null ? null : (n.folder ? "[+] " : n.isBattleMap() ? "[map] " : n.isCard() ? "[card] " : "") + n.name);
+                setText(empty || n == null ? null : (n.folder ? "[+] " : n.isBattleMap() ? "[map] " : n.isCard() ? "[card] " : n.isEncounter() ? "[enc] " : "") + n.name);
             }
         };
         if (draggable) {
@@ -525,7 +535,9 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         nm.setOnAction(e -> newBattleMap(selectedFolder()));
         MenuItem nc = new MenuItem("New card...");
         nc.setOnAction(e -> newCard(selectedFolder()));
-        MenuItem dup = new MenuItem("Duplicate card");
+        MenuItem ne = new MenuItem("New encounter...");
+        ne.setOnAction(e -> newEncounter(selectedFolder()));
+        MenuItem dup = new MenuItem("Duplicate");
         dup.setOnAction(e -> duplicateSelectedCard());
         MenuItem nf = new MenuItem("New folder");
         nf.setOnAction(e -> newFolder(selectedFolder()));
@@ -533,11 +545,11 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         rn.setOnAction(e -> renameSelected());
         MenuItem del = new MenuItem("Delete");
         del.setOnAction(e -> deleteSelected());
-        ContextMenu m = new ContextMenu(nb, nm, nc, nf, new SeparatorMenuItem(), dup, rn, del);
+        ContextMenu m = new ContextMenu(nb, nm, nc, ne, nf, new SeparatorMenuItem(), dup, rn, del);
         m.setOnShowing(e -> {
             TreeItem<TreeNode> it = tree.getSelectionModel().getSelectedItem();
             boolean isRoot = it == null || it.getValue() == store.project.root;
-            dup.setDisable(it == null || !it.getValue().isCard());
+            dup.setDisable(it == null || !(it.getValue().isCard() || it.getValue().isEncounter()));
             rn.setDisable(it == null);
             del.setDisable(isRoot);
         });
@@ -578,13 +590,30 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         });
     }
 
+    private void newEncounter(TreeNode parent) {
+        ask("New encounter", "Encounter name:", "New Encounter").ifPresent(name -> {
+            dnd.model.Encounter e = store.createEncounter(parent, name);
+            refreshTree();
+            openItem(e.id);
+        });
+    }
+
     private void duplicateSelectedCard() {
         TreeItem<TreeNode> it = tree.getSelectionModel().getSelectedItem();
-        if (it == null || !it.getValue().isCard()) return;
-        dnd.model.Card copy = store.duplicateCard(it.getValue());
-        if (copy == null) return;
+        if (it == null) return;
+        String newId;
+        if (it.getValue().isCard()) {
+            dnd.model.Card copy = store.duplicateCard(it.getValue());
+            newId = copy == null ? null : copy.id;
+        } else if (it.getValue().isEncounter()) {
+            dnd.model.Encounter copy = store.duplicateEncounter(it.getValue());
+            newId = copy == null ? null : copy.id;
+        } else {
+            return;
+        }
+        if (newId == null) return;
         refreshTree();
-        openItem(copy.id);
+        openItem(newId);
     }
 
     /** The card editor renamed its card: keep the tree, the tab title and the trail in step. */
@@ -634,7 +663,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Alert a = new Alert(Alert.AlertType.CONFIRMATION,
                 "Delete \"" + n.name + "\"" + (n.folder ? " and everything inside it" : "") + "? This cannot be undone.",
                 ButtonType.OK, ButtonType.CANCEL);
-        a.setHeaderText("Delete " + (n.folder ? "folder" : n.isBattleMap() ? "battlemap" : n.isCard() ? "card" : "whiteboard"));
+        a.setHeaderText("Delete " + (n.folder ? "folder" : n.isBattleMap() ? "battlemap" : n.isCard() ? "card" : n.isEncounter() ? "encounter" : "whiteboard"));
         Optional<ButtonType> r = a.showAndWait();
         if (r.isEmpty() || r.get() != ButtonType.OK) return;
 

@@ -32,6 +32,7 @@ public class MapEditor extends BorderPane implements ItemView {
     private final BattleMap map;
     private final ProjectStore store;
     private final java.util.function.Consumer<String> openItem;
+    private final Runnable treeChanged;
 
     public MapEditor(BattleMap map, ProjectStore store) {
         this(map, store, id -> { });
@@ -39,6 +40,12 @@ public class MapEditor extends BorderPane implements ItemView {
 
     /** @param openItem opens another project item in a tab (used to jump from a battle to a creature's card) */
     public MapEditor(BattleMap map, ProjectStore store, java.util.function.Consumer<String> openItem) {
+        this(map, store, openItem, () -> { });
+    }
+
+    /** @param treeChanged refreshes the project tree (the battle can add cards to the project) */
+    public MapEditor(BattleMap map, ProjectStore store, java.util.function.Consumer<String> openItem, Runnable treeChanged) {
+        this.treeChanged = treeChanged;
         this.map = map;
         this.store = store;
         this.openItem = openItem;
@@ -195,6 +202,8 @@ public class MapEditor extends BorderPane implements ItemView {
                     }
 
                     @Override public void openItem(String itemId) { openItem.accept(itemId); }
+
+                    @Override public void treeChanged() { treeChanged.run(); }
                 });
             } else {
                 battleScreen.refresh();

@@ -10,6 +10,9 @@ public class Project {
     /** Tabs that were open when the project was last closed, in order. */
     public List<String> openBoards = new ArrayList<>();
     public String activeBoard;
+    /** The adventuring party the encounter builder rates fights against. */
+    public int partySize = 4;
+    public int partyLevel = 3;
 
     public Project() { }
 }

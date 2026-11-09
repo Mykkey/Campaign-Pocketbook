@@ -81,6 +81,16 @@ Cards are their own item type (`+ Card` in the project tree, saved as `cards/<id
 - **Start from a template:** a blank player character, a blank creature, or one of ten example creatures (goblin, kobold, skeleton, zombie, wolf, giant rat, orc, bandit, guard, commoner).
 - **Duplicate** a card from the tree's right-click menu to make variants. Any whiteboard text or object can be **linked** to a card, so a double-click opens its stat block.
 
+## Encounters
+An encounter is a saved fight, its own item type next to whiteboards, battlemaps and cards (`encounters/<id>.encounter` in your project folder).
+
+- **Create one:** **+ Encounter** in the project tree (or right-click > New encounter). Duplicate it from the right-click menu to make variants.
+- **Build it:** pick a **common enemy** (goblin, orc, wolf...) from the dropdown, or use **+ From my cards...** for player characters, NPCs and your own custom cards. For each one set how many, which side (enemy / ally / player) and whether they act as a group.
+- **Common enemies:** a shelf of creatures shared by every project, so you do not need a card in the project to use a goblin. **Edit common enemies...** opens the library: change any creature's stats, remove ones you never use, add homebrew creatures (blank, duplicated, or copied from one of your project's cards), or restore the starter creatures. They are also listed in the battle's **+ Add creatures...** dialog. The first time one is used in a project a card for it is made in a "Common Enemies" folder, and it is refreshed from the library each time it is used (to change a creature for one project only, duplicate its card). The library is stored in `Common Enemies` next to your projects.
+- **Difficulty:** set your party (number of characters and their level; it is remembered with the project) and the encounter shows **Trivial / Easy / Medium / Hard / Deadly**, using the 5e Dungeon Master's Guide method (monster XP, times the multiplier for how many enemies there are, against the party's XP budget). Only enemies count. XP comes from each card's XP, or from its challenge rating if XP is blank.
+- **Run it:** on a battlemap press **Battle**, then **Load encounter...** in the setup screen to add all its creatures (and their tokens) in one go, then enter initiative and Start.
+- Like any item, an encounter can be linked from a whiteboard object (it opens on double-click).
+
 ## Battle mode
 On a battlemap, press **Battle** in the toolbar to open the battle screen. The map stays in the middle; creature cards go on the right and the turn order runs along the bottom. Combat is tracked by hand: you roll the dice and type the results; the app keeps the state. A slate banner at the top says **Battle setup**; once the fight starts it turns amber and reads **BATTLE - Round N** with whose turn it is.
 

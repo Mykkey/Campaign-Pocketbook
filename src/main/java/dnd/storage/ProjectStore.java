@@ -3,6 +3,7 @@ package dnd.storage;
 import dnd.model.BattleMap;
 import dnd.model.Board;
 import dnd.model.Card;
+import dnd.model.Encounter;
 import dnd.model.Project;
 import dnd.model.TreeNode;
 
@@ -22,6 +23,7 @@ import java.util.stream.Stream;
  *   boards/&lt;id&gt;.json     one file per whiteboard
  *   maps/&lt;id&gt;.battlemap  one file per battlemap
  *   cards/&lt;id&gt;.card      one file per character / creature card
+ *   encounters/&lt;id&gt;.encounter  one file per planned fight
  *   assets/&lt;file&gt;        imported SVG/PNG pieces for battlemaps
  *   images/&lt;file&gt;        imported pictures
  * </pre>
@@ -40,6 +42,8 @@ public final class ProjectStore {
     private final Set<String> dirtyMaps = new HashSet<>();
     private final Map<String, Card> cardCache = new HashMap<>();
     private final Set<String> dirtyCards = new HashSet<>();
+    private final Map<String, Encounter> encounterCache = new HashMap<>();
+    private final Set<String> dirtyEncounters = new HashSet<>();
     private boolean projectDirty;
 
     private ProjectStore(Path dir, Project project) {
@@ -95,6 +99,7 @@ public final class ProjectStore {
         Files.createDirectories(dir.resolve("boards"));
         Files.createDirectories(dir.resolve("maps"));
         Files.createDirectories(dir.resolve("cards"));
+        Files.createDirectories(dir.resolve("encounters"));
         Files.createDirectories(dir.resolve("images"));
         Files.createDirectories(dir.resolve("assets"));
     }
@@ -206,6 +211,35 @@ public final class ProjectStore {
         return c;
     }
 
+    /** Name of the folder that holds cards made from the shared Common Enemies library. */
+    public static final String COMMON_FOLDER = "Common Enemies";
+
+    /**
+     * Brings a common enemy into this project so it can fight: the first time it makes a card in a "Common Enemies"
+     * folder, and every time after that it refreshes that same card from the library, so changes made to the
+     * library creature apply and nothing is duplicated. (To change a creature for just one project, duplicate its card.)
+     */
+    public Card useCommonEnemy(Card lib) {
+        for (String id : allCardIds()) {
+            Card c = card(id);
+            if (c != null && lib.id.equals(c.libraryId)) {
+                String oldName = c.name;
+                c.copyFrom(lib);
+                c.libraryId = lib.id;
+                TreeNode n = project.root.find(c.id);
+                if (n != null && !c.name.equals(oldName)) renameNode(n, c.name);
+                markCardDirty(c);
+                return c;
+            }
+        }
+        TreeNode folder = null;
+        for (TreeNode ch : project.root.children) if (ch.folder && COMMON_FOLDER.equals(ch.name)) folder = ch;
+        if (folder == null) folder = createFolder(project.root, COMMON_FOLDER);
+        Card c = lib.copy();
+        c.libraryId = lib.id;
+        return createCard(folder, c);
+    }
+
     /** Copies a card next to the original (name + " (copy)"). */
     public Card duplicateCard(TreeNode node) {
         Card original = card(node.id);
@@ -226,6 +260,74 @@ public final class ProjectStore {
 
     public void markCardDirty(Card c) {
         dirtyCards.add(c.id);
+        onDirty.run();
+    }
+
+    // ---------------------------------------------------------------- encounters
+
+    public boolean isEncounter(String id) {
+        TreeNode n = id == null ? null : project.root.find(id);
+        return n != null && n.isEncounter();
+    }
+
+    private Path encounterPath(String id) {
+        return dir.resolve("encounters").resolve(id + ".encounter");
+    }
+
+    /** Loads (and caches) an encounter; null if it doesn't exist or can't be read. */
+    public Encounter encounter(String id) {
+        Encounter e = encounterCache.get(id);
+        if (e != null) return e;
+        Path p = encounterPath(id);
+        if (!Files.isRegularFile(p)) return null;
+        try {
+            e = Json.readFile(p, Encounter.class);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return null;
+        }
+        encounterCache.put(id, e);
+        return e;
+    }
+
+    public Encounter createEncounter(TreeNode parent, String name) {
+        Encounter e = new Encounter();
+        e.name = name;
+        return addEncounter(parent, e);
+    }
+
+    private Encounter addEncounter(TreeNode parent, Encounter e) {
+        e.id = java.util.UUID.randomUUID().toString();
+        TreeNode n = new TreeNode(e.name, false);
+        n.id = e.id;
+        n.kind = TreeNode.KIND_ENCOUNTER;
+        parent.children.add(n);
+        encounterCache.put(e.id, e);
+        markEncounterDirty(e);
+        markProjectDirty();
+        return e;
+    }
+
+    /** Copies an encounter next to the original (name + " (copy)"). */
+    public Encounter duplicateEncounter(TreeNode node) {
+        Encounter original = encounter(node.id);
+        if (original == null) return null;
+        Encounter copy = original.copy();
+        copy.name = original.name + " (copy)";
+        TreeNode parent = project.root.parentOf(node.id);
+        return addEncounter(parent == null ? project.root : parent, copy);
+    }
+
+    public List<String> allEncounterIds() {
+        List<TreeNode> nodes = new ArrayList<>();
+        project.root.collectEncounters(nodes);
+        List<String> ids = new ArrayList<>();
+        for (TreeNode n : nodes) ids.add(n.id);
+        return ids;
+    }
+
+    public void markEncounterDirty(Encounter e) {
+        dirtyEncounters.add(e.id);
         onDirty.run();
     }
 
@@ -297,6 +399,7 @@ public final class ProjectStore {
         for (String id : new ArrayList<>(project.openBoards)) {
             if (isBattleMap(id)) battleMap(id);
             else if (isCard(id)) card(id);
+            else if (isEncounter(id)) encounter(id);
             else if (boardExists(id)) board(id);
         }
         assets();
@@ -372,6 +475,12 @@ public final class ProjectStore {
                 c.name = name;
                 markCardDirty(c);
             }
+        } else if (node.isEncounter()) {
+            Encounter e = encounter(node.id);
+            if (e != null) {
+                e.name = name;
+                markEncounterDirty(e);
+            }
         } else if (node == project.root) {
             project.name = name;
         }
@@ -390,10 +499,13 @@ public final class ProjectStore {
             dirtyMaps.remove(b.id);
             cardCache.remove(b.id);
             dirtyCards.remove(b.id);
+            encounterCache.remove(b.id);
+            dirtyEncounters.remove(b.id);
             try {
                 Files.deleteIfExists(boardPath(b.id));
                 Files.deleteIfExists(mapPath(b.id));
                 Files.deleteIfExists(cardPath(b.id));
+                Files.deleteIfExists(encounterPath(b.id));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -461,6 +573,11 @@ public final class ProjectStore {
                 if (c != null) Json.writeFile(cardPath(id), c);
             }
             dirtyCards.clear();
+            for (String id : new ArrayList<>(dirtyEncounters)) {
+                Encounter e = encounterCache.get(id);
+                if (e != null) Json.writeFile(encounterPath(id), e);
+            }
+            dirtyEncounters.clear();
             if (projectDirty) {
                 Json.writeFile(dir.resolve(PROJECT_FILE), project);
                 projectDirty = false;

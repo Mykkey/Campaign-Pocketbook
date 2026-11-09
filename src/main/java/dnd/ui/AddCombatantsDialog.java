@@ -25,6 +25,7 @@ public final class AddCombatantsDialog {
 
     private static final class Row {
         final Card card;
+        boolean common;
         final CheckBox use = new CheckBox();
         final Spinner<Integer> count = new Spinner<>(1, 50, 1);
         final CheckBox group = new CheckBox("Act as a group");
@@ -73,9 +74,29 @@ public final class AddCombatantsDialog {
             rows.getChildren().add(h);
         }
         if (cards.isEmpty()) {
-            Label none = new Label("There are no cards in this project yet.\nCreate some with + Card in the project tree first.");
+            Label none = new Label("There are no cards in this project yet. Use the common enemies below, or create cards with + Card.");
             none.setStyle("-fx-text-fill: #888;");
             rows.getChildren().add(none);
+        }
+        // creatures from the shared library: no card needed, one is made in the project when they are added
+        List<Card> commons = dnd.library.CommonEnemies.shared().list();
+        if (!commons.isEmpty()) {
+            Label head = new Label("COMMON ENEMIES  (from your library; no card needed in this project)");
+            head.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #7a200d; -fx-padding: 10 0 0 0;");
+            rows.getChildren().add(head);
+            for (Card c : commons) {
+                Row r = new Row(c);
+                r.common = true;
+                all.add(r);
+                r.use.setText(c.name);
+                r.use.setPrefWidth(190);
+                Label info = new Label("AC " + c.ac + " | HP " + c.hpMax + " | CR " + c.challenge);
+                info.setStyle("-fx-text-fill: #777; -fx-font-size: 11px;");
+                info.setPrefWidth(150);
+                HBox h = new HBox(8, r.use, info, new Label("x"), r.count, r.side, r.group);
+                h.setAlignment(Pos.CENTER_LEFT);
+                rows.getChildren().add(h);
+            }
         }
         ScrollPane scroll = new ScrollPane(rows);
         scroll.setFitToWidth(true);
@@ -98,7 +119,8 @@ public final class AddCombatantsDialog {
                 } catch (NumberFormatException e) {
                     n = r.count.getValue() == null ? 1 : r.count.getValue();
                 }
-                picks.add(new Pick(r.card, Math.max(1, Math.min(50, n)), r.group.isSelected(), r.side.getValue()));
+                Card real = r.common ? store.useCommonEnemy(r.card) : r.card;
+                picks.add(new Pick(real, Math.max(1, Math.min(50, n)), r.group.isSelected(), r.side.getValue()));
             }
             return picks;
         });

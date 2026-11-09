@@ -45,6 +45,9 @@ final class BattleScreen implements BattleContext {
 
         void popOutPlayers();
 
+        /** The project gained items (a card made from a common enemy): refresh the project tree. */
+        void treeChanged();
+
         void openItem(String itemId);
     }
 
@@ -71,7 +74,7 @@ final class BattleScreen implements BattleContext {
         this.view = view;
         this.host = host;
         this.strip = new InitiativeStrip(this);
-        this.setup = new BattleSetupView(this, this::addCreatures, this::startBattle);
+        this.setup = new BattleSetupView(this, this::addCreatures, this::loadEncounter, this::startBattle);
 
         banner.setAlignment(Pos.CENTER_LEFT);
         banner.setPadding(new Insets(8, 14, 8, 14));
@@ -298,6 +301,7 @@ final class BattleScreen implements BattleContext {
     /** Adds creatures from cards. Before the fight they get no initiative yet; during it each needs one right away. */
     private void addCreatures() {
         Optional<List<AddCombatantsDialog.Pick>> res = AddCombatantsDialog.show(view.getScene() == null ? null : view.getScene().getWindow(), store);
+        host.treeChanged(); // adding a common enemy may have created a card (and its folder) in the project
         if (res.isEmpty() || res.get().isEmpty()) return;
         Battle b = battle();
         List<Combatant> added = new ArrayList<>();
@@ -314,6 +318,60 @@ final class BattleScreen implements BattleContext {
         if (added.isEmpty()) return;
         view.addCombatantTokens(added);
         changed();
+    }
+
+    /** The project card for a common enemy (made on first use), or null if it was deleted from the library. */
+    private Card commonCard(String libraryId) {
+        Card lib = dnd.library.CommonEnemies.shared().get(libraryId);
+        return lib == null ? null : store.useCommonEnemy(lib);
+    }
+
+    /** Adds every creature of a saved encounter (setup phase). */
+    private void loadEncounter() {
+        List<dnd.model.TreeNode> nodes = new ArrayList<>();
+        store.project.root.collectEncounters(nodes);
+        if (nodes.isEmpty()) return;
+        ComboBox<dnd.model.TreeNode> choice = new ComboBox<>();
+        choice.getItems().setAll(nodes);
+        choice.setValue(nodes.get(0));
+        choice.setConverter(new javafx.util.StringConverter<>() {
+            @Override public String toString(dnd.model.TreeNode n) { return n == null ? "" : n.name; }
+
+            @Override public dnd.model.TreeNode fromString(String s) { return null; }
+        });
+        Dialog<dnd.model.TreeNode> d = new Dialog<>();
+        d.setTitle("Load encounter");
+        d.setHeaderText("Which encounter do you want to run?");
+        d.getDialogPane().setContent(choice);
+        d.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        d.setResultConverter(bt -> bt == ButtonType.OK ? choice.getValue() : null);
+        if (view.getScene() != null) d.initOwner(view.getScene().getWindow());
+        Optional<dnd.model.TreeNode> picked = d.showAndWait();
+        if (picked.isEmpty()) return;
+        dnd.model.Encounter enc = store.encounter(picked.get().id);
+        if (enc == null) return;
+        Battle b = battle();
+        List<Combatant> added = new ArrayList<>();
+        int skipped = 0;
+        for (dnd.model.Encounter.Entry en : enc.entries) {
+            Card card = en.libraryId != null ? commonCard(en.libraryId) : (en.cardId == null ? null : store.card(en.cardId));
+            if (card == null || en.count < 1) {
+                skipped++;
+                continue;
+            }
+            added.addAll(BattleEngine.addFromCard(b, card, en.count, en.group, en.side));
+        }
+        host.treeChanged();
+        if (!added.isEmpty()) {
+            view.addCombatantTokens(added);
+            changed();
+        }
+        if (skipped > 0) {
+            Alert a = new Alert(Alert.AlertType.INFORMATION, skipped + " creature"
+                    + (skipped == 1 ? " was" : "s were") + " left out because its card has been deleted.");
+            if (view.getScene() != null) a.initOwner(view.getScene().getWindow());
+            a.show();
+        }
     }
 
     private Optional<Integer> askInitiative(Card card, int count, int suggested) {

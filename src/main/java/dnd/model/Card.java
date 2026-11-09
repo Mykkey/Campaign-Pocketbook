@@ -81,21 +81,30 @@ public class Card {
     }
 
     /** A deep copy with a new id. */
+    /** Set on a project card that was made from a "common enemy" in the shared library (see CommonEnemies). */
+    public String libraryId;
+
     public Card copy() {
         Card c = new Card();
-        c.name = name; c.kind = kind; c.size = size; c.creatureType = creatureType; c.alignment = alignment;
-        c.ac = ac; c.acNote = acNote; c.hpMax = hpMax; c.hitDice = hitDice; c.speed = speed;
-        c.str = str; c.dex = dex; c.con = con; c.intel = intel; c.wis = wis; c.cha = cha;
-        c.proficiency = proficiency; c.initiativeBonus = initiativeBonus;
-        c.saves = saves; c.skills = skills; c.vulnerabilities = vulnerabilities; c.resistances = resistances;
-        c.immunities = immunities; c.conditionImmunities = conditionImmunities;
-        c.senses = senses; c.languages = languages; c.challenge = challenge; c.xp = xp;
-        c.portrait = portrait; c.notes = notes;
-        for (Feature f : traits) c.traits.add(f.copy());
-        for (Attack a : attacks) c.attacks.add(a.copy());
-        for (Feature f : actions) c.actions.add(f.copy());
-        for (Feature f : reactions) c.reactions.add(f.copy());
-        for (Feature f : legendary) c.legendary.add(f.copy());
+        c.copyFrom(this);
         return c;
+    }
+
+    /** Overwrites every stat and description with {@code o}'s, keeping this card's id and library link. */
+    public void copyFrom(Card o) {
+        name = o.name; kind = o.kind; size = o.size; creatureType = o.creatureType; alignment = o.alignment;
+        ac = o.ac; acNote = o.acNote; hpMax = o.hpMax; hitDice = o.hitDice; speed = o.speed;
+        str = o.str; dex = o.dex; con = o.con; intel = o.intel; wis = o.wis; cha = o.cha;
+        proficiency = o.proficiency; initiativeBonus = o.initiativeBonus;
+        saves = o.saves; skills = o.skills; vulnerabilities = o.vulnerabilities; resistances = o.resistances;
+        immunities = o.immunities; conditionImmunities = o.conditionImmunities;
+        senses = o.senses; languages = o.languages; challenge = o.challenge; xp = o.xp;
+        portrait = o.portrait; notes = o.notes;
+        traits.clear(); attacks.clear(); actions.clear(); reactions.clear(); legendary.clear();
+        for (Feature f : o.traits) traits.add(f.copy());
+        for (Attack a : o.attacks) attacks.add(a.copy());
+        for (Feature f : o.actions) actions.add(f.copy());
+        for (Feature f : o.reactions) reactions.add(f.copy());
+        for (Feature f : o.legendary) legendary.add(f.copy());
     }
 }

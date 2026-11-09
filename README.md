@@ -40,6 +40,8 @@ The app also checks GitHub when it starts (only needs an internet connection; it
 Projects are saved as plain files in `~/DnDCampaignNotes/<project name>/` (`project.json`, `boards/*.json`, `images/`). Everything autosaves. To back up or move a campaign, just copy its folder.
 
 ## Using it
+The toolbars (whiteboard, battlemap and the top bar) use small icons to stay uncluttered. **Hover any icon** to see its name, what it does and its shortcut key; the tool icons keep their number keys (1 to 0), and switches such as Name hints, Link previews, Grid, Snap and Fog show as pressed (highlighted) when they are on.
+
 | Do this | How |
 |---------|-----|
 | Open a board | Double-click it in the project tree (left). Right-click the tree to add, rename or delete; drag to move. |

@@ -87,10 +87,8 @@ public class MapEditor extends BorderPane implements ItemView {
         Map<MapTool, ToggleButton> buttons = new EnumMap<>(MapTool.class);
         for (MapTool t : MapTool.values()) {
             String key = String.valueOf((t.ordinal() + 1) % 10); // keys 1-9, then 0 for the tenth tool
-            ToggleButton b = new ToggleButton(key + " " + t.label);
+            ToggleButton b = IconButtons.decorate(new ToggleButton(), t.name().toLowerCase(), t.label + ": " + t.tip + " [" + key + "]");
             b.setToggleGroup(group);
-            b.setFocusTraversable(false);
-            b.setTooltip(new Tooltip(t.tip + " [" + key + "]"));
             b.setOnAction(e -> {
                 ts.tool.set(t);
                 b.setSelected(true);
@@ -126,30 +124,24 @@ public class MapEditor extends BorderPane implements ItemView {
 
         ColorPicker tokenColor = new ColorPicker(ts.tokenColor.get());
         tokenColor.setTooltip(new Tooltip("Token colour (also recolours selected tokens)"));
+        tokenColor.setStyle("-fx-color-label-visible: false;");
         tokenColor.setOnAction(e -> {
             ts.tokenColor.set(tokenColor.getValue());
             view.applyTokenColor();
         });
-        CheckBox grid = new CheckBox("Grid");
+        ToggleButton grid = IconButtons.toggle("grid", "Grid: show the grid lines");
         grid.setSelected(map.showGrid);
-        grid.setFocusTraversable(false);
         grid.setOnAction(e -> {
             map.showGrid = grid.isSelected();
             store.markMapDirty(map);
             view.redraw();
         });
-        CheckBox snap = new CheckBox("Snap");
-        snap.setFocusTraversable(false);
-        snap.setTooltip(new Tooltip("Snap pieces to the grid"));
-        snap.selectedProperty().bindBidirectional(ts.snap);
+        ToggleButton snap = IconButtons.switchToggle("snap", "Snap: snap pieces to the grid", ts.snap);
         bar.getChildren().add(toolGroup(MapTool.TOKEN, new Label("Token colour"), tokenColor));
         bar.getChildren().addAll(grid, snap, new Separator(Orientation.VERTICAL));
 
         // ---- fog of war
-        CheckBox fog = new CheckBox("Fog");
-        fog.setFocusTraversable(false);
-        fog.setTooltip(new Tooltip("Hide the map from the players until you reveal it"));
-        fog.selectedProperty().bindBidirectional(ts.fogEnabled);
+        ToggleButton fog = IconButtons.switchToggle("fog", "Fog: hide the map from the players until you reveal it", ts.fogEnabled);
         ComboBox<String> fogMode = new ComboBox<>();
         fogMode.getItems().setAll("Reveal brush", "Hide brush", "Reveal rectangle", "Hide rectangle");
         fogMode.setValue("Reveal brush");
@@ -161,18 +153,15 @@ public class MapEditor extends BorderPane implements ItemView {
             ts.fogRect.set(i >= 2);
             ts.tool.set(MapTool.FOG);
         });
-        Button revealAll = action("Reveal all", "Remove all fog", () -> view.revealAllFog());
-        Button hideAll = action("Hide all", "Cover the whole map in fog (tokens that reveal fog keep their surroundings clear)",
+        Button revealAll = iconAction("eye", "Reveal all: remove all fog", () -> view.revealAllFog());
+        Button hideAll = iconAction("eye-off", "Hide all: cover the whole map in fog (tokens that reveal fog keep their surroundings clear)",
                 () -> view.hideAllFog());
         bar.getChildren().add(toolGroup(MapTool.FOG, fog, fogMode, revealAll, hideAll));
 
         // ---- ruler: the players can be shown the measurement too
-        CheckBox rulerShare = new CheckBox("Show players");
-        rulerShare.setFocusTraversable(false);
-        rulerShare.setTooltip(new Tooltip("Also draw the ruler in the players' window"));
-        rulerShare.selectedProperty().bindBidirectional(ts.rulerShared);
+        ToggleButton rulerShare = IconButtons.switchToggle("monitor", "Show players: also draw the ruler in the players' window", ts.rulerShared);
         bar.getChildren().add(toolGroup(MapTool.RULER, new Label("Ruler"), rulerShare,
-                action("Clear", "Take the ruler off the map (Esc)", view::clearMeasures)));
+                iconAction("clear", "Clear: take the ruler off the map (Esc)", view::clearMeasures)));
 
         bar.getChildren().add(toolGroup(MapTool.PIN, new Label("Click the map to add a note (only you see pins). Double-click a pin to edit it.")));
 
@@ -192,11 +181,8 @@ public class MapEditor extends BorderPane implements ItemView {
         feet.valueProperty().addListener((o, a, n) -> {
             if (n != null) ts.templateFeet.set(n);
         });
-        CheckBox share = new CheckBox("Show players");
-        share.setFocusTraversable(false);
-        share.setTooltip(new Tooltip("Also draw the area in the players' window"));
-        share.selectedProperty().bindBidirectional(ts.templateShared);
-        Button clearArea = action("Clear area", "Take the area off the map (Esc)", view::clearTemplate);
+        ToggleButton share = IconButtons.switchToggle("monitor", "Show players: also draw the area in the players' window", ts.templateShared);
+        Button clearArea = iconAction("clear", "Clear area: take the area off the map (Esc)", view::clearTemplate);
         bar.getChildren().add(toolGroup(MapTool.TEMPLATE, new Label("Area"), shape, feet, new Label("ft"), share, clearArea));
 
         // ---- lighting
@@ -209,30 +195,23 @@ public class MapEditor extends BorderPane implements ItemView {
             ts.lightPreset.set(n);
             ts.tool.set(MapTool.LIGHT);
         });
-        CheckBox dark = new CheckBox("Dark map");
-        dark.setFocusTraversable(false);
-        dark.setTooltip(new Tooltip("The map is dark: only places lit by a light, or within a creature's darkvision, are clear. "
-                + "Tokens with darkvision or a carried light clear the fog around them"));
-        dark.selectedProperty().bindBidirectional(ts.darkMap);
+        ToggleButton dark = IconButtons.switchToggle("moon", "Dark map: only places lit by a light, or within a creature's darkvision, are clear. "
+                + "Tokens with darkvision or a carried light clear the fog around them", ts.darkMap);
         bar.getChildren().add(toolGroup(MapTool.LIGHT, new Label("Light"), lightKind, dark));
 
-        Button popOut = action("Pop out", "Open this map in its own window for the players. Drag it to your "
+        Button popOut = iconAction("popout", "Pop out: open this map in its own window for the players. Drag it to your "
                 + "playtable monitor and press F11 for fullscreen. It updates live as you edit",
                 () -> PlayerWindow.open(getScene() == null ? null : getScene().getWindow(), map, store));
-        popOut.setStyle("-fx-font-weight: bold;");
-        battleBtn = new ToggleButton("Battle");
-        battleBtn.setFocusTraversable(false);
-        battleBtn.setStyle("-fx-font-weight: bold;");
-        battleBtn.setTooltip(new Tooltip("Battle mode: set up a fight, then run it with the initiative strip and creature cards"));
+        battleBtn = IconButtons.toggle("battle", "Battle: set up a fight, then run it with the initiative strip and creature cards");
         battleBtn.setSelected(map.battle != null && map.battle.active);
         battleBtn.setOnAction(e -> setBattleVisible(battleBtn.isSelected()));
         bar.getChildren().addAll(
                 battleBtn,
                 popOut,
-                action("Fit", "Zoom to show the whole map (Ctrl+0)", view::fitToWindow),
-                action("Undo", "Ctrl+Z", view::undo),
-                action("Redo", "Ctrl+Y", view::redo),
-                action("Delete", "Delete the selection", view::deleteSelected));
+                iconAction("fit", "Fit: zoom to show the whole map (Ctrl+0)", view::fitToWindow),
+                iconAction("undo", "Undo (Ctrl+Z)", view::undo),
+                iconAction("redo", "Redo (Ctrl+Y)", view::redo),
+                iconAction("delete", "Delete the selection", view::deleteSelected));
         return bar;
     }
 
@@ -313,6 +292,15 @@ public class MapEditor extends BorderPane implements ItemView {
                 }
             }
         };
+    }
+
+    private Button iconAction(String icon, String tip, Runnable run) {
+        Button b = IconButtons.decorate(new Button(), icon, tip);
+        b.setOnAction(e -> {
+            run.run();
+            view.requestFocus();
+        });
+        return b;
     }
 
     private Button action(String text, String tip, Runnable run) {

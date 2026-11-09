@@ -116,10 +116,8 @@ final class BattleScreen implements BattleContext {
         java.util.Map<MapTool, ToggleButton> buttons = new java.util.EnumMap<>(MapTool.class);
         for (Object[] d : defs) {
             MapTool tool = (MapTool) d[0];
-            ToggleButton b = new ToggleButton((String) d[1]);
+            ToggleButton b = IconButtons.decorate(new ToggleButton(), tool.name().toLowerCase(), d[1] + ": " + d[2]);
             b.setToggleGroup(tools);
-            b.setFocusTraversable(false);
-            b.setTooltip(new Tooltip((String) d[2]));
             b.setOnAction(e -> {
                 ts.tool.set(b.isSelected() ? tool : MapTool.SELECT);
                 view.requestFocus();
@@ -162,9 +160,7 @@ final class BattleScreen implements BattleContext {
         Region gap = new Region();
         HBox.setHgrow(gap, Priority.ALWAYS);
         // one switch for what the players see: the ruler and the area
-        CheckBox share = new CheckBox("Show ruler and area to players");
-        share.setFocusTraversable(false);
-        share.setTooltip(new Tooltip("When on, the ruler and the area you lay on the map are also drawn in the player window"));
+        ToggleButton share = IconButtons.toggle("monitor", "Show to players: when on, the ruler and the area you lay on the map are also drawn in the player window");
         share.setSelected(ts.rulerShared.get() || ts.templateShared.get());
         share.setOnAction(e -> {
             boolean on = share.isSelected(); // read once: setting the first property updates the box through its listener
@@ -173,9 +169,7 @@ final class BattleScreen implements BattleContext {
         });
         ts.rulerShared.addListener((o, a, n) -> share.setSelected(n || ts.templateShared.get()));
         ts.templateShared.addListener((o, a, n) -> share.setSelected(n || ts.rulerShared.get()));
-        Button clear = new Button("Clear");
-        clear.setFocusTraversable(false);
-        clear.setTooltip(new Tooltip("Take the ruler and the area off the map (Esc)"));
+        Button clear = IconButtons.decorate(new Button(), "clear", "Clear: take the ruler and the area off the map (Esc)");
         clear.setOnAction(e -> view.clearMeasures());
         quickTools.getChildren().addAll(gap, share, clear);
     }
@@ -281,31 +275,26 @@ final class BattleScreen implements BattleContext {
         banner.getChildren().add(sp);
 
         if (active) {
-            Button back = new Button("< Back");
-            back.setTooltip(new Tooltip("Go back one turn (P)"));
+            Button back = IconButtons.decorate(new Button(), "back", "Back: go back one turn (P)");
             back.setOnAction(e -> previous());
-            Button next = new Button("Next >");
-            next.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-base: #1f2937; -fx-text-fill: white; -fx-padding: 6 28 6 28;");
-            next.setTooltip(new Tooltip("End this turn and go to the next creature (N)"));
+            Button next = IconButtons.decorate(new Button(), "forward", "Next: end this turn and go to the next creature (N)");
+            next.setStyle("-fx-background-color: -t-blue; -fx-border-color: -t-blue-border; -fx-border-radius: 6; -fx-padding: 8 22 8 22;");
             next.setOnAction(e -> next());
-            Button add = new Button("+ Add creature");
-            add.setTooltip(new Tooltip("Bring someone into the fight (you will be asked for their initiative)"));
+            Button add = IconButtons.decorate(new Button(), "add", "Add creature: bring someone into the fight (you will be asked for their initiative)");
             add.setOnAction(e -> addCreatures());
-            Button end = new Button("End battle");
+            Button end = IconButtons.decorate(new Button(), "stop", "End battle");
             end.setOnAction(e -> endBattle());
             banner.getChildren().addAll(back, next, add, end);
         }
-        ToggleButton tools = new ToggleButton("Map tools");
+        ToggleButton tools = IconButtons.toggle("sliders", "Map tools: show the map toolbar (fog, terrain, tokens, ...)");
         tools.setSelected(toolsShown);
-        tools.setTooltip(new Tooltip("Show the map toolbar (fog, terrain, tokens, ...)"));
         tools.setOnAction(e -> {
             toolsShown = tools.isSelected();
             host.showMapTools(toolsShown);
         });
-        Button players = new Button("Player view");
-        players.setTooltip(new Tooltip("Open the player window"));
+        Button players = IconButtons.decorate(new Button(), "monitor", "Player view: open the player window");
         players.setOnAction(e -> host.popOutPlayers());
-        Button exit = new Button(active ? "Exit (keeps the battle)" : "Close");
+        Button exit = IconButtons.decorate(new Button(), "exit", active ? "Exit (keeps the battle)" : "Close the battle screen");
         exit.setOnAction(e -> host.exit());
         banner.getChildren().addAll(tools, players, exit);
     }
@@ -329,7 +318,7 @@ final class BattleScreen implements BattleContext {
         cards.getItems().clear();
         cards.getItems().add(activeScroll);
         if (seen != null) {
-            Button close = new Button("Back to current turn");
+            Button close = IconButtons.decorate(new Button(), "target", "Back to the current turn");
             close.setOnAction(e -> inspect(null));
             Label hint = new Label("Viewing " + seen.name() + " (their turn is not up)");
             hint.setStyle("-fx-text-fill: -t-blue-text; -fx-font-weight: bold;");

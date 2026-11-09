@@ -160,7 +160,19 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         library.setOnAction(e -> openLibrary());
         recentMenu.setTooltip(new Tooltip("The last items you opened"));
         recentMenu.setOnShowing(e -> rebuildRecent());
-        HBox nav = new HBox(8, projects, backBtn, fwdBtn, trail, spacer, names, npc, loot, relations, quests, timeline, library, Theme.toggleButton(), recentMenu, backlinks, search);
+        IconButtons.decorate(projects, "home", "Projects: back to the list of campaigns");
+        IconButtons.decorate(backBtn, "back");
+        IconButtons.decorate(fwdBtn, "forward");
+        IconButtons.decorate(names, "names");
+        IconButtons.decorate(npc, "person");
+        IconButtons.decorate(loot, "loot");
+        IconButtons.decorate(relations, "relations");
+        IconButtons.decorate(quests, "quest");
+        IconButtons.decorate(timeline, "calendar");
+        IconButtons.decorate(library, "book");
+        IconButtons.decorate(recentMenu, "clock");
+        IconButtons.decorate(backlinks, "link");
+        HBox nav = new HBox(4, projects, backBtn, fwdBtn, trail, spacer, names, npc, loot, relations, quests, timeline, library, Theme.toggleButton(), recentMenu, backlinks, search);
         nav.setAlignment(Pos.CENTER_LEFT);
         nav.setPadding(new Insets(6, 8, 0, 8));
 

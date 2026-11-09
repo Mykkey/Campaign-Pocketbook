@@ -45,8 +45,10 @@ public final class Theme {
     /** A button that flips between light and dark mode; its text always names the mode it will switch to. */
     public static Button toggleButton() {
         Button b = new Button();
-        b.textProperty().bind(Bindings.when(DARK).then("Light mode").otherwise("Dark mode"));
-        b.setTooltip(new Tooltip("Switch between light and dark mode (remembered)"));
+        b.graphicProperty().bind(Bindings.createObjectBinding(() -> Icons.of(DARK.get() ? "sun" : "moon"), DARK));
+        b.getStyleClass().add("icon-button");
+        b.tooltipProperty().bind(Bindings.createObjectBinding(
+                () -> new Tooltip(DARK.get() ? "Switch to light mode (remembered)" : "Switch to dark mode (remembered)"), DARK));
         b.setFocusTraversable(false);
         b.setOnAction(e -> setDark(!isDark()));
         return b;

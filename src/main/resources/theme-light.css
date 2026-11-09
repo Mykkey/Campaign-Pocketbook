@@ -19,3 +19,9 @@
     -t-danger: #b91c1c;
     -t-ok: #15803d;
 }
+/* icon-only toolbar buttons */
+.icon-button { -fx-padding: 5; -fx-background-radius: 6; -fx-background-color: transparent; -fx-border-color: transparent; -fx-border-radius: 6; }
+.icon-button:hover { -fx-background-color: -t-surface2; }
+.icon-button:armed { -fx-background-color: -t-border; }
+.toggle-button.icon-button:selected { -fx-background-color: -t-blue; -fx-border-color: -t-blue-border; }
+.icon-button:disabled { -fx-opacity: 0.4; }

@@ -10,11 +10,11 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-/** The tool palette plus colour / size / style controls. */
+/** The tool palette plus colour / size / style controls: icon buttons, with the names and shortcuts in tooltips. */
 public class ToolbarPanel extends FlowPane {
 
     public ToolbarPanel(ToolState ts, Supplier<BoardView> current) {
-        setHgap(6);
+        setHgap(4);
         setVgap(4);
         setPadding(new Insets(6));
 
@@ -22,10 +22,9 @@ public class ToolbarPanel extends FlowPane {
         ToggleGroup group = new ToggleGroup();
         Map<Tool, ToggleButton> buttons = new EnumMap<>(Tool.class);
         for (Tool t : Tool.values()) {
-            ToggleButton b = new ToggleButton((t.ordinal() + 1) % 10 + " " + t.label);
+            ToggleButton b = IconButtons.decorate(new ToggleButton(), t.name().toLowerCase(),
+                    t.label + ": " + t.tip + " [" + (t.ordinal() + 1) % 10 + "]");
             b.setToggleGroup(group);
-            b.setFocusTraversable(false);
-            b.setTooltip(new Tooltip(t.tip + " [" + (t.ordinal() + 1) % 10 + "]"));
             b.setOnAction(e -> {
                 ts.tool.set(t);
                 b.setSelected(true); // clicking the active tool must not deselect it
@@ -35,10 +34,11 @@ public class ToolbarPanel extends FlowPane {
         }
         buttons.get(ts.tool.get()).setSelected(true);
         ts.tool.addListener((o, a, n) -> buttons.get(n).setSelected(true));
+        getChildren().add(new Separator(Orientation.VERTICAL));
 
-        getChildren().add(action("Image...", "Add a picture (you can also drag files in, or paste with Ctrl+V)",
+        getChildren().add(action("image", "Image: add a picture (you can also drag files in, or paste with Ctrl+V)",
                 v -> v.addImageFromChooser(), current));
-        getChildren().add(action("Battlemap...", "Insert a live preview of a battlemap; double-click it to open the map",
+        getChildren().add(action("map", "Battlemap: insert a live preview of a battlemap; double-click it to open the map",
                 v -> v.insertMapPreview(), current));
         getChildren().add(new Separator(Orientation.VERTICAL));
 
@@ -46,12 +46,12 @@ public class ToolbarPanel extends FlowPane {
         ColorPicker color = new ColorPicker(ts.color.get());
         color.setTooltip(new Tooltip("Text / outline colour (applies to the selection too)"));
         color.setOnAction(e -> ts.color.set(color.getValue()));
+        color.setStyle("-fx-color-label-visible: false;"); // just the swatch, not the hex code
         ColorPicker fill = new ColorPicker(ts.fill.get());
         fill.setTooltip(new Tooltip("Sticky note colour / shape fill"));
         fill.setOnAction(e -> ts.fill.set(fill.getValue()));
-        CheckBox useFill = new CheckBox("Fill shapes");
-        useFill.setFocusTraversable(false);
-        useFill.selectedProperty().bindBidirectional(ts.useFill);
+        fill.setStyle("-fx-color-label-visible: false;");
+        ToggleButton useFill = IconButtons.switchToggle("fill-shapes", "Fill shapes: draw rectangles and ellipses filled with the fill colour", ts.useFill);
 
         Spinner<Integer> width = new Spinner<>(1, 60, ts.width.get());
         width.setPrefWidth(70);
@@ -67,6 +67,8 @@ public class ToolbarPanel extends FlowPane {
         });
         // While a text is being typed, B and I style the selected words; otherwise they style the whole block.
         ToggleButton bold = new ToggleButton("B");
+        bold.getStyleClass().add("icon-button");
+        bold.setMinWidth(30);
         bold.setStyle("-fx-font-weight: bold;");
         bold.setFocusTraversable(false);
         bold.setTooltip(new Tooltip("Bold. While typing: the selected words (Ctrl+B). Otherwise: the whole text or sticky note"));
@@ -82,6 +84,8 @@ public class ToolbarPanel extends FlowPane {
             }
         });
         ToggleButton italic = new ToggleButton("I");
+        italic.getStyleClass().add("icon-button");
+        italic.setMinWidth(30);
         italic.setStyle("-fx-font-style: italic;");
         italic.setFocusTraversable(false);
         italic.setTooltip(new Tooltip("Italic. While typing: the selected words (Ctrl+I). Otherwise: the whole text or sticky note"));
@@ -97,45 +101,26 @@ public class ToolbarPanel extends FlowPane {
             }
         });
 
-        getChildren().addAll(new Label("Colour"), color, new Label("Fill"), fill, useFill,
-                new Label("Width"), width, new Label("Font"), font, bold, italic,
-                new Separator(Orientation.VERTICAL));
+        getChildren().addAll(color, fill, useFill, width, font, bold, italic, new Separator(Orientation.VERTICAL));
 
-        // --- actions
+        // --- links and notes
         getChildren().addAll(
-                action("Link...", "Link the selected words (while typing) or object(s) to another item (Ctrl+L). Blue = link: hover it to preview the item, double-click to open it", v -> v.linkSelected(), current),
-                action("Unlink", "Remove the link from the selected words (while typing) or object(s)", v -> v.unlinkSelected(), current),
-                action("Note...", "Write your own note that shows when you hover over the selected words (while typing) or object(s). Green = note. Double-click a note to edit it",
+                action("link", "Link: link the selected words (while typing) or object(s) to another item (Ctrl+L). Blue = link: hover it to preview the item, double-click to open it", v -> v.linkSelected(), current),
+                action("unlink", "Unlink: remove the link from the selected words (while typing) or object(s)", v -> v.unlinkSelected(), current),
+                action("note", "Note: write your own note that shows when you hover over the selected words (while typing) or object(s). Green = note. Double-click a note to edit it",
                         v -> v.noteSelected(), current),
-                action("No note", "Remove the note from the selected words (while typing) or object(s)", v -> v.removeNoteSelected(), current),
-                nameHintsBox(ts),
-                action("Link all names", "Link every suggested name (dotted underline) in the selected text, or on the whole whiteboard if nothing is selected", v -> v.linkAllNames(), current),
-                linkPreviewsBox(ts),
-                action("Undo", "Ctrl+Z", v -> v.undo(), current),
-                action("Redo", "Ctrl+Y", v -> v.redo(), current),
-                action("Delete", "Delete the selection", v -> v.deleteSelected(), current));
+                action("no-note", "No note: remove the note from the selected words (while typing) or object(s)", v -> v.removeNoteSelected(), current),
+                action("link-all", "Link all names: link every suggested name (dotted underline) in the selected text, or on the whole whiteboard if nothing is selected", v -> v.linkAllNames(), current),
+                IconButtons.switchToggle("name-hints", "Name hints: underline the names of your cards and spells in text; hover one to link it", ts.nameHints),
+                IconButtons.switchToggle("previews", "Link previews: show a preview of the linked card, spell, map or whiteboard when you hover over a link", ts.linkPreviews),
+                new Separator(Orientation.VERTICAL),
+                action("undo", "Undo (Ctrl+Z)", v -> v.undo(), current),
+                action("redo", "Redo (Ctrl+Y)", v -> v.redo(), current),
+                action("delete", "Delete the selection", v -> v.deleteSelected(), current));
     }
 
-    private static CheckBox nameHintsBox(ToolState ts) {
-        CheckBox cb = new CheckBox("Name hints");
-        cb.setFocusTraversable(false);
-        cb.setTooltip(new Tooltip("Underline the names of your cards and spells in text; hover one to link it"));
-        cb.selectedProperty().bindBidirectional(ts.nameHints);
-        return cb;
-    }
-
-    private static CheckBox linkPreviewsBox(ToolState ts) {
-        CheckBox cb = new CheckBox("Link previews");
-        cb.setFocusTraversable(false);
-        cb.setTooltip(new Tooltip("Show a preview of the linked card, spell, map or whiteboard when you hover over a link"));
-        cb.selectedProperty().bindBidirectional(ts.linkPreviews);
-        return cb;
-    }
-
-    private static Button action(String text, String tip, Consumer<BoardView> run, Supplier<BoardView> current) {
-        Button b = new Button(text);
-        b.setFocusTraversable(false);
-        b.setTooltip(new Tooltip(tip));
+    private static Button action(String icon, String tip, Consumer<BoardView> run, Supplier<BoardView> current) {
+        Button b = IconButtons.decorate(new Button(), icon, tip);
         b.setOnAction(e -> {
             BoardView v = current.get();
             if (v != null) {

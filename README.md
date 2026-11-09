@@ -117,6 +117,9 @@ Tick **Fog** in a battlemap's toolbar to hide the map from the players until you
 ## Name generator
 Click **Names...** in the top bar (or press Ctrl+G), pick a race and optionally a gender, and it rolls first + last names. Select one and hit **Copy**, or **Add to board** (or double-click a name) to drop it onto the current whiteboard as text. Races: Human, Elf, Dwarf, Halfling, Gnome, Half-Elf, Half-Orc, Tiefling, Dragonborn, Orc, Goblin, Tabaxi, Aasimar, Genasi, Goliath, Kobold and Tortle.
 
+## Loot generator
+Press **Loot...** in the top bar (or **Ctrl+L**) for random treasure. Pick a **tier** (the challenge rating of what the party beat: 0-4, 5-10, 11-16, 17+) and either **a creature's pockets** (coins and the odd keepsake; set how many creatures and the coins are added together) or **a treasure hoard** (coins, gems, art objects, magic items of rarities that suit the tier, and a few curios). It changes as you change the options, **Roll** rolls again, **Copy** copies it and **Add to board** puts it on the open whiteboard as a text note. The amounts are rough guidance in the spirit of the usual treasure tiers, not a published table, so change anything you like.
+
 ## Credits
 The example creature cards use stat values from the System Reference Document 5.1 by Wizards of the Coast, licensed under [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/). This app is not affiliated with or endorsed by Wizards of the Coast.
 

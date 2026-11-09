@@ -104,7 +104,10 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Button names = new Button("Names...");
         names.setTooltip(new Tooltip("Random character name generator (Ctrl+G)"));
         names.setOnAction(e -> openNameGenerator());
-        HBox nav = new HBox(8, projects, backBtn, fwdBtn, trail, spacer, names, backlinks, search);
+        Button loot = new Button("Loot...");
+        loot.setTooltip(new Tooltip("Random treasure generator (Ctrl+L)"));
+        loot.setOnAction(e -> openLootGenerator());
+        HBox nav = new HBox(8, projects, backBtn, fwdBtn, trail, spacer, names, loot, backlinks, search);
         nav.setAlignment(Pos.CENTER_LEFT);
         nav.setPadding(new Insets(6, 8, 0, 8));
 
@@ -180,6 +183,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             scene.getAccelerators().put(new KeyCodeCombination(KeyCode.W, KeyCombination.SHORTCUT_DOWN), this::closeCurrentTab);
             scene.getAccelerators().put(new KeyCodeCombination(KeyCode.F, KeyCombination.SHORTCUT_DOWN), () -> search.requestFocus());
             scene.getAccelerators().put(new KeyCodeCombination(KeyCode.G, KeyCombination.SHORTCUT_DOWN), this::openNameGenerator);
+            scene.getAccelerators().put(new KeyCodeCombination(KeyCode.L, KeyCombination.SHORTCUT_DOWN), this::openLootGenerator);
         });
 
         refreshTree();
@@ -433,6 +437,17 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
                 new Alert(Alert.AlertType.INFORMATION, "Open a whiteboard first, then add the name to it.").show();
             } else {
                 v.addTextAtCenter(name);
+            }
+        });
+    }
+
+    private void openLootGenerator() {
+        LootDialog.show(getScene().getWindow(), text -> {
+            BoardView v = currentView();
+            if (v == null) {
+                new Alert(Alert.AlertType.INFORMATION, "Open a whiteboard first, then add the loot to it.").show();
+            } else {
+                v.addTextAtCenter(text);
             }
         });
     }

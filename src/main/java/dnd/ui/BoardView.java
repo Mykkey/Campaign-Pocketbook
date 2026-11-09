@@ -94,7 +94,7 @@ public class BoardView extends Pane implements ItemView {
         return true;
     }
 
-    private enum Mode { NONE, PAN, MOVE, MARQUEE, RESIZE, DRAW, SHAPE, ERASE, TEXTBOX }
+    private enum Mode { NONE, PAN, MOVE, MARQUEE, RESIZE, DRAW, SHAPE, ERASE, TEXTBOX, BEND }
 
     private static final Color SELECT_COLOR = Color.web("#2563eb");
     private static final String DEFAULT_STICKY = "#FFF2A8";
@@ -432,6 +432,13 @@ public class BoardView extends Pane implements ItemView {
             g.setFill(Color.WHITE);
             g.fillRect(hx - s / 2, hy - s / 2, s, s);
             g.strokeRect(hx - s / 2, hy - s / 2, s, s);
+            if (single.lineLike()) { // the round handle on the line: drag it to bend the line, or along it to move the bend
+                double[] bp = single.bendPoint();
+                g.setFill(SELECT_COLOR);
+                g.fillOval(bp[0] - s / 2, bp[1] - s / 2, s, s);
+                g.setStroke(Color.WHITE);
+                g.strokeOval(bp[0] - s / 2, bp[1] - s / 2, s, s);
+            }
         }
         if (mode == Mode.TEXTBOX) { // the box being dragged out for a new text
             g.setStroke(SELECT_COLOR);
@@ -537,9 +544,19 @@ public class BoardView extends Pane implements ItemView {
                 g.setStroke(Theme.ink(col(o.color)));
                 g.setLineWidth(o.strokeWidth);
                 double ex = o.x + o.w, ey = o.y + o.h;
-                g.strokeLine(o.x, o.y, ex, ey);
+                double ang = Math.atan2(o.h, o.w);
+                if (o.curved()) {
+                    double[] c = o.controlPoint();
+                    g.beginPath();
+                    g.moveTo(o.x, o.y);
+                    g.quadraticCurveTo(c[0], c[1], ex, ey);
+                    g.stroke();
+                    ang = Math.atan2(ey - c[1], ex - c[0]); // the arrow head follows the curve
+                } else {
+                    g.strokeLine(o.x, o.y, ex, ey);
+                }
                 if (o.type == Type.ARROW && (o.w != 0 || o.h != 0)) {
-                    double ang = Math.atan2(o.h, o.w), len = 10 + 3 * o.strokeWidth;
+                    double len = 10 + 3 * o.strokeWidth;
                     g.strokeLine(ex, ey, ex - len * Math.cos(ang - 0.45), ey - len * Math.sin(ang - 0.45));
                     g.strokeLine(ex, ey, ex - len * Math.cos(ang + 0.45), ey - len * Math.sin(ang + 0.45));
                 }
@@ -612,6 +629,13 @@ public class BoardView extends Pane implements ItemView {
         switch (o.type) {
             case LINE:
             case ARROW:
+                if (o.curved()) {
+                    double[][] pts = o.curvePoints(24);
+                    for (int i = 0; i + 1 < pts.length; i++) {
+                        if (distToSegment(px, py, pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1]) <= tol + o.strokeWidth / 2) return true;
+                    }
+                    return false;
+                }
                 return distToSegment(px, py, o.x, o.y, o.x + o.w, o.y + o.h) <= tol + o.strokeWidth / 2;
             case STROKE: {
                 List<Double> p = o.points;
@@ -665,6 +689,13 @@ public class BoardView extends Pane implements ItemView {
     private double handleX(BoardObject o) { return o.lineLike() ? o.x + o.w : o.right(); }
 
     private double handleY(BoardObject o) { return o.lineLike() ? o.y + o.h : o.bottom(); }
+
+    private boolean onBendHandle(BoardObject o, double px, double py) {
+        if (!o.lineLike()) return false;
+        double[] bp = o.bendPoint();
+        double s = 7 / zoom();
+        return Math.abs(px - bp[0]) <= s && Math.abs(py - bp[1]) <= s;
+    }
 
     private boolean onHandle(BoardObject o, double px, double py) {
         double s = 7 / zoom();
@@ -767,6 +798,10 @@ public class BoardView extends Pane implements ItemView {
                     resizeRatio = single.w == 0 ? 1 : single.h / single.w;
                     break;
                 }
+                if (single != null && onBendHandle(single, pressWX, pressWY)) {
+                    mode = Mode.BEND;
+                    break;
+                }
                 BoardObject o = hit(pressWX, pressWY);
                 if (o != null) {
                     if (e.isShiftDown()) {
@@ -854,6 +889,14 @@ public class BoardView extends Pane implements ItemView {
             case TEXTBOX -> {
                 mqX1 = px;
                 mqY1 = py;
+            }
+            case BEND -> {
+                BoardObject o = singleResizable();
+                if (o != null) {
+                    gestureCheckpoint();
+                    o.bendTo(px, py, 5 / zoom());
+                    store.markDirty(board);
+                }
             }
             case DRAW -> {
                 int n = tmp.points.size();

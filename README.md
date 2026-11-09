@@ -43,6 +43,7 @@ Projects are saved as plain files in `~/DnDCampaignNotes/<project name>/` (`proj
 | Do this | How |
 |---------|-----|
 | Open a board | Double-click it in the project tree (left). Right-click the tree to add, rename or delete; drag to move. |
+| Curve a line or arrow | Select it: a round handle sits on the line, next to the square end handle. Drag the round handle sideways to bend the line into a curve, and drag it along the line to move where it bends. Pull it back onto the line to straighten it. The arrow head follows the curve. |
 | Add text | Double-click empty space (or the Text tool). Ctrl+Enter, Esc or clicking away finishes. |
 | Text box with a set width | With the Text tool, **drag out a box** instead of clicking. Text wraps onto the next line when it reaches the box edge, and the box gets taller or shorter by itself as you type. Drag the small square at its bottom-right corner to change the width at any time, including **while you are typing** (double-click a text and resize straight away); the words reflow as you drag. Right-click > **Fit width to text** puts it back to one automatic-width block. A plain click (or double-click on empty space) still makes a text that takes the width of what you type. |
 | Pan / zoom | Hand tool, middle-mouse drag, or hold Space and drag. Mouse wheel zooms, Ctrl+0 resets. |

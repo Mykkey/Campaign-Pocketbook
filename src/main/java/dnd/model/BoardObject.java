@@ -28,6 +28,13 @@ public class BoardObject {
      * width of its text (one line per line break), as older boards do.
      */
     public double wrapWidth;
+    /**
+     * LINE and ARROW only: where along the line (0..1 from the start) the bend point sits; 0 means the middle.
+     * Together with {@link #bendOffset} it is the curve's most extreme point (the one farthest from the straight line).
+     */
+    public double bendT;
+    /** LINE and ARROW only: how far the bend point is pulled sideways from the straight line (0 = straight). */
+    public double bendOffset;
     public boolean bold, italic;
     /** File name inside the project's images folder (IMAGE). */
     public String image;
@@ -77,6 +84,66 @@ public class BoardObject {
         return n <= 0 ? null : refs.get(String.valueOf(n));
     }
 
+    // ---- curved lines and arrows: a quadratic curve from (x, y) to (x + w, y + h) through the bend point
+
+    /** The position of the bend point along the line, 0.1 to 0.9 (the middle unless it was moved). */
+    public double bendPosition() {
+        return bendT > 0 ? Math.max(0.1, Math.min(0.9, bendT)) : 0.5;
+    }
+
+    /** True for a line or arrow that has been pulled into a curve. */
+    public boolean curved() {
+        return lineLike() && Math.abs(bendOffset) > 0.5;
+    }
+
+    /** The point on the curve that the bend handle sits on: its most extreme point. */
+    public double[] bendPoint() {
+        double t = bendPosition(), len = Math.hypot(w, h);
+        double bx = x + w * t, by = y + h * t;
+        if (len < 1e-9) return new double[]{bx, by};
+        return new double[]{bx - h / len * bendOffset, by + w / len * bendOffset};
+    }
+
+    /**
+     * The control point of the quadratic curve (on the straight line when it is not curved). It is chosen so the
+     * curve's most extreme point, the one farthest from the straight line, is exactly the bend point: along the
+     * line that point is at distance d from the start, so the control point sits at 2d - length/2, and its pull to
+     * the side is twice the bend offset.
+     */
+    public double[] controlPoint() {
+        double len = Math.hypot(w, h);
+        if (len < 1e-9) return new double[]{x, y};
+        double ux = w / len, uy = h / len, d = bendPosition() * len;
+        double along = 2 * d - len / 2, side = 2 * bendOffset;
+        return new double[]{x + ux * along - uy * side, y + uy * along + ux * side};
+    }
+
+    /**
+     * Moves the bend point to (px, py): how far along the line sets where it bends, how far to the side sets how
+     * much. A sideways pull smaller than {@code snap} counts as straight.
+     */
+    public void bendTo(double px, double py, double snap) {
+        double len = Math.hypot(w, h);
+        if (len < 1) return;
+        double ux = w / len, uy = h / len, rx = px - x, ry = py - y;
+        bendT = Math.max(0.1, Math.min(0.9, (rx * ux + ry * uy) / len));
+        double off = -rx * uy + ry * ux;
+        bendOffset = Math.abs(off) < snap ? 0 : off;
+    }
+
+    /** The line or curve as {@code n + 1} points from start to end. */
+    public double[][] curvePoints(int n) {
+        double[][] out = new double[n + 1][2];
+        double[] c = controlPoint();
+        double ex = x + w, ey = y + h;
+        for (int i = 0; i <= n; i++) {
+            double t = (double) i / n, u = 1 - t;
+            out[i][0] = u * u * x + 2 * u * t * c[0] + t * t * ex;
+            out[i][1] = u * u * y + 2 * u * t * c[1] + t * t * ey;
+        }
+        return out;
+    }
+
     public double left() { return Math.min(x, x + w); }
     public double top() { return Math.min(y, y + h); }
     public double right() { return Math.max(x, x + w); }
@@ -114,7 +181,7 @@ public class BoardObject {
         BoardObject o = new BoardObject(type);
         o.x = x; o.y = y; o.w = w; o.h = h;
         o.color = color; o.fill = fill; o.strokeWidth = strokeWidth;
-        o.text = text; o.fontSize = fontSize; o.wrapWidth = wrapWidth; o.bold = bold; o.italic = italic;
+        o.text = text; o.fontSize = fontSize; o.wrapWidth = wrapWidth; o.bendT = bendT; o.bendOffset = bendOffset; o.bold = bold; o.italic = italic;
         o.image = image; o.link = link; o.note = note;
         for (java.util.Map.Entry<String, SpanRef> e : refs.entrySet()) o.refs.put(e.getKey(), e.getValue().copy());
         o.dismissedNames.addAll(dismissedNames);

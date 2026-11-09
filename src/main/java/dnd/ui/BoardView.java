@@ -94,7 +94,7 @@ public class BoardView extends Pane implements ItemView {
         return true;
     }
 
-    private enum Mode { NONE, PAN, MOVE, MARQUEE, RESIZE, DRAW, SHAPE, ERASE }
+    private enum Mode { NONE, PAN, MOVE, MARQUEE, RESIZE, DRAW, SHAPE, ERASE, TEXTBOX }
 
     private static final Color SELECT_COLOR = Color.web("#2563eb");
     private static final String DEFAULT_STICKY = "#FFF2A8";
@@ -248,11 +248,14 @@ public class BoardView extends Pane implements ItemView {
                 o.italic ? FontPosture.ITALIC : FontPosture.REGULAR, o.fontSize);
     }
 
-    /** Recomputes the size of a TEXT object from its content. */
+    /**
+     * Recomputes the size of a TEXT object from its content: with a set {@code wrapWidth} the width stays and the
+     * text wraps, so only the height follows the text; otherwise the box takes the width of its longest line.
+     */
     static void measure(BoardObject o) {
         if (o.type != Type.TEXT) return;
-        List<RichLayout.Line> lines = RichLayout.layout(o.text, o, 0);
-        o.w = Math.max(10, RichLayout.maxWidth(lines));
+        List<RichLayout.Line> lines = RichLayout.layout(o.text, o, o.wrapWidth > 0 ? o.wrapWidth : 0);
+        o.w = o.wrapWidth > 0 ? o.wrapWidth : Math.max(10, RichLayout.maxWidth(lines));
         o.h = Math.max(o.fontSize * 1.3, lines.size() * RichLayout.lineHeight(o));
     }
 
@@ -309,15 +312,15 @@ public class BoardView extends Pane implements ItemView {
         g.setFill(base);
     }
 
-    /** Lines of a TEXT object (no wrapping), cached so redraws while panning don't re-measure every word. */
+    /** Lines of a TEXT object (wrapped at its width if it has one), cached so redraws while panning don't re-measure every word. */
     private List<RichLayout.Line> textLines(BoardObject o) {
-        String key = "T|" + o.text + "|" + o.fontSize + o.bold + o.italic + hintKey(o);
+        String key = "T|" + o.text + "|" + o.fontSize + o.bold + o.italic + "|w" + o.wrapWidth + hintKey(o);
         Object[] cached = wrapCache.get(o.id);
         if (cached != null && cached[0].equals(key)) {
             @SuppressWarnings("unchecked") List<RichLayout.Line> l = (List<RichLayout.Line>) cached[1];
             return l;
         }
-        List<RichLayout.Line> out = RichLayout.layout(o.text, o, 0, hintsFor(o));
+        List<RichLayout.Line> out = RichLayout.layout(o.text, o, o.wrapWidth > 0 ? o.wrapWidth : 0, hintsFor(o));
         wrapCache.put(o.id, new Object[]{key, out});
         return out;
     }
@@ -427,6 +430,13 @@ public class BoardView extends Pane implements ItemView {
             g.setFill(Color.WHITE);
             g.fillRect(hx - s / 2, hy - s / 2, s, s);
             g.strokeRect(hx - s / 2, hy - s / 2, s, s);
+        }
+        if (mode == Mode.TEXTBOX) { // the box being dragged out for a new text
+            g.setStroke(SELECT_COLOR);
+            g.setLineWidth(1.5 / zoom());
+            g.setLineDashes(6 / zoom(), 4 / zoom());
+            g.strokeRect(Math.min(mqX0, mqX1), Math.min(mqY0, mqY1), Math.abs(mqX1 - mqX0), Math.abs(mqY1 - mqY0));
+            g.setLineDashes((double[]) null);
         }
         if (mode == Mode.MARQUEE) {
             g.setFill(Color.web("#2563eb33"));
@@ -647,7 +657,7 @@ public class BoardView extends Pane implements ItemView {
     private BoardObject singleResizable() {
         if (selected.size() != 1 || editor != null) return null;
         BoardObject o = board.find(selected.iterator().next());
-        return o == null || o.type == Type.TEXT ? null : o;
+        return o;
     }
 
     private double handleX(BoardObject o) { return o.lineLike() ? o.x + o.w : o.right(); }
@@ -771,9 +781,10 @@ public class BoardView extends Pane implements ItemView {
                     mqY0 = mqY1 = pressWY;
                 }
             }
-            case TEXT -> {
-                createText(pressWX, pressWY, "");
-                ts.tool.set(Tool.SELECT);
+            case TEXT -> { // a click makes a text that takes its own width; dragging out a box sets the width it wraps at
+                mode = Mode.TEXTBOX;
+                mqX0 = mqX1 = pressWX;
+                mqY0 = mqY1 = pressWY;
             }
             case STICKY -> {
                 createSticky(pressWX, pressWY);
@@ -838,6 +849,10 @@ public class BoardView extends Pane implements ItemView {
                 }
             }
             case RESIZE -> resizeSelected(px, py);
+            case TEXTBOX -> {
+                mqX1 = px;
+                mqY1 = py;
+            }
             case DRAW -> {
                 int n = tmp.points.size();
                 double lx = tmp.points.get(n - 2), ly = tmp.points.get(n - 1);
@@ -878,6 +893,13 @@ public class BoardView extends Pane implements ItemView {
                     store.markDirty(board);
                 }
             }
+            case TEXTBOX -> {
+                double width = Math.abs(mqX1 - mqX0);
+                double left = Math.min(mqX0, mqX1), top = Math.min(mqY0, mqY1);
+                if (dragStarted && width >= MIN_BOX_WIDTH) createText(left, top, "", width);
+                else createText(mqX0, mqY0, "");
+                ts.tool.set(Tool.SELECT);
+            }
             case SHAPE -> {
                 if (tmp != null && (Math.abs(tmp.w) >= 4 || Math.abs(tmp.h) >= 4)) {
                     if (!tmp.lineLike()) {
@@ -904,7 +926,11 @@ public class BoardView extends Pane implements ItemView {
         BoardObject o = singleResizable();
         if (o == null) return;
         gestureCheckpoint();
-        if (o.lineLike()) {
+        if (o.type == Type.TEXT) { // the width is what is dragged; the height follows the text
+            o.wrapWidth = Math.max(MIN_BOX_WIDTH, px - o.x);
+            measure(o);
+            wrapCache.remove(o.id);
+        } else if (o.lineLike()) {
             o.w = px - o.x;
             o.h = py - o.y;
         } else if (o.type == Type.STROKE) {
@@ -1075,6 +1101,15 @@ public class BoardView extends Pane implements ItemView {
         if (single != null && (single.type == Type.TEXT || single.type == Type.STICKY)) {
             menu.getItems().add(item("Edit text", false, () -> startEdit(single, false)));
         }
+        if (single != null && single.type == Type.TEXT && single.wrapWidth > 0) {
+            menu.getItems().add(item("Fit width to text", false, () -> {
+                checkpoint();
+                single.wrapWidth = 0;
+                measure(single);
+                wrapCache.remove(single.id);
+                changed();
+            }));
+        }
         boolean anyNote = false;
         for (String id : selected) {
             BoardObject s = board.find(id);
@@ -1112,10 +1147,18 @@ public class BoardView extends Pane implements ItemView {
 
     // ================================================================ editing operations
 
+    private static final double MIN_BOX_WIDTH = 40;
+
     private BoardObject createText(double px, double py, String text) {
+        return createText(px, py, text, 0);
+    }
+
+    /** A new text; {@code wrapWidth} above 0 gives it a set width to wrap at. */
+    private BoardObject createText(double px, double py, String text, double wrapWidth) {
         BoardObject t = new BoardObject(Type.TEXT);
         t.x = px;
         t.y = py;
+        t.wrapWidth = wrapWidth;
         t.text = text;
         t.color = hex(ts.color.get());
         t.fontSize = ts.fontSize.get();
@@ -1171,11 +1214,14 @@ public class BoardView extends Pane implements ItemView {
         boolean sticky = o.type == Type.STICKY;
         String bg = sticky ? cssRgb(col(o.fill != null ? o.fill : DEFAULT_STICKY)) : Theme.isDark() ? "#1f2227" : "white";
         ta.setStyle("-fx-control-inner-background: " + bg + "; -fx-text-fill: " + cssRgb(sticky ? col(o.color) : Theme.ink(col(o.color))) + ";");
-        ta.setWrapText(o.type == Type.STICKY);
+        boolean bounded = o.type == Type.TEXT && o.wrapWidth > 0;
+        ta.setWrapText(o.type == Type.STICKY || bounded);
         ta.setLayoutX(board.offsetX + o.x * z - 7);
         ta.setLayoutY(board.offsetY + o.y * z - 5);
         if (o.type == Type.STICKY) {
             ta.setPrefSize(o.w * z + 14, o.h * z + 10);
+        } else if (bounded) {
+            ta.setPrefSize(o.w * z + 14, Math.max(70, o.h * z + 30));
         } else {
             ta.setPrefSize(Math.max(180, o.w * z + 60), Math.max(70, o.h * z + 30));
         }

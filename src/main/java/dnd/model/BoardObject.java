@@ -23,6 +23,11 @@ public class BoardObject {
     public double strokeWidth = 2;
     public String text = "";
     public double fontSize = 20;
+    /**
+     * TEXT only: the width the text wraps at, set by dragging out or resizing the box. 0 means the box takes the
+     * width of its text (one line per line break), as older boards do.
+     */
+    public double wrapWidth;
     public boolean bold, italic;
     /** File name inside the project's images folder (IMAGE). */
     public String image;
@@ -109,7 +114,7 @@ public class BoardObject {
         BoardObject o = new BoardObject(type);
         o.x = x; o.y = y; o.w = w; o.h = h;
         o.color = color; o.fill = fill; o.strokeWidth = strokeWidth;
-        o.text = text; o.fontSize = fontSize; o.bold = bold; o.italic = italic;
+        o.text = text; o.fontSize = fontSize; o.wrapWidth = wrapWidth; o.bold = bold; o.italic = italic;
         o.image = image; o.link = link; o.note = note;
         for (java.util.Map.Entry<String, SpanRef> e : refs.entrySet()) o.refs.put(e.getKey(), e.getValue().copy());
         o.dismissedNames.addAll(dismissedNames);

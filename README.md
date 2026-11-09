@@ -44,6 +44,7 @@ Projects are saved as plain files in `~/DnDCampaignNotes/<project name>/` (`proj
 |---------|-----|
 | Open a board | Double-click it in the project tree (left). Right-click the tree to add, rename or delete; drag to move. |
 | Add text | Double-click empty space (or the Text tool). Ctrl+Enter, Esc or clicking away finishes. |
+| Text box with a set width | With the Text tool, **drag out a box** instead of clicking. Text wraps onto the next line when it reaches the box edge, and the box gets taller or shorter by itself as you type. Select the text and drag the **handle** at its bottom-right corner to change the width at any time; the words reflow as you drag. Right-click > **Fit width to text** puts it back to one automatic-width block. A plain click (or double-click on empty space) still makes a text that takes the width of what you type. |
 | Pan / zoom | Hand tool, middle-mouse drag, or hold Space and drag. Mouse wheel zooms, Ctrl+0 resets. |
 | Link to another board | Select an object, press **Link...** (Ctrl+L or right-click), pick a board. Double-click it to jump. Blue badge = linked, red = target was deleted. |
 | Go back | Back/Forward buttons or Alt+Left / Alt+Right. The trail shows where you came from. |

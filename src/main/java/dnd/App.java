@@ -2,6 +2,8 @@ package dnd;
 
 import dnd.storage.ProjectStore;
 import dnd.ui.ProjectLauncher;
+import dnd.ui.UpdateBanner;
+import javafx.scene.layout.BorderPane;
 import dnd.ui.WorkspaceView;
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -21,13 +23,16 @@ public class App extends Application {
         stage.setOnCloseRequest(e -> {
             if (workspace != null) workspace.shutdown();
         });
+        UpdateBanner.startCheck();
         showLauncher();
         stage.show();
     }
 
     private void showLauncher() {
         workspace = null;
-        StackPane root = new StackPane(new ProjectLauncher(this::showWorkspace));
+        BorderPane root = new BorderPane();
+        root.setTop(new UpdateBanner(getHostServices()));
+        root.setCenter(new StackPane(new ProjectLauncher(this::showWorkspace)));
         stage.setScene(new Scene(root, stage.getWidth(), stage.getHeight()));
         stage.setTitle("D&D Campaign Notes");
     }

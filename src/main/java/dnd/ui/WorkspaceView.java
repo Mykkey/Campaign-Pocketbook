@@ -42,13 +42,17 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
     private final Button fwdBtn = new Button(">");
     private final MenuButton backlinks = new MenuButton("Backlinks");
     private final TextField search = new TextField();
-    private final ContextMenu searchResults = new ContextMenu();
+    private final javafx.stage.Popup searchPopup = new javafx.stage.Popup();
+    private final VBox searchList = new VBox();
     private final PauseTransition saver = new PauseTransition(Duration.seconds(1));
     private final ToolbarPanel toolbar;
     private boolean suppressHistory;
     private boolean restoring;
 
+    private final javafx.application.HostServices hostServices;
+
     public WorkspaceView(ProjectStore store, Runnable onExit, javafx.application.HostServices hostServices) {
+        this.hostServices = hostServices;
         this.store = store;
         this.onExit = onExit;
 
@@ -98,7 +102,17 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         backlinks.setOnShowing(e -> rebuildBacklinks());
         search.setPromptText("Search project...");
         search.setPrefWidth(220);
+        searchList.setStyle("-fx-background-color: white; -fx-border-color: #94a3b8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 8, 0.2, 0, 2);");
+        searchPopup.getContent().add(searchList);
+        searchPopup.setAutoHide(true); // a click anywhere else closes it
+        search.setOnKeyPressed(ev -> {
+            if (ev.getCode() == javafx.scene.input.KeyCode.ESCAPE) searchPopup.hide();
+        });
         search.setOnAction(e -> runSearch());
+        // keep the results in step with what is typed while they are showing
+        search.textProperty().addListener((o, was, now) -> {
+            if (searchPopup.isShowing()) runSearch();
+        });
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         Button names = new Button("Names...");
@@ -107,7 +121,10 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Button loot = new Button("Loot...");
         loot.setTooltip(new Tooltip("Random treasure generator (Ctrl+L)"));
         loot.setOnAction(e -> openLootGenerator());
-        HBox nav = new HBox(8, projects, backBtn, fwdBtn, trail, spacer, names, loot, backlinks, search);
+        Button library = new Button("Library...");
+        library.setTooltip(new Tooltip("Browse imported SRD monsters and spells"));
+        library.setOnAction(e -> openLibrary());
+        HBox nav = new HBox(8, projects, backBtn, fwdBtn, trail, spacer, names, loot, library, backlinks, search);
         nav.setAlignment(Pos.CENTER_LEFT);
         nav.setPadding(new Insets(6, 8, 0, 8));
 
@@ -410,17 +427,47 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         return m;
     }
 
+    /**
+     * Shows the matches under the search box. This is a plain popup, not a menu: a menu takes the keyboard for
+     * itself, which made a second Enter close the results and left the box looking dead. A popup leaves the
+     * keyboard in the search box, so Enter searches again and typing updates the results.
+     */
     private void runSearch() {
         List<SearchService.Result> res = SearchService.search(store, search.getText(), 40);
-        searchResults.getItems().clear();
-        if (res.isEmpty()) searchResults.getItems().add(disabled("No results"));
-        for (SearchService.Result r : res) {
-            MenuItem m = new MenuItem(r.boardName + "  -  " + r.snippet);
-            m.setOnAction(e -> showResult(r));
-            searchResults.getItems().add(m);
+        searchList.getChildren().clear();
+        if (search.getText().isBlank()) {
+            searchPopup.hide();
+            return;
         }
-        searchResults.show(search, Side.BOTTOM, 0, 0);
+        if (res.isEmpty()) {
+            Label none = new Label("No results");
+            none.setStyle("-fx-text-fill: #888; -fx-padding: 6 12 6 12;");
+            searchList.getChildren().add(none);
+        }
+        for (SearchService.Result r : res) {
+            Label row = new Label(r.boardName + "  -  " + r.snippet);
+            row.setMaxWidth(Double.MAX_VALUE);
+            row.setStyle(SEARCH_ROW);
+            row.setOnMouseEntered(ev -> row.setStyle(SEARCH_ROW + " -fx-background-color: #dbeafe;"));
+            row.setOnMouseExited(ev -> row.setStyle(SEARCH_ROW));
+            row.setOnMouseClicked(ev -> {
+                searchPopup.hide();
+                showResult(r);
+            });
+            searchList.getChildren().add(row);
+        }
+        javafx.geometry.Point2D at = search.localToScreen(0, search.getHeight());
+        if (at == null) return;
+        searchList.setMinWidth(Math.max(260, search.getWidth()));
+        if (searchPopup.isShowing()) {
+            searchPopup.setAnchorX(at.getX());
+            searchPopup.setAnchorY(at.getY());
+        } else {
+            searchPopup.show(search, at.getX(), at.getY());
+        }
     }
+
+    private static final String SEARCH_ROW = "-fx-padding: 6 12 6 12; -fx-cursor: hand;";
 
     private void showResult(SearchService.Result r) {
         openItem(r.boardId);
@@ -437,6 +484,17 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
                 new Alert(Alert.AlertType.INFORMATION, "Open a whiteboard first, then add the name to it.").show();
             } else {
                 v.addTextAtCenter(name);
+            }
+        });
+    }
+
+    private void openLibrary() {
+        LibraryDialog.show(getScene().getWindow(), store, hostServices, this::openItem, this::refreshTree, text -> {
+            BoardView v = currentView();
+            if (v == null) {
+                new Alert(Alert.AlertType.INFORMATION, "Open a whiteboard first, then add the spell to it.").show();
+            } else {
+                v.addTextAtCenter(text);
             }
         });
     }

@@ -1,0 +1,47 @@
+[
+  {
+    "index": "test-fireball",
+    "name": "Test Fireball",
+    "desc": ["A bright streak flashes to a point you choose.", "Each creature in the area takes fire damage."],
+    "higher_level": ["The damage increases by 1d6 for each slot level above 3rd."],
+    "range": "150 feet",
+    "components": ["V", "S", "M"],
+    "material": "A tiny ball of bat guano and sulfur.",
+    "ritual": false,
+    "duration": "Instantaneous",
+    "concentration": false,
+    "casting_time": "1 action",
+    "level": 3,
+    "school": {"index": "evocation", "name": "Evocation"},
+    "classes": [{"name": "Sorcerer"}, {"name": "Wizard"}]
+  },
+  {
+    "index": "test-light",
+    "name": "Test Light",
+    "desc": ["You touch one object, and it sheds bright light."],
+    "range": "Touch",
+    "components": ["V", "M"],
+    "material": "A firefly.",
+    "ritual": false,
+    "duration": "1 hour",
+    "concentration": false,
+    "casting_time": "1 action",
+    "level": 0,
+    "school": {"index": "evocation", "name": "Evocation"},
+    "classes": [{"name": "Cleric"}, {"name": "Wizard"}]
+  },
+  {
+    "index": "test-detect",
+    "name": "Test Detect",
+    "desc": ["You sense the presence of magic."],
+    "range": "Self",
+    "components": ["V", "S"],
+    "ritual": true,
+    "duration": "Up to 10 minutes",
+    "concentration": true,
+    "casting_time": "1 action",
+    "level": 1,
+    "school": {"index": "divination", "name": "Divination"},
+    "classes": [{"name": "Bard"}]
+  }
+]

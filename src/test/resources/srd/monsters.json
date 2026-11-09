@@ -1,0 +1,69 @@
+[
+  {
+    "index": "test-goblin",
+    "name": "Test Goblin",
+    "size": "Small",
+    "type": "humanoid",
+    "subtype": "goblinoid",
+    "alignment": "neutral evil",
+    "armor_class": [{"type": "armor", "value": 15}],
+    "hit_points": 7,
+    "hit_dice": "2d6",
+    "speed": {"walk": "30 ft."},
+    "strength": 8, "dexterity": 14, "constitution": 10, "intelligence": 10, "wisdom": 8, "charisma": 8,
+    "proficiencies": [
+      {"value": 6, "proficiency": {"index": "skill-stealth", "name": "Skill: Stealth"}},
+      {"value": 4, "proficiency": {"index": "saving-throw-dex", "name": "Saving Throw: DEX"}}
+    ],
+    "damage_vulnerabilities": [],
+    "damage_resistances": [],
+    "damage_immunities": [],
+    "condition_immunities": [],
+    "senses": {"darkvision": "60 ft.", "passive_perception": 9},
+    "languages": "Common, Goblin",
+    "challenge_rating": 0.25,
+    "proficiency_bonus": 2,
+    "xp": 50,
+    "special_abilities": [{"name": "Nimble Escape", "desc": "The goblin can Disengage or Hide as a bonus action."}],
+    "actions": [
+      {"name": "Scimitar", "desc": "Melee Weapon Attack: +4 to hit, reach 5 ft., one target. Hit: 5 (1d6 + 2) slashing damage.",
+       "attack_bonus": 4, "damage": [{"damage_type": {"name": "Slashing"}, "damage_dice": "1d6+2"}]},
+      {"name": "Shortbow", "desc": "Ranged Weapon Attack: +4 to hit, range 80/320 ft., one target. Hit: 5 (1d6 + 2) piercing damage.",
+       "attack_bonus": 4, "damage": [{"damage_type": {"name": "Piercing"}, "damage_dice": "1d6+2"}]}
+    ]
+  },
+  {
+    "index": "test-drake",
+    "name": "Test Drake",
+    "size": "Large",
+    "type": "dragon",
+    "alignment": "chaotic evil",
+    "armor_class": 18,
+    "hit_points": 136,
+    "hit_dice": "16d10",
+    "speed": {"walk": "40 ft.", "fly": "80 ft.", "swim": "40 ft.", "hover": true},
+    "strength": 19, "dexterity": 12, "constitution": 17, "intelligence": 15, "wisdom": 13, "charisma": 17,
+    "damage_vulnerabilities": ["cold"],
+    "damage_resistances": ["bludgeoning, piercing, and slashing from nonmagical attacks"],
+    "damage_immunities": ["fire"],
+    "condition_immunities": [{"index": "poisoned", "name": "Poisoned"}],
+    "senses": {"blindsight": "30 ft.", "darkvision": "120 ft.", "passive_perception": 17},
+    "languages": "Common, Draconic",
+    "challenge_rating": 8,
+    "proficiency_bonus": 3,
+    "xp": 3900,
+    "special_abilities": [
+      {"name": "Fire Aura", "desc": "Creatures that start nearby take fire damage.", "usage": {"type": "per day", "times": 3}}
+    ],
+    "actions": [
+      {"name": "Multiattack", "desc": "The drake makes three attacks: one with its bite and two with its claws."},
+      {"name": "Bite", "desc": "Melee Weapon Attack: +7 to hit, reach 10 ft., one target. Hit: 15 (2d10 + 4) piercing damage plus 7 (2d6) fire damage. The target is grappled.",
+       "attack_bonus": 7, "damage": [
+         {"damage_type": {"name": "Piercing"}, "damage_dice": "2d10+4"},
+         {"damage_type": {"name": "Fire"}, "damage_dice": "2d6"}]},
+      {"name": "Fire Breath", "desc": "The drake exhales fire in a 30-foot cone.", "usage": {"type": "recharge on roll", "dice": "1d6", "min_value": 5}}
+    ],
+    "reactions": [{"name": "Tail Swat", "desc": "The drake knocks back an attacker."}],
+    "legendary_actions": [{"name": "Wing Attack", "desc": "The drake beats its wings."}]
+  }
+]

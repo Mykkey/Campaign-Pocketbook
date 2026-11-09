@@ -117,11 +117,18 @@ Tick **Fog** in a battlemap's toolbar to hide the map from the players until you
 ## Name generator
 Click **Names...** in the top bar (or press Ctrl+G), pick a race and optionally a gender, and it rolls first + last names. Select one and hit **Copy**, or **Add to board** (or double-click a name) to drop it onto the current whiteboard as text. Races: Human, Elf, Dwarf, Halfling, Gnome, Half-Elf, Half-Orc, Tiefling, Dragonborn, Orc, Goblin, Tabaxi, Aasimar, Genasi, Goliath, Kobold and Tortle.
 
+## Monster and spell library
+Press **Library...** in the top bar to browse the 5e SRD monsters and spells. The data is not bundled with the app: download [5e-SRD-Monsters.json](https://raw.githubusercontent.com/5e-bits/5e-database/main/src/2014/en/5e-SRD-Monsters.json) and [5e-SRD-Spells.json](https://raw.githubusercontent.com/5e-bits/5e-database/main/src/2014/en/5e-SRD-Spells.json) once from the open [5e-database](https://github.com/5e-bits/5e-database/tree/main/src/2014/en) project (the library window has links too; your browser shows the text, so press Ctrl+S to save it) and press **Import SRD file...** in the library window (you can pick both files at once). The imported data is kept next to your projects in `SRD Library`, so every project can use it.
+
+- **Monsters:** search by name and filter by type or challenge rating. The full stat block is shown. **Add to project as a card** makes an ordinary, editable card in an "SRD Monsters" folder (its attacks are filled in, so it works in battles straight away). **Add to common enemies** puts it in the dropdown used by the encounter builder and the battle's Add dialog, in every project.
+- **Spells:** search by name and filter by level, class and school. **Add to board** puts the spell on the open whiteboard as a text note, and **Copy** copies it.
+- Importing a file again replaces what was imported before for that kind (monsters or spells).
+
 ## Loot generator
 Press **Loot...** in the top bar (or **Ctrl+L**) for random treasure. Pick a **tier** (the challenge rating of what the party beat: 0-4, 5-10, 11-16, 17+) and either **a creature's pockets** (coins and the odd keepsake; set how many creatures and the coins are added together) or **a treasure hoard** (coins, gems, art objects, magic items of rarities that suit the tier, and a few curios). It changes as you change the options, **Roll** rolls again, **Copy** copies it and **Add to board** puts it on the open whiteboard as a text note. The amounts are rough guidance in the spirit of the usual treasure tiers, not a published table, so change anything you like.
 
 ## Credits
-The example creature cards use stat values from the System Reference Document 5.1 by Wizards of the Coast, licensed under [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/). This app is not affiliated with or endorsed by Wizards of the Coast.
+The example creature cards, and any monsters and spells you import into the library, use content from the System Reference Document 5.1 by Wizards of the Coast, licensed under [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/). This app is not affiliated with or endorsed by Wizards of the Coast.
 
 ## For developers
 ```

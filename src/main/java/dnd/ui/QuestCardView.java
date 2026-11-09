@@ -43,7 +43,7 @@ public class QuestCardView extends VBox {
         status.setStyle("-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: white; -fx-background-radius: 8; -fx-padding: 1 7 1 7; -fx-background-color: "
                 + statusColor(q.status) + ";");
         getChildren().addAll(title, status);
-        line("Given by", q.giver);
+        line("Given by", q.giverName(store::itemNameOrNull));
         line("Reward", q.reward);
         if (q.summary != null && !q.summary.isBlank()) {
             Label s = new Label(q.summary.trim());
@@ -68,7 +68,7 @@ public class QuestCardView extends VBox {
         if (!q.related.isEmpty()) {
             StringBuilder sb = new StringBuilder();
             for (String id : q.related) {
-                String n = store.itemName(id);
+                String n = store.itemNameOrNull(id);
                 if (n == null) continue;
                 if (sb.length() > 0) sb.append(", ");
                 sb.append(n);

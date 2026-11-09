@@ -360,7 +360,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
                     new Alert(Alert.AlertType.WARNING, "That quest could not be found.").show();
                     return;
                 }
-                view = new QuestEditor(qu, store, newName -> renameFromEditor(id, newName), this::openItem, () -> pickBoard("Add to the quest..."));
+                view = new QuestEditor(qu, store, newName -> renameFromEditor(id, newName), this::openItem, () -> pickBoard("Add to the quest..."), () -> pickCard("Who gave this quest?"));
             } else if (store.isSession(id)) {
                 dnd.model.Session se = store.session(id);
                 if (se == null) {
@@ -1003,13 +1003,21 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         return pickItem(title, "Choose a battlemap", true);
     }
 
+    /** Lets the user pick one of their character cards (for a quest's giver). */
+    private Optional<String> pickCard(String title) {
+        return pickItem(title, "Choose a character", TreeNode::isCard);
+    }
+
     private Optional<String> pickItem(String title, String header, boolean mapsOnly) {
+        return pickItem(title, header, n -> mapsOnly ? n.isBattleMap() : !n.folder);
+    }
+
+    private Optional<String> pickItem(String title, String header, java.util.function.Predicate<TreeNode> pickable) {
         Dialog<String> d = new Dialog<>();
         d.setTitle(title);
         d.setHeaderText(header);
         d.initOwner(getScene().getWindow());
 
-        java.util.function.Predicate<TreeNode> pickable = n -> mapsOnly ? n.isBattleMap() : !n.folder;
         TreeView<TreeNode> tv = new TreeView<>(buildItem(store.project.root, null));
         tv.setCellFactory(v -> createTreeCell(false));
         tv.setPrefSize(360, 420);

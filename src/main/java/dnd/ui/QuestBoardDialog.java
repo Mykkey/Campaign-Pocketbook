@@ -60,7 +60,8 @@ public final class QuestBoardDialog {
                         return;
                     }
                     String progress = q.progressText();
-                    setText(q.name + (progress.isEmpty() ? "" : "\n" + progress) + (q.giver == null || q.giver.isBlank() ? "" : "\nfrom " + q.giver));
+                    String from = q.giverName(store::itemNameOrNull);
+                    setText(q.name + (progress.isEmpty() ? "" : "\n" + progress) + (from.isBlank() ? "" : "\nfrom " + from));
                 }
             });
             list.setOnMouseClicked(e -> {
@@ -113,7 +114,7 @@ public final class QuestBoardDialog {
         for (Quest.Status s : Quest.Status.values()) by.put(s, FXCollections.observableArrayList());
         for (String id : store.allQuestIds()) {
             Quest quest = store.quest(id);
-            if (quest != null && matches(quest, q)) by.get(quest.status).add(quest);
+            if (quest != null && matches(quest, q, store::itemNameOrNull)) by.get(quest.status).add(quest);
         }
         for (Quest.Status s : Quest.Status.values()) {
             lists.get(s).setItems(by.get(s));
@@ -123,8 +124,13 @@ public final class QuestBoardDialog {
 
     /** True when the quest's name, giver, reward, summary or any step contains the filter text. */
     public static boolean matches(Quest quest, String lowerFilter) {
+        return matches(quest, lowerFilter, id -> null);
+    }
+
+    /** As {@link #matches(Quest, String)}, also matching the current name of the character who gave the quest. */
+    public static boolean matches(Quest quest, String lowerFilter, java.util.function.Function<String, String> nameOf) {
         if (lowerFilter == null || lowerFilter.isEmpty()) return true;
-        java.util.List<String> fields = new ArrayList<>(java.util.List.of(nz(quest.name), nz(quest.giver), nz(quest.reward), nz(quest.summary)));
+        java.util.List<String> fields = new ArrayList<>(java.util.List.of(nz(quest.name), nz(quest.giver), nz(quest.giverName(nameOf)), nz(quest.reward), nz(quest.summary)));
         for (Quest.Step s : quest.steps) fields.add(nz(s.text));
         for (String f : fields) if (f.toLowerCase(Locale.ROOT).contains(lowerFilter)) return true;
         return false;

@@ -34,8 +34,10 @@ public class Quest extends ProjectEntry {
     }
 
     public Status status = Status.OPEN;
-    /** Who gave the quest (free text, e.g. "Mira the innkeeper"). */
+    /** Who gave the quest, as typed (e.g. "Mira the innkeeper"); also the last known name of the chosen character. */
     public String giver = "";
+    /** Id of the character card that gave the quest, or null when the giver is just a typed name. */
+    public String giverId;
     public String reward = "";
     public String summary = "";
     public List<Step> steps = new ArrayList<>();
@@ -45,6 +47,20 @@ public class Quest extends ProjectEntry {
     public String notes = "";
 
     public Quest() { }
+
+    /**
+     * The giver to show: the chosen character's current name (so a renamed card updates here), falling back to the
+     * typed name if the card was deleted or none was chosen.
+     *
+     * @param nameOf the name of the item with an id, or null if there is no such item
+     */
+    public String giverName(java.util.function.Function<String, String> nameOf) {
+        if (giverId != null) {
+            String n = nameOf.apply(giverId);
+            if (n != null && !n.isBlank()) return n;
+        }
+        return giver == null ? "" : giver;
+    }
 
     public int stepsDone() {
         int n = 0;
@@ -63,7 +79,7 @@ public class Quest extends ProjectEntry {
 
     public Quest copy() {
         Quest q = new Quest();
-        q.id = id; q.name = name; q.status = status; q.giver = giver; q.reward = reward; q.summary = summary;
+        q.id = id; q.name = name; q.status = status; q.giver = giver; q.giverId = giverId; q.reward = reward; q.summary = summary;
         for (Step s : steps) q.steps.add(new Step(s.text, s.done));
         q.related = new ArrayList<>(related);
         q.notes = notes;

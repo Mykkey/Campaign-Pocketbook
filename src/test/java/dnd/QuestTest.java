@@ -105,4 +105,36 @@ class QuestTest {
         for (Quest.Status s : Quest.Status.values()) colours.add(dnd.ui.QuestCardView.statusColor(s));
         assertEquals(Quest.Status.values().length, colours.size());
     }
+
+    @Test
+    void theGiverIsAChosenCharactersCurrentNameOrTheTypedName(@TempDir Path tmp) throws Exception {
+        ProjectStore store = ProjectStore.create(tmp, "Camp");
+        dnd.model.Card mira = new dnd.model.Card();
+        mira.name = "Mira";
+        store.createCard(store.project.root, mira);
+        Quest q = sample();
+        q.giverId = mira.id;
+        q.giver = "Mira";
+        store.createQuest(store.project.root, q);
+
+        assertEquals("Mira", q.giverName(store::itemNameOrNull));
+        store.renameNode(store.project.root.find(mira.id), "Mira Stonehelm");
+        assertEquals("Mira Stonehelm", q.giverName(store::itemNameOrNull), "a renamed character updates");
+        assertTrue(SearchService.search(store, "stonehelm", 10).stream().anyMatch(r -> r.snippet.contains("given by: Mira Stonehelm")));
+        assertTrue(dnd.ui.QuestBoardDialog.matches(q, "stonehelm", store::itemNameOrNull));
+        assertFalse(dnd.ui.QuestBoardDialog.matches(q, "stonehelm"), "without a name lookup only the typed name matches");
+
+        store.deleteNode(store.project.root.find(mira.id));
+        assertEquals("Mira", q.giverName(store::itemNameOrNull), "falls back to the last known name");
+
+        Quest typed = sample();
+        assertNull(typed.giverId);
+        assertEquals("Mira the innkeeper", typed.giverName(store::itemNameOrNull));
+        assertEquals("", new Quest().giverName(id -> null));
+
+        store.flush();
+        Quest back = ProjectStore.open(tmp, "Camp").quest(q.id);
+        assertEquals(mira.id, back.giverId);
+        assertEquals(mira.id, back.copy().giverId);
+    }
 }

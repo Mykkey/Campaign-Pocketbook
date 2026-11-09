@@ -192,6 +192,12 @@ public final class ProjectStore {
         return boardName(id);
     }
 
+    /** The name of the item with this id, or null if there is no such item (deleted, or never existed). */
+    public String itemNameOrNull(String id) {
+        TreeNode n = id == null ? null : project.root.find(id);
+        return n == null ? null : n.name;
+    }
+
     // ---------------------------------------------------------------- cards
 
     public boolean isCard(String id) {

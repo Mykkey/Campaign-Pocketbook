@@ -51,7 +51,7 @@ public class SessionCardView extends VBox {
         if (!s.related.isEmpty()) {
             StringBuilder sb = new StringBuilder();
             for (String id : s.related) {
-                String n = store.itemName(id);
+                String n = store.itemNameOrNull(id);
                 if (n == null) continue;
                 if (sb.length() > 0) sb.append(", ");
                 sb.append(n);

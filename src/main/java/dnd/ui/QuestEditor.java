@@ -19,6 +19,7 @@ public class QuestEditor extends BorderPane implements ItemView {
     private final ProjectStore store;
     private final Consumer<String> openItem;
     private final Supplier<Optional<String>> picker;
+    private final Supplier<Optional<String>> cardPicker;
     private final QuestCardView preview;
     private final VBox stepRows = new VBox(6);
     private final ListView<String> related = new ListView<>();
@@ -26,13 +27,15 @@ public class QuestEditor extends BorderPane implements ItemView {
     /**
      * @param openItem opens a project item in a tab
      * @param picker   lets the user pick any project item (for "involves")
+     * @param cardPicker lets the user pick one of their character cards (for "given by")
      */
     public QuestEditor(Quest quest, ProjectStore store, Consumer<String> onRename, Consumer<String> openItem,
-                       Supplier<Optional<String>> picker) {
+                       Supplier<Optional<String>> picker, Supplier<Optional<String>> cardPicker) {
         this.quest = quest;
         this.store = store;
         this.openItem = openItem;
         this.picker = picker;
+        this.cardPicker = cardPicker;
         this.preview = new QuestCardView(store);
 
         TextField name = new TextField(quest.name);
@@ -51,7 +54,7 @@ public class QuestEditor extends BorderPane implements ItemView {
             changed();
         });
 
-        TextField giver = field(quest.giver, x -> quest.giver = x, "Who asked the party? e.g. Mira the innkeeper");
+        Node giver = giverControl();
         TextField reward = field(quest.reward, x -> quest.reward = x, "e.g. 200 gp and a favour");
         TextArea summary = area(quest.summary, x -> quest.summary = x, "What is going on, in a few lines", 4);
         TextArea notes = area(quest.notes, x -> quest.notes = x, "Your own notes: secrets, what happens if they ignore it...", 4);
@@ -129,6 +132,75 @@ public class QuestEditor extends BorderPane implements ItemView {
         split.setDividerPositions(0.62);
         setCenter(split);
         preview.refresh(quest);
+    }
+
+    /**
+     * The "Given by" control: a typed name, or a chosen character shown as a link (hover for the card, double-click
+     * to open it). Choose... picks a character; Clear goes back to a typed name.
+     */
+    private Node giverControl() {
+        TextField typed = new TextField(quest.giver == null ? "" : quest.giver);
+        typed.setPromptText("A name, or choose a character");
+        typed.textProperty().addListener((o, a, n) -> {
+            if (quest.giverId == null) {
+                quest.giver = n;
+                changed();
+            }
+        });
+        HBox.setHgrow(typed, Priority.ALWAYS);
+
+        Label linked = new Label();
+        linked.setMaxWidth(Double.MAX_VALUE);
+        Runnable colour = () -> linked.setStyle("-fx-text-fill: " + (Theme.isDark() ? "#6aa5ff" : "#2563eb")
+                + "; -fx-underline: true; -fx-cursor: hand; -fx-padding: 4 6 4 6;");
+        colour.run();
+        Theme.darkProperty().addListener((o, was, now) -> colour.run());
+        HBox.setHgrow(linked, Priority.ALWAYS);
+        Tooltip preview = new Tooltip();
+        preview.setShowDelay(javafx.util.Duration.millis(350));
+        preview.setShowDuration(javafx.util.Duration.minutes(5));
+        preview.setStyle("-fx-background-color: transparent; -fx-padding: 0;");
+        preview.setOnShowing(e -> preview.setGraphic(ItemPreview.build(store, quest.giverId)));
+        linked.setTooltip(preview);
+        linked.setOnMouseClicked(e -> {
+            if (e.getClickCount() == 2 && quest.giverId != null && store.itemExists(quest.giverId)) openItem.accept(quest.giverId);
+        });
+
+        Button choose = new Button("Choose...");
+        choose.setTooltip(new Tooltip("Pick one of your characters as the quest giver"));
+        Button clear = new Button("Clear");
+        clear.setTooltip(new Tooltip("Go back to typing a name"));
+        HBox row = new HBox(6, typed, linked, choose, clear);
+        row.setAlignment(Pos.CENTER_LEFT);
+
+        Runnable refresh = () -> {
+            boolean card = quest.giverId != null;
+            typed.setVisible(!card);
+            typed.setManaged(!card);
+            linked.setVisible(card);
+            linked.setManaged(card);
+            clear.setVisible(card);
+            clear.setManaged(card);
+            if (card) {
+                String name = store.itemNameOrNull(quest.giverId);
+                linked.setText(name == null ? (quest.giver + " (card deleted)") : name + "   (double-click to open)");
+            }
+        };
+        choose.setOnAction(e -> cardPicker.get().ifPresent(id -> {
+            quest.giverId = id;
+            String name = store.itemNameOrNull(id);
+            if (name != null) quest.giver = name;
+            changed();
+            refresh.run();
+        }));
+        clear.setOnAction(e -> {
+            quest.giverId = null;
+            typed.setText(quest.giver == null ? "" : quest.giver);
+            changed();
+            refresh.run();
+        });
+        refresh.run();
+        return row;
     }
 
     private void openSelected() {

@@ -116,7 +116,7 @@ public final class SearchService {
                 continue;
             }
             dnd.model.Quest qu = store.quest(n.id);
-            String hit = qu == null ? null : questMatch(qu, q);
+            String hit = qu == null ? null : questMatch(qu, q, store::itemNameOrNull);
             if (hit != null) {
                 out.add(new Result(n.id, n.name, null, "Quest - " + hit));
                 if (out.size() >= limit) return out;
@@ -227,9 +227,14 @@ public final class SearchService {
 
     /** Where on a quest the text was found, or null. */
     static String questMatch(dnd.model.Quest qu, String q) {
+        return questMatch(qu, q, id -> null);
+    }
+
+    static String questMatch(dnd.model.Quest qu, String q, java.util.function.Function<String, String> nameOf) {
         if (has(qu.summary, q)) return "summary: " + excerpt(qu.summary, q);
         for (dnd.model.Quest.Step s : qu.steps) if (has(s.text, q)) return "step: " + excerpt(s.text, q);
-        if (has(qu.giver, q)) return "given by: " + qu.giver;
+        String giverName = qu.giverName(nameOf);
+        if (has(giverName, q) || has(qu.giver, q)) return "given by: " + giverName;
         if (has(qu.reward, q)) return "reward: " + qu.reward;
         if (has(qu.notes, q)) return "notes: " + excerpt(qu.notes, q);
         return null;

@@ -1975,6 +1975,48 @@ public class BoardView extends Pane implements ItemView {
         if (p != null) hintPopup.show(this, p.getX(), p.getY());
     }
 
+    /**
+     * Turns every suggested name (the dotted underlines) into a link: in the selected text blocks and sticky notes,
+     * or in the whole whiteboard if nothing is selected. One undo step; names that were dismissed stay as they are.
+     */
+    public void linkAllNames() {
+        commitEdit();
+        if (!ts.nameHints.get()) {
+            info("Turn on Name hints first, then press Link all names.");
+            return;
+        }
+        List<BoardObject> targets = new ArrayList<>();
+        for (BoardObject o : board.objects) {
+            if ((selected.isEmpty() || selected.contains(o.id)) && (o.type == Type.TEXT || o.type == Type.STICKY)) targets.add(o);
+        }
+        int total = 0;
+        boolean checkpointed = false;
+        for (BoardObject o : targets) {
+            List<dnd.text.NameHints.Hint> hints = new ArrayList<>(hintsFor(o));
+            if (hints.isEmpty()) continue;
+            if (!checkpointed) {
+                checkpoint();
+                checkpointed = true;
+            }
+            hints.sort((a, b) -> Integer.compare(b.start(), a.start())); // last first, so earlier positions stay valid
+            for (dnd.text.NameHints.Hint h : hints) {
+                int ref = o.nextRef();
+                dnd.model.SpanRef sr = new dnd.model.SpanRef();
+                sr.link = h.itemId();
+                o.refs.put(String.valueOf(ref), sr);
+                o.text = dnd.text.RichText.setSpanRef(o.text, h.start(), h.end(), ref).markup();
+                total++;
+            }
+            measure(o);
+        }
+        if (total == 0) {
+            info(selected.isEmpty() ? "There are no suggested names to link on this whiteboard." : "There are no suggested names to link in the selection.");
+            return;
+        }
+        clearHover();
+        changed();
+    }
+
     private void applyHint(BoardObject o, dnd.text.NameHints.Hint hint) {
         hintPopup.hide();
         hoverKey = null;

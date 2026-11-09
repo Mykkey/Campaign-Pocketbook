@@ -109,6 +109,7 @@ public class ToolbarPanel extends FlowPane {
                         v -> v.noteSelected(), current),
                 action("No note", "Remove the note from the selected words (while typing) or object(s)", v -> v.removeNoteSelected(), current),
                 nameHintsBox(ts),
+                action("Link all names", "Link every suggested name (dotted underline) in the selected text, or on the whole whiteboard if nothing is selected", v -> v.linkAllNames(), current),
                 linkPreviewsBox(ts),
                 action("Undo", "Ctrl+Z", v -> v.undo(), current),
                 action("Redo", "Ctrl+Y", v -> v.redo(), current),

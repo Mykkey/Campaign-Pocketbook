@@ -75,13 +75,13 @@ final class InitiativeStrip extends ScrollPane {
         boolean down = s.defeated();
 
         Label init = new Label(has ? String.valueOf(s.initiative()) : "?");
-        init.setStyle("-fx-font-weight: bold; -fx-text-fill: " + (current ? "#78350f" : "#334155") + "; -fx-font-size: " + (current ? 18 : 14)
-                + "px; -fx-background-color: " + (current ? "#fde68a" : "#e2e8f0") + "; -fx-background-radius: 10; -fx-padding: 1 8 1 8;");
+        init.setStyle("-fx-font-weight: bold; -fx-text-fill: " + (current ? "#78350f" : "-t-text2") + "; -fx-font-size: " + (current ? 18 : 14)
+                + "px; -fx-background-color: " + (current ? "#fde68a" : "-t-surface2") + "; -fx-background-radius: 10; -fx-padding: 1 8 1 8;");
         Label dot = new Label("●");
         dot.setStyle("-fx-text-fill: " + sideColor(first.side) + ";");
         Label name = new Label(s.name());
         name.setFont(Font.font("System", FontWeight.BOLD, current ? 19 : 14));
-        name.setStyle(down ? "-fx-strikethrough: true; -fx-text-fill: #6b7280;" : "-fx-text-fill: #0f172a;");
+        name.setStyle(down ? "-fx-strikethrough: true; -fx-text-fill: -t-text3;" : "-fx-text-fill: " + (current ? "#0f172a" : "-t-text") + ";");
         HBox top = new HBox(6, init, dot, name);
         top.setAlignment(Pos.CENTER_LEFT);
         // a coloured dot per condition that anyone in this slot has (same colours as the ring on the map)
@@ -108,14 +108,14 @@ final class InitiativeStrip extends ScrollPane {
         Label sub = new Label(down ? "down" : s.members.size() > 1
                 ? s.aliveCount() + " of " + s.members.size() + " up  |  " + hp + "/" + max + " HP"
                 : hp + "/" + max + " HP  |  AC " + first.ac);
-        sub.setStyle("-fx-font-size: " + (current ? 13 : 11) + "px; -fx-text-fill: #475569;");
+        sub.setStyle("-fx-font-size: " + (current ? 13 : 11) + "px; -fx-text-fill: " + (current ? "#334155" : "-t-text2") + ";");
 
         VBox chip = new VBox(3, top, bar, sub);
         chip.setPadding(current ? new Insets(8, 16, 8, 14) : new Insets(6, 12, 6, 10));
         chip.setMinWidth(current ? 230 : 160);
         chip.setAlignment(Pos.CENTER_LEFT);
         String border = inspected ? "#2563eb" : current ? "#b45309" : "#94a3b8";
-        chip.setStyle("-fx-background-color: " + (current ? "#fbbf24" : "#f8fafc") + "; -fx-background-radius: 12; -fx-border-radius: 12; "
+        chip.setStyle("-fx-background-color: " + (current ? "#fbbf24" : "-t-slate") + "; -fx-background-radius: 12; -fx-border-radius: 12; "
                 + "-fx-border-color: " + border + "; -fx-border-width: " + (current || inspected ? 3 : 1) + ";"
                 + (down ? " -fx-opacity: 0.6;" : "")
                 + (current ? " -fx-effect: dropshadow(gaussian, rgba(251,191,36,0.9), 18, 0.35, 0, 0);" : ""));

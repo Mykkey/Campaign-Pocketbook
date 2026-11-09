@@ -34,7 +34,7 @@ final class BattleSetupView extends VBox {
         this.onStart = onStart;
         setSpacing(8);
         setPadding(new Insets(12));
-        setStyle("-fx-background-color: #f8fafc;");
+        setStyle("-fx-background-color: -t-slate;");
         refresh();
     }
 
@@ -45,7 +45,7 @@ final class BattleSetupView extends VBox {
         Label title = new Label("Set up the battle");
         title.setFont(Font.font("System", FontWeight.BOLD, 20));
         Label steps = new Label("1. Add the players and monsters.\n2. Enter each initiative (or roll it).\n3. Press Start battle.");
-        steps.setStyle("-fx-text-fill: #475569;");
+        steps.setStyle("-fx-text-fill: -t-text2;");
         getChildren().addAll(title, steps);
 
         Button add = new Button("+ Add creatures...");
@@ -72,7 +72,7 @@ final class BattleSetupView extends VBox {
         List<Slot> slots = BattleEngine.slots(b);
         if (b.combatants.isEmpty()) {
             Label none = new Label("Nobody yet. Press + Add creatures... to bring in cards from your project.");
-            none.setStyle("-fx-text-fill: #888;");
+            none.setStyle("-fx-text-fill: -t-text3;");
             none.setWrapText(true);
             getChildren().add(none);
         } else {
@@ -107,12 +107,12 @@ final class BattleSetupView extends VBox {
         } else if (!missing.isEmpty()) {
             why.setText(missing.size() == 1 ? "1 creature still needs an initiative: " + missing.get(0).name()
                     : missing.size() + " creatures still need an initiative.");
-            why.setStyle("-fx-text-fill: #b91c1c; -fx-font-weight: bold;");
+            why.setStyle("-fx-text-fill: -t-danger; -fx-font-weight: bold;");
         } else if (!BattleEngine.canStart(b)) {
             why.setText("Everyone is marked down, so there is nobody to take a turn.");
         } else {
             why.setText("Everyone is ready.");
-            why.setStyle("-fx-text-fill: #15803d; -fx-font-weight: bold;");
+            why.setStyle("-fx-text-fill: -t-ok; -fx-font-weight: bold;");
         }
         getChildren().addAll(spacer, why, start);
     }
@@ -125,7 +125,7 @@ final class BattleSetupView extends VBox {
         HBox row = new HBox(8);
         row.setAlignment(Pos.CENTER_LEFT);
         row.setPadding(new Insets(6));
-        row.setStyle("-fx-background-color: " + (has ? "white" : "#fef2f2") + "; -fx-border-color: " + (has ? "#d9d4c4" : "#fca5a5")
+        row.setStyle("-fx-background-color: " + (has ? "-t-surface" : "-t-red") + "; -fx-border-color: " + (has ? "-t-border" : "#fca5a5")
                 + "; -fx-background-radius: 5; -fx-border-radius: 5;");
 
         if (!group) {
@@ -145,7 +145,7 @@ final class BattleSetupView extends VBox {
         name.setStyle("-fx-font-weight: bold;");
         Label info = new Label(group ? s.members.size() + " together | AC " + first.ac + " | HP " + first.hpMax + " each"
                 : "AC " + first.ac + " | HP " + first.hpMax);
-        info.setStyle("-fx-text-fill: #64748b; -fx-font-size: 11px;");
+        info.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
         VBox who = new VBox(1, name, info);
         HBox.setHgrow(who, Priority.ALWAYS);
 

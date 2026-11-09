@@ -1,0 +1,21 @@
+/* Light theme: the colours the app has always used, as named colours so dark mode can swap them. */
+.root {
+    -t-text: #222222;
+    -t-text2: #555555;
+    -t-text3: #777777;
+    -t-surface: white;
+    -t-cream: #f6f4ee;
+    -t-slate: #f8fafc;
+    -t-surface2: #e2e8f0;
+    -t-border: #d9d4c4;
+    -t-paperbg: #ece6d8;
+    -t-amber: #fffbea;
+    -t-red: #fef2f2;
+    -t-blue: #dbeafe;
+    -t-blue2: #f1f5fb;
+    -t-blue-border: #93c5fd;
+    -t-heading: #7a200d;
+    -t-blue-text: #1e3a8a;
+    -t-danger: #b91c1c;
+    -t-ok: #15803d;
+}

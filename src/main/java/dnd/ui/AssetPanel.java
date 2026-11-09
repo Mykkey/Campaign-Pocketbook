@@ -58,7 +58,7 @@ public class AssetPanel extends VBox {
 
         empty.setWrapText(true);
         empty.setMinHeight(Region.USE_PREF_SIZE);
-        empty.setStyle("-fx-text-fill: #888;");
+        empty.setStyle("-fx-text-fill: -t-text3;");
 
         Button importBtn = new Button("Import SVG / PNG...");
         importBtn.setMaxWidth(Double.MAX_VALUE);
@@ -68,7 +68,7 @@ public class AssetPanel extends VBox {
         Label hint = new Label("Click a piece, then click the map to place it. Esc to stop.");
         hint.setWrapText(true);
         hint.setMinHeight(Region.USE_PREF_SIZE);
-        hint.setStyle("-fx-text-fill: #888; -fx-font-size: 11px;");
+        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
 
         getChildren().addAll(title, search, category, scroll, empty, importBtn, hint);
 
@@ -141,8 +141,8 @@ public class AssetPanel extends VBox {
         box.setPrefSize(72, 78);
         box.setPadding(new Insets(3));
         boolean armed = a.id.equals(ts.armedAsset.get());
-        box.setStyle("-fx-background-color: " + (armed ? "#dbeafe" : "#f4f1ea") + ";"
-                + "-fx-border-color: " + (armed ? "#2563eb" : "#d6d0c0") + "; -fx-border-radius: 4; -fx-background-radius: 4;");
+        box.setStyle("-fx-background-color: " + (armed ? "-t-blue" : "-t-cream") + ";"
+                + "-fx-border-color: " + (armed ? "#2563eb" : "-t-border") + "; -fx-border-radius: 4; -fx-background-radius: 4;");
         Tooltip.install(box, new Tooltip(a.name + "  (" + trim(a.cellsW) + " x " + trim(a.cellsH) + " cells)"));
         box.setOnMouseClicked(e -> {
             ts.armedAsset.set(a.id);

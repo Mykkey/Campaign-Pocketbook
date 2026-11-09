@@ -86,7 +86,7 @@ final class BattleScreen implements BattleContext {
         cards.setOrientation(Orientation.VERTICAL);
         right.setPrefWidth(500);
         right.setMinWidth(380);
-        right.setStyle("-fx-border-color: #cbd5e1; -fx-border-width: 0 0 0 1;");
+        right.setStyle("-fx-border-color: -t-border; -fx-border-width: 0 0 0 1;");
         refresh();
     }
 
@@ -244,11 +244,11 @@ final class BattleScreen implements BattleContext {
             Button close = new Button("Back to current turn");
             close.setOnAction(e -> inspect(null));
             Label hint = new Label("Viewing " + seen.name() + " (their turn is not up)");
-            hint.setStyle("-fx-text-fill: #1e3a8a; -fx-font-weight: bold;");
+            hint.setStyle("-fx-text-fill: -t-blue-text; -fx-font-weight: bold;");
             HBox top = new HBox(10, hint, close);
             top.setAlignment(Pos.CENTER_LEFT);
             top.setPadding(new Insets(6, 10, 6, 10));
-            top.setStyle("-fx-background-color: #dbeafe;");
+            top.setStyle("-fx-background-color: -t-blue;");
             VBox box = new VBox(top, new CombatantCard(this, new ArrayList<>(seen.members), false));
             inspectScroll.setContent(box);
             cards.getItems().add(inspectScroll);

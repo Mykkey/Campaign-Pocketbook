@@ -42,11 +42,11 @@ public class UpdateBanner extends HBox {
         this.hostServices = hostServices;
         Region sp = new Region();
         HBox.setHgrow(sp, Priority.ALWAYS);
-        msg.setStyle("-fx-text-fill: #1e3a8a;");
+        msg.setStyle("-fx-text-fill: -t-blue-text;");
         getChildren().addAll(msg, sp, update, later);
         setAlignment(Pos.CENTER_LEFT);
         setPadding(new Insets(6, 10, 6, 10));
-        setStyle("-fx-background-color: #dbeafe; -fx-border-color: #93c5fd; -fx-border-width: 0 0 1 0;");
+        setStyle("-fx-background-color: -t-blue; -fx-border-color: -t-blue-border; -fx-border-width: 0 0 1 0;");
 
         later.setOnAction(e -> {
             String v = NEWER.get();

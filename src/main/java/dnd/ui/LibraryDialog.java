@@ -55,7 +55,7 @@ public final class LibraryDialog {
         TabPane tabs = new TabPane();
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         Label status = new Label();
-        status.setStyle("-fx-text-fill: #64748b;");
+        status.setStyle("-fx-text-fill: -t-text3;");
 
         Tab monstersTab = new Tab("Monsters");
         Tab spellsTab = new Tab("Spells");
@@ -97,7 +97,7 @@ public final class LibraryDialog {
         });
         Label hint = new Label("The SRD data is not bundled with the app. Download both files once (your browser will show the "
                 + "text: press Ctrl+S to save it as a .json file), then press Import.");
-        hint.setStyle("-fx-text-fill: #64748b; -fx-font-size: 11px;");
+        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
         hint.setWrapText(true);
         Hyperlink dlMonsters = link("Download monsters (5e-SRD-Monsters.json)", MONSTERS_URL, hostServices);
         Hyperlink dlSpells = link("Download spells (5e-SRD-Spells.json)", SPELLS_URL, hostServices);
@@ -178,7 +178,7 @@ public final class LibraryDialog {
         ScrollPane previewScroll = new ScrollPane(preview);
         previewScroll.setFitToWidth(true);
         previewScroll.setPadding(new Insets(10));
-        previewScroll.setStyle("-fx-background: #ece6d8;");
+        previewScroll.setStyle("-fx-background: -t-paperbg;");
         Button toProject = new Button("Add to project as a card");
         toProject.setStyle("-fx-font-weight: bold;");
         toProject.setTooltip(new Tooltip("Makes a card in the open project (in an \"" + SRD_FOLDER + "\" folder) that you can edit freely"));
@@ -361,7 +361,7 @@ public final class LibraryDialog {
     private static Node emptyNote(String message) {
         Label l = new Label(message);
         l.setWrapText(true);
-        l.setStyle("-fx-text-fill: #64748b; -fx-font-size: 14px;");
+        l.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 14px;");
         VBox box = new VBox(l);
         box.setPadding(new Insets(30));
         return box;

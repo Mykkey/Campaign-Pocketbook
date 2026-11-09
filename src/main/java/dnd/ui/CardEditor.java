@@ -61,7 +61,7 @@ public class CardEditor extends BorderPane implements ItemView {
         ScrollPane previewScroll = new ScrollPane(preview);
         previewScroll.setPadding(new Insets(10));
         previewScroll.setFitToWidth(true);
-        previewScroll.setStyle("-fx-background: #ece6d8;");
+        previewScroll.setStyle("-fx-background: -t-paperbg;");
 
         SplitPane split = new SplitPane(formScroll, previewScroll);
         split.setDividerPositions(0.6);
@@ -82,7 +82,7 @@ public class CardEditor extends BorderPane implements ItemView {
 
     private static Label heading(String text) {
         Label l = new Label(text);
-        l.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #7a200d;");
+        l.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: -t-heading;");
         return l;
     }
 
@@ -131,7 +131,7 @@ public class CardEditor extends BorderPane implements ItemView {
 
     private static VBox labelled(String label, Node n) {
         Label l = new Label(label);
-        l.setStyle("-fx-font-size: 11px; -fx-text-fill: #666;");
+        l.setStyle("-fx-font-size: 11px; -fx-text-fill: -t-text3;");
         return new VBox(2, l, n);
     }
 
@@ -306,7 +306,7 @@ public class CardEditor extends BorderPane implements ItemView {
         box.getChildren().add(heading(title));
         box.getChildren().addAll(content);
         box.setPadding(new Insets(10));
-        box.setStyle("-fx-background-color: #f6f4ee; -fx-border-color: #ddd8c8; -fx-background-radius: 4; -fx-border-radius: 4;");
+        box.setStyle("-fx-background-color: -t-cream; -fx-border-color: -t-border; -fx-background-radius: 4; -fx-border-radius: 4;");
         for (Node n : content) {
             if (n instanceof HBox h) for (Node c : h.getChildren()) HBox.setHgrow(c, Priority.SOMETIMES);
         }
@@ -331,7 +331,7 @@ public class CardEditor extends BorderPane implements ItemView {
             });
             getChildren().addAll(row(heading(title), add), rows);
             setPadding(new Insets(10));
-            setStyle("-fx-background-color: #f6f4ee; -fx-border-color: #ddd8c8; -fx-background-radius: 4; -fx-border-radius: 4;");
+            setStyle("-fx-background-color: -t-cream; -fx-border-color: -t-border; -fx-background-radius: 4; -fx-border-radius: 4;");
             rebuild();
         }
 
@@ -378,10 +378,10 @@ public class CardEditor extends BorderPane implements ItemView {
                 changed();
             });
             Label hint = new Label("Shown in the battle tracker on this creature's turn. Damage uses dice like 1d6+2.");
-            hint.setStyle("-fx-text-fill: #777; -fx-font-size: 11px;");
+            hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
             getChildren().addAll(row(heading("Attacks"), add), hint, rows);
             setPadding(new Insets(10));
-            setStyle("-fx-background-color: #f6f4ee; -fx-border-color: #ddd8c8; -fx-background-radius: 4; -fx-border-radius: 4;");
+            setStyle("-fx-background-color: -t-cream; -fx-border-color: -t-border; -fx-background-radius: 4; -fx-border-radius: 4;");
             rebuild();
         }
 
@@ -398,7 +398,7 @@ public class CardEditor extends BorderPane implements ItemView {
                 Runnable showAvg = () -> {
                     int av = a.averageDamage();
                     avg.setText(av >= 0 ? "avg " + av : "invalid dice");
-                    avg.setStyle(av >= 0 ? "-fx-text-fill: #555;" : "-fx-text-fill: #d33;");
+                    avg.setStyle(av >= 0 ? "-fx-text-fill: -t-text2;" : "-fx-text-fill: -t-danger;");
                 };
                 dmg.textProperty().addListener((o, x, n) -> {
                     a.damage = n;
@@ -425,7 +425,7 @@ public class CardEditor extends BorderPane implements ItemView {
             }
             if (card.attacks.isEmpty()) {
                 Label none = new Label("No attacks yet.");
-                none.setStyle("-fx-text-fill: #888;");
+                none.setStyle("-fx-text-fill: -t-text3;");
                 rows.getChildren().add(none);
             }
         }

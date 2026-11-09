@@ -20,6 +20,7 @@ public class App extends Application {
     @Override
     public void start(Stage stage) {
         this.stage = stage;
+        dnd.ui.Theme.install();
         stage.setTitle(TITLE);
         try (java.io.InputStream icon = App.class.getResourceAsStream("/icon.png")) {
             if (icon != null) stage.getIcons().add(new javafx.scene.image.Image(icon));

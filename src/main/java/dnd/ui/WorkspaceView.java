@@ -102,7 +102,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         backlinks.setOnShowing(e -> rebuildBacklinks());
         search.setPromptText("Search project...");
         search.setPrefWidth(220);
-        searchList.setStyle("-fx-background-color: white; -fx-border-color: #94a3b8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 8, 0.2, 0, 2);");
+        searchList.setStyle("-fx-background-color: -t-surface; -fx-border-color: -t-border; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 8, 0.2, 0, 2);");
         searchPopup.getContent().add(searchList);
         searchPopup.setAutoHide(true); // a click anywhere else closes it
         search.setOnKeyPressed(ev -> {
@@ -124,7 +124,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Button library = new Button("Library...");
         library.setTooltip(new Tooltip("Browse imported SRD monsters and spells"));
         library.setOnAction(e -> openLibrary());
-        HBox nav = new HBox(8, projects, backBtn, fwdBtn, trail, spacer, names, loot, library, backlinks, search);
+        HBox nav = new HBox(8, projects, backBtn, fwdBtn, trail, spacer, names, loot, library, Theme.toggleButton(), backlinks, search);
         nav.setAlignment(Pos.CENTER_LEFT);
         nav.setPadding(new Insets(6, 8, 0, 8));
 
@@ -135,7 +135,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         // ---- centre: tabs (with a hint behind them while no board is open)
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
         Label hint = new Label("Double-click a whiteboard or battlemap in the project tree to open it.");
-        hint.setStyle("-fx-text-fill: #888;");
+        hint.setStyle("-fx-text-fill: -t-text3;");
         tabs.visibleProperty().bind(Bindings.isNotEmpty(tabs.getTabs()));
         StackPane center = new StackPane(hint, tabs);
 
@@ -441,14 +441,14 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         }
         if (res.isEmpty()) {
             Label none = new Label("No results");
-            none.setStyle("-fx-text-fill: #888; -fx-padding: 6 12 6 12;");
+            none.setStyle("-fx-text-fill: -t-text3; -fx-padding: 6 12 6 12;");
             searchList.getChildren().add(none);
         }
         for (SearchService.Result r : res) {
             Label row = new Label(r.boardName + "  -  " + r.snippet);
             row.setMaxWidth(Double.MAX_VALUE);
             row.setStyle(SEARCH_ROW);
-            row.setOnMouseEntered(ev -> row.setStyle(SEARCH_ROW + " -fx-background-color: #dbeafe;"));
+            row.setOnMouseEntered(ev -> row.setStyle(SEARCH_ROW + " -fx-background-color: -t-blue;"));
             row.setOnMouseExited(ev -> row.setStyle(SEARCH_ROW));
             row.setOnMouseClicked(ev -> {
                 searchPopup.hide();

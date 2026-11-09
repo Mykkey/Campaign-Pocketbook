@@ -47,7 +47,7 @@ public class ProjectLauncher extends VBox {
         title.setStyle("-fx-font-size: 28px; -fx-font-weight: bold;");
         Label sub = new Label("Choose a campaign to open, or create a new one.");
         Label where = new Label("Saved in: " + base);
-        where.setStyle("-fx-text-fill: #888; -fx-font-size: 11px;");
+        where.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
 
         Button open = new Button("Open");
         open.setDefaultButton(true);
@@ -58,7 +58,7 @@ public class ProjectLauncher extends VBox {
         delete.setOnAction(e -> deleteSelected());
         open.disableProperty().bind(list.getSelectionModel().selectedItemProperty().isNull());
         delete.disableProperty().bind(list.getSelectionModel().selectedItemProperty().isNull());
-        HBox buttons = new HBox(8, open, create, delete);
+        HBox buttons = new HBox(8, open, create, delete, Theme.toggleButton());
         buttons.setAlignment(Pos.CENTER);
 
         list.setPlaceholder(new Label("No projects yet - create one!"));
@@ -86,15 +86,16 @@ public class ProjectLauncher extends VBox {
     private void buildOverlay() {
         ProgressIndicator spinner = new ProgressIndicator(ProgressIndicator.INDETERMINATE_PROGRESS);
         spinner.setPrefSize(64, 64);
-        overlayText.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #333;");
+        overlayText.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: -t-text;");
         VBox box = new VBox(14, spinner, overlayText);
         box.setAlignment(Pos.CENTER);
         box.setMaxSize(VBox.USE_PREF_SIZE, VBox.USE_PREF_SIZE);
         box.setPadding(new Insets(26, 40, 26, 40));
-        box.setStyle("-fx-background-color: white; -fx-background-radius: 12; "
+        box.setStyle("-fx-background-color: -t-surface; -fx-background-radius: 12; "
                 + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 18, 0.2, 0, 4);");
         overlay.getChildren().add(box);
-        overlay.setStyle("-fx-background-color: rgba(255,255,255,0.65);");
+        overlay.styleProperty().bind(javafx.beans.binding.Bindings.when(Theme.darkProperty())
+                .then("-fx-background-color: rgba(20,22,26,0.72);").otherwise("-fx-background-color: rgba(255,255,255,0.65);"));
         overlay.setCursor(Cursor.WAIT);
         overlay.setVisible(false); // while hidden it neither shows nor catches clicks
     }

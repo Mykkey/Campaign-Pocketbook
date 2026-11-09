@@ -113,7 +113,7 @@ public class LootDialog {
         HBox buttons = new HBox(8, roll, copy, add);
         buttons.setAlignment(Pos.CENTER_LEFT);
         Label hint = new Label("Amounts are rough guidance, not a published table. Change anything you like.");
-        hint.setStyle("-fx-text-fill: #888; -fx-font-size: 11px;");
+        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
         hint.setWrapText(true);
 
         VBox root = new VBox(10, form, buttons, result, hint);

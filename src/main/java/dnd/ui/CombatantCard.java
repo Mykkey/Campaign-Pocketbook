@@ -40,7 +40,7 @@ final class CombatantCard extends VBox {
         this.active = active;
         setSpacing(8);
         setPadding(new Insets(10));
-        setStyle("-fx-background-color: " + (active ? "#fffbea" : "#f1f5fb") + "; -fx-border-color: "
+        setStyle("-fx-background-color: " + (active ? "-t-amber" : "-t-blue2") + "; -fx-border-color: "
                 + (active ? "#f59e0b" : "#2563eb") + "; -fx-border-width: 0 0 0 5;");
         build();
     }
@@ -70,7 +70,7 @@ final class CombatantCard extends VBox {
         } else {
             long up = members.stream().filter(c -> !c.defeated).count();
             Label count = new Label(up + " of " + members.size() + " up");
-            count.setStyle("-fx-text-fill: #555; -fx-font-weight: bold;");
+            count.setStyle("-fx-text-fill: -t-text2; -fx-font-weight: bold;");
             head.getChildren().addAll(count, conditionsButton(members));
         }
         getChildren().add(head);
@@ -82,7 +82,7 @@ final class CombatantCard extends VBox {
             if (first.notes != null && !first.notes.isBlank()) {
                 Label n = new Label(first.notes);
                 n.setWrapText(true);
-                n.setStyle("-fx-text-fill: #555; -fx-font-style: italic;");
+                n.setStyle("-fx-text-fill: -t-text2; -fx-font-style: italic;");
                 getChildren().add(n);
             }
         } else {
@@ -95,14 +95,14 @@ final class CombatantCard extends VBox {
             getChildren().add(sectionLabel("Attacks"));
             if (card.attacks.isEmpty()) {
                 Label none = new Label("This card lists no attacks.");
-                none.setStyle("-fx-text-fill: #777;");
+                none.setStyle("-fx-text-fill: -t-text3;");
                 getChildren().add(none);
             }
             for (Attack a : card.attacks) {
                 Label l = new Label(a.name + ":  " + a.summary());
                 l.setWrapText(true);
                 l.setFont(Font.font("System", active ? 15 : 13));
-                l.setStyle("-fx-padding: 3 6 3 6; -fx-background-color: white; -fx-border-color: #e5e7eb;");
+                l.setStyle("-fx-padding: 3 6 3 6; -fx-background-color: -t-surface; -fx-border-color: -t-border;");
                 l.setMaxWidth(Double.MAX_VALUE);
                 getChildren().add(l);
             }
@@ -113,7 +113,7 @@ final class CombatantCard extends VBox {
             if (!extras.isEmpty()) {
                 Label e = new Label("Also: " + String.join(", ", extras));
                 e.setWrapText(true);
-                e.setStyle("-fx-text-fill: #555; -fx-font-style: italic;");
+                e.setStyle("-fx-text-fill: -t-text2; -fx-font-style: italic;");
                 getChildren().add(e);
             }
             Hyperlink open = new Hyperlink("Open " + card.name + " in its own tab");
@@ -129,7 +129,7 @@ final class CombatantCard extends VBox {
         } else {
             Label none = new Label("No card is linked to this creature, so there is no stat block or attack list.");
             none.setWrapText(true);
-            none.setStyle("-fx-text-fill: #777;");
+            none.setStyle("-fx-text-fill: -t-text3;");
             getChildren().add(none);
         }
     }
@@ -138,7 +138,7 @@ final class CombatantCard extends VBox {
 
     private static Label sectionLabel(String text) {
         Label l = new Label(text.toUpperCase());
-        l.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #7a200d; -fx-padding: 6 0 0 0;");
+        l.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: -t-heading; -fx-padding: 6 0 0 0;");
         return l;
     }
 
@@ -162,7 +162,7 @@ final class CombatantCard extends VBox {
         box.textProperty().addListener((o, a, n) -> box.setStyle(""));
         Label ac = new Label("AC " + c.ac);
         ac.setFont(Font.font("System", FontWeight.BOLD, big ? 15 : 12));
-        ac.setStyle("-fx-text-fill: #475569;");
+        ac.setStyle("-fx-text-fill: -t-text2;");
         HBox row = new HBox(8, bar, hp, box, ac);
         row.setAlignment(Pos.CENTER_LEFT);
         return row;
@@ -171,7 +171,7 @@ final class CombatantCard extends VBox {
     private Node memberRow(Combatant c) {
         Label dot = new Label(c.name.replaceAll("^.* ", "#"));
         dot.setMinWidth(30);
-        dot.setStyle("-fx-font-weight: bold;" + (c.defeated ? " -fx-strikethrough: true; -fx-text-fill: #777;" : ""));
+        dot.setStyle("-fx-font-weight: bold;" + (c.defeated ? " -fx-strikethrough: true; -fx-text-fill: -t-text3;" : ""));
         HBox row = hpRow(c, false);
         row.getChildren().add(0, dot);
         row.getChildren().add(downToggle(c));
@@ -190,7 +190,7 @@ final class CombatantCard extends VBox {
             swatch.setStyle("-fx-text-fill: " + col + ";");
             chip.setGraphic(swatch);
             chip.setGraphicTextGap(4);
-            chip.setStyle("-fx-background-color: #f1f5f9; -fx-border-color: " + col + "; -fx-border-radius: 8; -fx-padding: 1 7 1 6; -fx-background-radius: 8; -fx-font-size: 12px;");
+            chip.setStyle("-fx-background-color: -t-slate; -fx-border-color: " + col + "; -fx-border-radius: 8; -fx-padding: 1 7 1 6; -fx-background-radius: 8; -fx-font-size: 12px;");
             chips.getChildren().add(chip);
         }
         return chips;

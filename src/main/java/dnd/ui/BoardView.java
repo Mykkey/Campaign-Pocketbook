@@ -116,7 +116,10 @@ public class BoardView extends Pane implements ItemView {
     private BoardObject editing;
     private boolean editingNew;
 
+    private final javafx.beans.value.ChangeListener<Boolean> themeListener = (o, was, now) -> redraw();
+
     public BoardView(Board board, ProjectStore store, ToolState ts, Host host) {
+        Theme.darkProperty().addListener(new javafx.beans.value.WeakChangeListener<>(themeListener));
         this.board = board;
         this.store = store;
         this.ts = ts;
@@ -261,7 +264,7 @@ public class BoardView extends Pane implements ItemView {
         GraphicsContext g = canvas.getGraphicsContext2D();
         double W = canvas.getWidth(), H = canvas.getHeight();
         g.setTransform(1, 0, 0, 1, 0, 0);
-        g.setFill(Color.web("#fbfaf6"));
+        g.setFill(Theme.isDark() ? Color.web("#1c1e22") : Color.web("#fbfaf6"));
         g.fillRect(0, 0, W, H);
         drawGrid(g, W, H);
 
@@ -311,7 +314,7 @@ public class BoardView extends Pane implements ItemView {
         while (step < 14) step *= 2;
         double startX = ((board.offsetX % step) + step) % step;
         double startY = ((board.offsetY % step) + step) % step;
-        g.setFill(Color.web("#d6d3c8"));
+        g.setFill(Theme.isDark() ? Color.web("#34373e") : Color.web("#d6d3c8"));
         for (double x = startX; x < W; x += step) {
             for (double y = startY; y < H; y += step) {
                 g.fillRect(x - 1, y - 1, 2, 2);
@@ -323,7 +326,7 @@ public class BoardView extends Pane implements ItemView {
         switch (o.type) {
             case TEXT -> {
                 if (o != editing) {
-                    g.setFill(col(o.color));
+                    g.setFill(Theme.ink(col(o.color)));
                     g.setTextBaseline(VPos.TOP);
                     g.setTextAlign(TextAlignment.LEFT);
                     drawLines(g, textLines(o), o, o.x, o.y, Double.MAX_VALUE);
@@ -368,7 +371,7 @@ public class BoardView extends Pane implements ItemView {
                     g.setFill(col(o.fill));
                     g.fillRect(o.x, o.y, o.w, o.h);
                 }
-                g.setStroke(col(o.color));
+                g.setStroke(Theme.ink(col(o.color)));
                 g.setLineWidth(o.strokeWidth);
                 g.strokeRect(o.x, o.y, o.w, o.h);
             }
@@ -377,12 +380,12 @@ public class BoardView extends Pane implements ItemView {
                     g.setFill(col(o.fill));
                     g.fillOval(o.x, o.y, o.w, o.h);
                 }
-                g.setStroke(col(o.color));
+                g.setStroke(Theme.ink(col(o.color)));
                 g.setLineWidth(o.strokeWidth);
                 g.strokeOval(o.x, o.y, o.w, o.h);
             }
             case LINE, ARROW -> {
-                g.setStroke(col(o.color));
+                g.setStroke(Theme.ink(col(o.color)));
                 g.setLineWidth(o.strokeWidth);
                 double ex = o.x + o.w, ey = o.y + o.h;
                 g.strokeLine(o.x, o.y, ex, ey);
@@ -400,7 +403,7 @@ public class BoardView extends Pane implements ItemView {
                         xs[i] = o.points.get(2 * i);
                         ys[i] = o.points.get(2 * i + 1);
                     }
-                    g.setStroke(col(o.color));
+                    g.setStroke(Theme.ink(col(o.color)));
                     g.setLineWidth(o.strokeWidth);
                     g.strokePolyline(xs, ys, n);
                 }
@@ -977,8 +980,9 @@ public class BoardView extends Pane implements ItemView {
         double z = zoom();
         ta.setFont(Font.font("System", o.bold ? FontWeight.BOLD : FontWeight.NORMAL,
                 o.italic ? FontPosture.ITALIC : FontPosture.REGULAR, Math.max(6, o.fontSize * z)));
-        String bg = o.type == Type.STICKY ? cssRgb(col(o.fill != null ? o.fill : DEFAULT_STICKY)) : "white";
-        ta.setStyle("-fx-control-inner-background: " + bg + "; -fx-text-fill: " + cssRgb(col(o.color)) + ";");
+        boolean sticky = o.type == Type.STICKY;
+        String bg = sticky ? cssRgb(col(o.fill != null ? o.fill : DEFAULT_STICKY)) : Theme.isDark() ? "#1f2227" : "white";
+        ta.setStyle("-fx-control-inner-background: " + bg + "; -fx-text-fill: " + cssRgb(sticky ? col(o.color) : Theme.ink(col(o.color))) + ";");
         ta.setWrapText(o.type == Type.STICKY);
         ta.setLayoutX(board.offsetX + o.x * z - 7);
         ta.setLayoutY(board.offsetY + o.y * z - 5);

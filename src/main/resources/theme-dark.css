@@ -1,0 +1,44 @@
+/* Dark theme: the same named colours, dark, plus Modena's base colours so every standard control follows. */
+.root {
+    -t-text: #e6e8eb;
+    -t-text2: #b8bec7;
+    -t-text3: #8d95a1;
+    -t-surface: #2b2e34;
+    -t-cream: #2a2d33;
+    -t-slate: #262a31;
+    -t-surface2: #3a3e46;
+    -t-border: #4a4f59;
+    -t-paperbg: #1b1d21;
+    -t-amber: #3d3420;
+    -t-red: #3d2527;
+    -t-blue: #1f3350;
+    -t-blue2: #232c3d;
+    -t-blue-border: #36568a;
+    -t-heading: #f0a99c;
+    -t-blue-text: #a9c4f5;
+    -t-danger: #f87171;
+    -t-ok: #4ade80;
+
+    -fx-base: #30343b;
+    -fx-background: #24272c;
+    -fx-control-inner-background: #1f2227;
+    -fx-control-inner-background-alt: #252830;
+    -fx-accent: #3d7be0;
+    -fx-focus-color: #5b9bff;
+    -fx-faint-focus-color: #5b9bff22;
+    -fx-text-base-color: #e6e8eb;
+    -fx-text-background-color: #e6e8eb;
+    -fx-text-inner-color: #e6e8eb;
+    -fx-light-text-color: #e6e8eb;
+    -fx-mid-text-color: #cfd3d9;
+    -fx-dark-text-color: #e6e8eb;
+    -fx-prompt-text-fill: #8d95a1;
+    -fx-selection-bar: #3d7be0;
+    -fx-selection-bar-non-focused: #3a4a66;
+    -fx-selection-bar-text: white;
+}
+
+.hyperlink { -fx-text-fill: #7db1ff; }
+.tooltip { -fx-background-color: #101215; -fx-text-fill: #e6e8eb; }
+.tree-cell:filled:selected, .list-cell:filled:selected { -fx-text-fill: white; }
+.tree-cell:filled:selected .label, .list-cell:filled:selected .label { -fx-text-fill: white; }

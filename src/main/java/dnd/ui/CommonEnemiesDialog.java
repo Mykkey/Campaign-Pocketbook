@@ -49,7 +49,7 @@ public final class CommonEnemiesDialog {
         });
         BorderPane editorHolder = new BorderPane();
         Label placeholder = new Label("Pick a creature on the left to edit its stats.");
-        placeholder.setStyle("-fx-text-fill: #888;");
+        placeholder.setStyle("-fx-text-fill: -t-text3;");
         placeholder.setPadding(new Insets(20));
         editorHolder.setCenter(placeholder);
 
@@ -134,7 +134,7 @@ public final class CommonEnemiesDialog {
                 + "making a card first. Edit the stats here; the first time one is used in a project a card for it is "
                 + "made in a \"" + ProjectStore.COMMON_FOLDER + "\" folder and refreshed from here each time.");
         hint.setWrapText(true);
-        hint.setStyle("-fx-text-fill: #64748b; -fx-font-size: 11px;");
+        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
 
         VBox left = new VBox(6, list, add, fromCard, dup, del, restore, hint);
         left.setPadding(new Insets(8));

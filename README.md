@@ -127,6 +127,9 @@ Press **Library...** in the top bar to browse the 5e SRD monsters and spells. Th
 ## Loot generator
 Press **Loot...** in the top bar (or **Ctrl+L**) for random treasure. Pick a **tier** (the challenge rating of what the party beat: 0-4, 5-10, 11-16, 17+) and either **a creature's pockets** (coins and the odd keepsake; set how many creatures and the coins are added together) or **a treasure hoard** (coins, gems, art objects, magic items of rarities that suit the tier, and a few curios). It changes as you change the options, **Roll** rolls again, **Copy** copies it and **Add to board** puts it on the open whiteboard as a text note. The amounts are rough guidance in the spirit of the usual treasure tiers, not a published table, so change anything you like.
 
+## Dark mode
+Press **Dark mode** in the top bar (or on the project chooser) to switch the whole app to a dark theme, and **Light mode** to switch back. It is remembered the next time you start the app (in `settings.properties` next to your projects) and applies to every window and dialog. On whiteboards the board turns dark and dark text and lines are drawn lighter so they stay readable; the colours stored in your notes are never changed, and sticky notes, images and stat blocks keep their own colours. The player window is always dark.
+
 ## Credits
 The example creature cards, and any monsters and spells you import into the library, use content from the System Reference Document 5.1 by Wizards of the Coast, licensed under [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/). This app is not affiliated with or endorsed by Wizards of the Coast.
 

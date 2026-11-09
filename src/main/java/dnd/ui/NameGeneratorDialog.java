@@ -109,7 +109,7 @@ public class NameGeneratorDialog {
         HBox buttons = new HBox(8, generate, copy, add);
         buttons.setAlignment(Pos.CENTER_LEFT);
         Label hint = new Label("Double-click a name to put it on the current board.");
-        hint.setStyle("-fx-text-fill: #888; -fx-font-size: 11px;");
+        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
 
         VBox root = new VBox(10, form, buttons, results, hint);
         root.setPadding(new Insets(14));

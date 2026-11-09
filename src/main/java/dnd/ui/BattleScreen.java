@@ -153,6 +153,7 @@ final class BattleScreen implements BattleContext {
 
     void refresh() {
         Battle b = battle();
+        if (BattleEngine.relinkTokens(b, map) > 0) view.battleChanged(); // repairs saves where a creature lost its token
         boolean active = b.active;
         if (!active) inspectedKey = null;
         if (inspectedKey != null && BattleEngine.slots(b).stream().noneMatch(s -> s.key.equals(inspectedKey))) inspectedKey = null;

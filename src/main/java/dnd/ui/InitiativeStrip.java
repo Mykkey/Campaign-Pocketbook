@@ -84,6 +84,15 @@ final class InitiativeStrip extends ScrollPane {
         name.setStyle(down ? "-fx-strikethrough: true; -fx-text-fill: #6b7280;" : "-fx-text-fill: #0f172a;");
         HBox top = new HBox(6, init, dot, name);
         top.setAlignment(Pos.CENTER_LEFT);
+        // a coloured dot per condition that anyone in this slot has (same colours as the ring on the map)
+        java.util.LinkedHashSet<String> conds = new java.util.LinkedHashSet<>();
+        for (Combatant c : s.members) if (!c.defeated) conds.addAll(c.conditions);
+        for (String cond : conds) {
+            Label cd = new Label("\u25CF");
+            cd.setStyle("-fx-text-fill: " + dnd.battle.ConditionStyle.colorOf(cond) + "; -fx-font-size: " + (current ? 16 : 12) + "px;");
+            Tooltip.install(cd, new Tooltip(cond));
+            top.getChildren().add(cd);
+        }
 
         int hp = 0, max = 0;
         for (Combatant c : s.members) {
@@ -111,8 +120,16 @@ final class InitiativeStrip extends ScrollPane {
                 + (down ? " -fx-opacity: 0.6;" : "")
                 + (current ? " -fx-effect: dropshadow(gaussian, rgba(251,191,36,0.9), 18, 0.35, 0, 0);" : ""));
         chip.setCursor(Cursor.HAND);
-        Tooltip.install(chip, new Tooltip("Click to view " + s.name() + "'s card"));
-        chip.setOnMouseClicked(e -> ctx.inspect(s.key));
+        Tooltip.install(chip, new Tooltip("Click to view " + s.name() + "'s card. Right-click to set conditions."));
+        chip.setOnMouseClicked(e -> {
+            if (e.getButton() == javafx.scene.input.MouseButton.PRIMARY) ctx.inspect(s.key);
+        });
+        javafx.scene.control.ContextMenu menu = new javafx.scene.control.ContextMenu();
+        chip.setOnContextMenuRequested(e -> {
+            menu.getItems().setAll(CombatantCard.conditionsMenu(ctx, new java.util.ArrayList<>(s.members)));
+            menu.show(chip, e.getScreenX(), e.getScreenY());
+            e.consume();
+        });
         return chip;
     }
 

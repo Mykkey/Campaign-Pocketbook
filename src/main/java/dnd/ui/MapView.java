@@ -447,6 +447,7 @@ public class MapView extends Pane implements ItemView {
         map.revealed.clear();
         map.revealed.addAll(s.revealed);
         selected.removeIf(id -> map.findObject(id) == null && map.findToken(id) == null);
+        dnd.battle.BattleEngine.relinkTokens(map.battle, map);
         changed();
     }
 

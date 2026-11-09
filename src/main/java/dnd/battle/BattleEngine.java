@@ -413,6 +413,32 @@ public final class BattleEngine {
         c.tempHp = temp;
     }
 
+    /**
+     * Re-links creatures to their map tokens. Undo/redo on the map restores old token lists but not which token a
+     * creature points at, so a creature can end up pointing at a token that no longer exists (and its ring, turn
+     * highlight and clicks stop working). Each such creature is given an unclaimed token for the same card.
+     *
+     * @return how many creatures were re-linked
+     */
+    public static int relinkTokens(Battle b, dnd.model.BattleMap map) {
+        if (b == null) return 0;
+        java.util.Set<String> claimed = new java.util.HashSet<>();
+        for (Combatant c : b.combatants) if (c.tokenId != null && map.findToken(c.tokenId) != null) claimed.add(c.tokenId);
+        int fixed = 0;
+        for (Combatant c : b.combatants) {
+            if (c.tokenId != null && map.findToken(c.tokenId) != null) continue;
+            if (c.cardId == null) continue;
+            for (dnd.model.MapToken t : map.tokens) {
+                if (claimed.contains(t.id) || !c.cardId.equals(t.cardId)) continue;
+                c.tokenId = t.id;
+                claimed.add(t.id);
+                fixed++;
+                break;
+            }
+        }
+        return fixed;
+    }
+
     public static boolean toggleCondition(Combatant c, String condition) {
         if (condition == null || condition.isBlank()) return false;
         String key = condition.trim();

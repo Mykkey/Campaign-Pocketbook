@@ -1,4 +1,4 @@
-﻿# D&D Campaign Notes
+# D&D Campaign Notes
 
 A whiteboard-style note-taking app for planning D&D campaigns. Drag the board around, double-click to drop text anywhere, draw, add sticky notes and images, and **link any object to another whiteboard** so a double-click jumps straight there. Organise boards into projects and folders, and keep several open at once in tabs.
 
@@ -90,7 +90,7 @@ On a battlemap, press **Battle** in the toolbar to open the battle screen. The m
 
 **3. Plan ahead.** Click any chip in the strip, or any token on the map, to show that creature in a second card under the active one, without changing whose turn it is. **Back to current turn** closes it. Late arrivals can be added mid-battle with **+ Add creatures...** and are asked for their initiative.
 
-**HP:** every card has an HP bar and a box: type `-7` for damage, `+5` to heal, or a plain number to set HP. **Several hits at once** work too, e.g. `-5 -7 -3`. Temporary HP soak damage first, reaching 0 marks a creature down (its token greys out with a cross), and healing brings it back. The `...` menu has rename, max HP, temp HP, AC, **conditions**, notes, find token, **place token** (if you deleted the old one) and remove. **Map tools** in the banner brings the normal toolbar back for moving tokens and revealing fog; **Exit** returns to the normal editor and keeps the battle.
+**HP:** every card has an HP bar and a box: type `-7` for damage, `+5` to heal, or a plain number to set HP. **Several hits at once** work too, e.g. `-5 -7 -3`. Temporary HP soak damage first, reaching 0 marks a creature down (its token greys out with a cross), and healing brings it back. The `...` menu has rename, max HP, temp HP, AC, **conditions**, notes, find token, **place token** (if you deleted the old one) and remove. **Conditions** show as a coloured ring around the creature's token, split into one slice per condition (Poisoned is green, Stunned yellow, Frightened purple, and so on), on your map and in the player window, and as matching dots on its chip in the initiative strip. **Map tools** in the banner brings the normal toolbar back for moving tokens and revealing fog; **Exit** returns to the normal editor and keeps the battle.
 
 **Groups:** creatures that share a group take one turn together with one initiative (a pack of goblins). Tick two or more rows in setup and press *Group*, or *Ungroup* later. The card lists each member with its own HP.
 

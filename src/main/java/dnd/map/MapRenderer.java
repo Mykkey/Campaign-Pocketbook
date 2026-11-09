@@ -77,17 +77,19 @@ public final class MapRenderer {
         }
         // battle state: whose turn it is and who is down, looked up by token id
         java.util.Set<String> active = new java.util.HashSet<>(), down = new java.util.HashSet<>();
+        Map<String, List<String>> rings = new HashMap<>();
         if (m.battle != null) {
             for (dnd.model.Combatant co : m.battle.combatants) {
                 if (co.tokenId == null) continue;
                 if (co.defeated) down.add(co.tokenId);
                 if (dnd.battle.BattleEngine.isCurrent(m.battle, co)) active.add(co.tokenId);
+                if (!co.conditions.isEmpty()) rings.put(co.tokenId, dnd.battle.ConditionStyle.colorsOf(co.conditions));
             }
         }
         for (MapToken t : m.tokens) {
             if (t.hidden && who == Audience.PLAYERS) continue;
             drawToken(g, t, grid, m.cellSize, t.hidden && who == Audience.DM ? 0.45 : 1.0,
-                    active.contains(t.id), down.contains(t.id));
+                    active.contains(t.id), down.contains(t.id), rings.getOrDefault(t.id, List.of()));
         }
         if (who != Audience.PLAIN && m.fogEnabled) drawFog(g, m, grid, who == Audience.PLAYERS);
     }
@@ -290,28 +292,39 @@ public final class MapRenderer {
     }
 
     public static void drawToken(GraphicsContext g, MapToken t, Grid grid, double cellSize, double opacity) {
-        drawToken(g, t, grid, cellSize, opacity, false, false);
+        drawToken(g, t, grid, cellSize, opacity, false, false, List.of());
     }
 
     /**
      * @param active it is this creature's turn: a gold ring is drawn around it
      * @param down   the creature is defeated: greyed out with a cross
+     * @param rings  condition colours (hex): a ring split into one coloured slice per condition is drawn around it
      */
     public static void drawToken(GraphicsContext g, MapToken t, Grid grid, double cellSize, double opacity,
-                                 boolean active, boolean down) {
+                                 boolean active, boolean down, List<String> rings) {
         if (!grid.inside(t.col, t.row)) return;
         double[] c = grid.center(t.col, t.row);
         double d = cellSize * (0.78 + 0.95 * (Math.max(1, t.size) - 1));
         g.save();
         g.setGlobalAlpha(down ? opacity * 0.6 : opacity);
         if (active) {
-            double r = d / 2 + cellSize * 0.1;
+            double r = d / 2 + cellSize * (rings.isEmpty() ? 0.1 : 0.2);
             g.setStroke(Color.web("#fbbf24", 0.35));
             g.setLineWidth(cellSize * 0.2);
             g.strokeOval(c[0] - r, c[1] - r, 2 * r, 2 * r);
             g.setStroke(Color.web("#f59e0b"));
             g.setLineWidth(Math.max(2, cellSize * 0.07));
             g.strokeOval(c[0] - r, c[1] - r, 2 * r, 2 * r);
+        }
+        if (!rings.isEmpty()) {
+            double r = d / 2 + cellSize * 0.07;
+            double[] starts = dnd.battle.ConditionStyle.sliceStarts(rings.size());
+            double extent = 360.0 / rings.size();
+            g.setLineWidth(Math.max(3, cellSize * 0.1));
+            for (int i = 0; i < rings.size(); i++) {
+                g.setStroke(Color.web(rings.get(i)));
+                g.strokeArc(c[0] - r, c[1] - r, 2 * r, 2 * r, starts[i], extent, javafx.scene.shape.ArcType.OPEN);
+            }
         }
         g.setFill(Color.web("#00000040"));
         g.fillOval(c[0] - d / 2 + d * 0.05, c[1] - d / 2 + d * 0.07, d, d);

@@ -418,4 +418,31 @@ class BattleEngineTest {
         assertEquals(200, b.log.size());
         assertEquals("line 499", b.log.get(b.log.size() - 1));
     }
+
+    @Test
+    void relinkTokensRepairsCreaturesWhoseTokenWasLostByUndo() {
+        dnd.model.BattleMap map = new dnd.model.BattleMap();
+        dnd.model.MapToken orphan = new dnd.model.MapToken();
+        orphan.cardId = "goblin-card";
+        map.tokens.add(orphan);
+        dnd.model.MapToken other = new dnd.model.MapToken();
+        other.cardId = "orc-card";
+        map.tokens.add(other);
+
+        Battle b = new Battle();
+        Combatant gob = new Combatant();
+        gob.cardId = "goblin-card";
+        gob.tokenId = "token-that-no-longer-exists";
+        Combatant orc = new Combatant();
+        orc.cardId = "orc-card";
+        orc.tokenId = other.id; // still fine, must be left alone
+        Combatant noCard = new Combatant();
+        b.combatants.addAll(List.of(gob, orc, noCard));
+
+        assertEquals(1, BattleEngine.relinkTokens(b, map));
+        assertEquals(orphan.id, gob.tokenId);
+        assertEquals(other.id, orc.tokenId);
+        assertNull(noCard.tokenId);
+        assertEquals(0, BattleEngine.relinkTokens(b, map), "nothing left to repair");
+    }
 }

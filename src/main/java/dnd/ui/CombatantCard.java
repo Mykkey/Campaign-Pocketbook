@@ -25,9 +25,6 @@ import java.util.Optional;
  * in the initiative strip shows theirs in a second card so the DM can plan ahead.
  */
 final class CombatantCard extends VBox {
-    private static final String[] CONDITIONS = {"Blinded", "Charmed", "Concentrating", "Deafened", "Exhausted",
-            "Frightened", "Grappled", "Incapacitated", "Invisible", "Paralyzed", "Petrified", "Poisoned", "Prone",
-            "Restrained", "Stunned", "Unconscious"};
 
     private final BattleContext ctx;
     private final List<Combatant> members;
@@ -69,12 +66,12 @@ final class CombatantCard extends VBox {
         HBox head = new HBox(8, tag, dot, name, sp);
         head.setAlignment(Pos.CENTER_LEFT);
         if (!group) {
-            head.getChildren().addAll(downToggle(first), menuFor(first));
+            head.getChildren().addAll(conditionsButton(List.of(first)), downToggle(first), menuFor(first));
         } else {
             long up = members.stream().filter(c -> !c.defeated).count();
             Label count = new Label(up + " of " + members.size() + " up");
             count.setStyle("-fx-text-fill: #555; -fx-font-weight: bold;");
-            head.getChildren().add(count);
+            head.getChildren().addAll(count, conditionsButton(members));
         }
         getChildren().add(head);
 
@@ -188,10 +185,44 @@ final class CombatantCard extends VBox {
         FlowPane chips = new FlowPane(4, 4);
         for (String cond : c.conditions) {
             Label chip = new Label(cond);
-            chip.setStyle("-fx-background-color: #f3e0e0; -fx-padding: 1 7 1 7; -fx-background-radius: 8; -fx-font-size: 12px;");
+            String col = dnd.battle.ConditionStyle.colorOf(cond);
+            Label swatch = new Label("\u25CF");
+            swatch.setStyle("-fx-text-fill: " + col + ";");
+            chip.setGraphic(swatch);
+            chip.setGraphicTextGap(4);
+            chip.setStyle("-fx-background-color: #f1f5f9; -fx-border-color: " + col + "; -fx-border-radius: 8; -fx-padding: 1 7 1 6; -fx-background-radius: 8; -fx-font-size: 12px;");
             chips.getChildren().add(chip);
         }
         return chips;
+    }
+
+    /** A "Conditions" menu that sets or clears each standard condition on every creature in {@code targets}. */
+    static Menu conditionsMenu(BattleContext ctx, List<Combatant> targets) {
+        Menu conds = new Menu("Conditions");
+        for (String name : dnd.battle.ConditionStyle.names()) {
+            CheckMenuItem ci = new CheckMenuItem(name);
+            Label sw = new Label("\u25CF");
+            sw.setStyle("-fx-text-fill: " + dnd.battle.ConditionStyle.colorOf(name) + ";");
+            ci.setGraphic(sw);
+            ci.setSelected(targets.stream().allMatch(x -> x.conditions.stream().anyMatch(y -> y.equalsIgnoreCase(name))));
+            ci.setOnAction(e -> {
+                for (Combatant x : targets) {
+                    boolean has = x.conditions.stream().anyMatch(y -> y.equalsIgnoreCase(name));
+                    if (has != ci.isSelected()) BattleEngine.toggleCondition(x, name);
+                }
+                ctx.changed();
+            });
+            conds.getItems().add(ci);
+        }
+        return conds;
+    }
+
+    /** A visible button on the card header for setting conditions (so it is not hidden in the ... menu). */
+    private MenuButton conditionsButton(List<Combatant> targets) {
+        MenuButton mb = new MenuButton("Conditions");
+        mb.getItems().addAll(conditionsMenu(ctx, targets).getItems());
+        mb.setTooltip(new Tooltip("Set or clear conditions. They show as a coloured ring around the token."));
+        return mb;
     }
 
     private ToggleButton downToggle(Combatant c) {
@@ -229,16 +260,7 @@ final class CombatantCard extends VBox {
             c.ac = Math.max(0, v);
             ctx.changed();
         }));
-        Menu conds = new Menu("Conditions");
-        for (String name : CONDITIONS) {
-            CheckMenuItem ci = new CheckMenuItem(name);
-            ci.setSelected(c.conditions.stream().anyMatch(x -> x.equalsIgnoreCase(name)));
-            ci.setOnAction(e -> {
-                BattleEngine.toggleCondition(c, name);
-                ctx.changed();
-            });
-            conds.getItems().add(ci);
-        }
+        Menu conds = conditionsMenu(ctx, List.of(c));
         MenuItem notes = new MenuItem("Notes...");
         notes.setOnAction(e -> ask("Notes", "Notes for " + c.name + ":", c.notes == null ? "" : c.notes).ifPresent(v -> {
             c.notes = v;

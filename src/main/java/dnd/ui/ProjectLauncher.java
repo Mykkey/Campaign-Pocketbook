@@ -67,7 +67,17 @@ public class ProjectLauncher extends VBox {
         });
         VBox.setVgrow(list, Priority.ALWAYS);
 
-        getChildren().addAll(title, sub, list, buttons, where);
+        Button export = new Button("Export backup...");
+        export.setTooltip(new Tooltip("Save the selected campaign, with its pictures and maps, as one .zip file to keep or share"));
+        export.setOnAction(e -> exportSelected());
+        export.disableProperty().bind(list.getSelectionModel().selectedItemProperty().isNull());
+        Button importZip = new Button("Import backup...");
+        importZip.setTooltip(new Tooltip("Bring in a campaign from a .zip made with Export backup. It becomes a new project; nothing is overwritten"));
+        importZip.setOnAction(e -> importBackup());
+        HBox backup = new HBox(8, export, importZip);
+        backup.setAlignment(Pos.CENTER);
+
+        getChildren().addAll(title, sub, list, buttons, backup, where);
         refresh();
     }
 
@@ -170,6 +180,67 @@ public class ProjectLauncher extends VBox {
             Files.createDirectories(base);
             return ProjectStore.create(base, projectName);
         }, "Could not create project: ");
+    }
+
+    /** Runs a slow job with the spinner showing, then reports on the UI thread. */
+    private <T> void background(String message, Callable<T> job, Consumer<T> done, String failure) {
+        if (busy) return;
+        showLoading(message);
+        Task<T> task = new Task<>() {
+            @Override
+            protected T call() throws Exception {
+                return job.call();
+            }
+        };
+        task.setOnSucceeded(e -> {
+            hideLoading();
+            done.accept(task.getValue());
+        });
+        task.setOnFailed(e -> {
+            hideLoading();
+            Throwable ex = task.getException();
+            new Alert(Alert.AlertType.ERROR, failure + (ex == null ? "" : ex.getMessage())).show();
+        });
+        Thread t = new Thread(task, "backup");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    private void exportSelected() {
+        String name = list.getSelectionModel().getSelectedItem();
+        if (name == null) return;
+        javafx.stage.FileChooser fc = new javafx.stage.FileChooser();
+        fc.setTitle("Save a backup of " + name);
+        fc.setInitialFileName(name + ".zip");
+        fc.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("Campaign backup (*.zip)", "*.zip"));
+        java.io.File target = fc.showSaveDialog(getScene().getWindow());
+        if (target == null) return;
+        Path zip = target.toPath();
+        if (!zip.getFileName().toString().toLowerCase().endsWith(".zip")) zip = zip.resolveSibling(zip.getFileName() + ".zip");
+        final Path out = zip;
+        background("Saving " + name + "...", () -> dnd.storage.ProjectArchive.export(base.resolve(name), out),
+                files -> {
+                    Alert a = new Alert(Alert.AlertType.INFORMATION, files + " files saved to:\n" + out);
+                    a.setHeaderText("Backup saved");
+                    a.show();
+                }, "Could not save the backup: ");
+    }
+
+    private void importBackup() {
+        javafx.stage.FileChooser fc = new javafx.stage.FileChooser();
+        fc.setTitle("Choose a campaign backup");
+        fc.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("Campaign backup (*.zip)", "*.zip"));
+        java.io.File source = fc.showOpenDialog(getScene().getWindow());
+        if (source == null) return;
+        background("Importing " + source.getName() + "...", () -> dnd.storage.ProjectArchive.importZip(source.toPath(), base),
+                result -> {
+                    refresh();
+                    list.getSelectionModel().select(result.folderName());
+                    Alert a = new Alert(Alert.AlertType.INFORMATION,
+                            "\"" + result.folderName() + "\" was added to your projects (" + result.files() + " files). Your other campaigns were not touched.");
+                    a.setHeaderText("Backup imported");
+                    a.show();
+                }, "Could not import the backup: ");
     }
 
     private void deleteSelected() {

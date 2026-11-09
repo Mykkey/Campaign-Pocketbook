@@ -140,6 +140,8 @@ public class BoardView extends Pane implements ItemView {
     private BoardObject tmp;
 
     private TextArea editor;
+    /** The grip at the corner of the text box being typed into: drag it to resize the box without leaving the editor. */
+    private javafx.scene.layout.Region editGrip;
     private BoardObject editing;
     private boolean editingNew;
 
@@ -1243,11 +1245,73 @@ public class BoardView extends Pane implements ItemView {
         });
         clearHover();
         getChildren().add(ta);
+        addEditGrip(o, ta);
+        ta.textProperty().addListener((obs, was, now) -> fitEditor(o, ta));
         redraw();
         Platform.runLater(() -> {
             ta.requestFocus();
             ta.positionCaret(ta.getText().length());
         });
+    }
+
+    /**
+     * A small square at the bottom-right corner of the box being typed into. Dragging it sets the width the text
+     * wraps at (and the size of a sticky note) while the editor stays open; the box height follows the typing.
+     */
+    private void addEditGrip(BoardObject o, TextArea ta) {
+        if (o.type != Type.TEXT && o.type != Type.STICKY) return;
+        javafx.scene.layout.Region grip = new javafx.scene.layout.Region();
+        grip.setPrefSize(12, 12);
+        grip.setMinSize(12, 12);
+        grip.setMaxSize(12, 12);
+        grip.setStyle("-fx-background-color: white; -fx-border-color: #2563eb; -fx-border-width: 1.5; -fx-cursor: se-resize;");
+        Tooltip.install(grip, new Tooltip("Drag to resize the box"));
+        grip.setOnMousePressed(e -> {
+            pickingTarget = true; // clicking the grip must not end the edit
+            if (!editingNew) checkpoint();
+            e.consume();
+        });
+        grip.setOnMouseDragged(e -> {
+            javafx.geometry.Point2D lp = sceneToLocal(e.getSceneX(), e.getSceneY());
+            double px = wx(lp.getX()), py = wy(lp.getY());
+            if (o.type == Type.STICKY) {
+                o.w = Math.max(60, px - o.x);
+                o.h = Math.max(40, py - o.y);
+            } else {
+                o.wrapWidth = Math.max(MIN_BOX_WIDTH, px - o.x);
+                ta.setWrapText(true);
+            }
+            fitEditor(o, ta);
+            store.markDirty(board);
+            e.consume();
+        });
+        grip.setOnMouseReleased(e -> {
+            pickingTarget = false;
+            ta.requestFocus();
+            e.consume();
+        });
+        editGrip = grip;
+        getChildren().add(grip);
+        fitEditor(o, ta);
+    }
+
+    /** Sizes the editor to the box (the height follows what is typed) and puts the grip at its corner. */
+    private void fitEditor(BoardObject o, TextArea ta) {
+        if (editor != ta) return;
+        double z = zoom();
+        if (o.type == Type.STICKY) {
+            ta.setPrefSize(o.w * z + 14, o.h * z + 10);
+        } else if (o.wrapWidth > 0) {
+            BoardObject probe = o.copy();
+            probe.text = ta.getText();
+            measure(probe);
+            ta.setPrefSize(o.wrapWidth * z + 14, Math.max(70, probe.h * z + 30));
+        }
+        if (editGrip != null) {
+            editGrip.setLayoutX(ta.getLayoutX() + ta.getPrefWidth() - 6);
+            editGrip.setLayoutY(ta.getLayoutY() + ta.getPrefHeight() - 6);
+            editGrip.toFront();
+        }
     }
 
     /** True while a text or sticky note is being typed into. */
@@ -1283,6 +1347,10 @@ public class BoardView extends Pane implements ItemView {
         editor = null;
         editing = null;
         getChildren().remove(ta);
+        if (editGrip != null) {
+            getChildren().remove(editGrip);
+            editGrip = null;
+        }
 
         String nt = ta.getText();
         if (nt.isBlank()) {
@@ -1301,6 +1369,7 @@ public class BoardView extends Pane implements ItemView {
                 measure(o);
             }
             pruneRefs(o);
+            measure(o); // also when only the width was changed with the grip
         }
         changed();
         requestFocus();

@@ -106,6 +106,23 @@ public final class SearchService {
             }
         }
 
+        // quests: by name, then by who gave them, the steps and notes
+        List<TreeNode> quests = new ArrayList<>();
+        store.project.root.collectKind(TreeNode.KIND_QUEST, quests);
+        for (TreeNode n : quests) {
+            if (n.name.toLowerCase(Locale.ROOT).contains(q)) {
+                out.add(new Result(n.id, n.name, null, "Quest"));
+                if (out.size() >= limit) return out;
+                continue;
+            }
+            dnd.model.Quest qu = store.quest(n.id);
+            String hit = qu == null ? null : questMatch(qu, q);
+            if (hit != null) {
+                out.add(new Result(n.id, n.name, null, "Quest - " + hit));
+                if (out.size() >= limit) return out;
+            }
+        }
+
         // encounters: by name and notes
         List<TreeNode> encounters = new ArrayList<>();
         store.project.root.collectEncounters(encounters);
@@ -179,6 +196,16 @@ public final class SearchService {
                 {"senses", c.senses}, {"skills", c.skills}, {"resistances", c.resistances}, {"immunities", c.immunities},
                 {"vulnerabilities", c.vulnerabilities}, {"saves", c.saves}};
         for (String[] f : fields) if (has(f[1], q)) return f[0] + ": " + excerpt(f[1], q);
+        return null;
+    }
+
+    /** Where on a quest the text was found, or null. */
+    static String questMatch(dnd.model.Quest qu, String q) {
+        if (has(qu.summary, q)) return "summary: " + excerpt(qu.summary, q);
+        for (dnd.model.Quest.Step s : qu.steps) if (has(s.text, q)) return "step: " + excerpt(s.text, q);
+        if (has(qu.giver, q)) return "given by: " + qu.giver;
+        if (has(qu.reward, q)) return "reward: " + qu.reward;
+        if (has(qu.notes, q)) return "notes: " + excerpt(qu.notes, q);
         return null;
     }
 

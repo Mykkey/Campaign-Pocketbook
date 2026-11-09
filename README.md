@@ -93,6 +93,9 @@ Spells are their own item type (**+ Spell** in the project tree, saved as `spell
 ## Magic items
 Magic items are their own item type (**+ Item** in the project tree, saved as `items/<id>.item`), so a homebrew item or a piece of loot can be written once and linked from anywhere. An item has a name, type (wondrous item, weapon, armor, potion, ring, wand...), rarity (common to artifact), whether it needs attunement (and by whom), a description, charges and when they come back, a curse or drawback, its value in gold and your own notes. The card beside the form updates live and takes its accent colour from the rarity. Items can be linked and previewed on hover like any other item, are offered by name hints when their name appears in text, and are found by project search (name, description, curse, notes).
 
+## Quests
+Quests are their own item type (**+ Quest** in the project tree, saved as `quests/<id>.quest`) for plot threads you want to keep track of. A quest has a name, a status (open, active, on hold, done, failed), who gave it, the reward, a summary, a checklist of **steps and clues** to tick off as the party does or finds them, the characters, maps, whiteboards and items it **involves** (add them, double-click to open), and your own notes. A summary beside the form updates live. Press **Quests...** in the top bar for the **quest board**: every quest in columns by status with its progress ("1 of 3 steps") and giver, a filter box, double-click to open and right-click to move a quest to another status. Quests can be linked and previewed on hover like any other item and are found by project search (name, summary, steps, giver, reward, notes).
+
 ## Links and notes in text
 On a whiteboard, links and notes work on **selected words**, not just whole text blocks:
 

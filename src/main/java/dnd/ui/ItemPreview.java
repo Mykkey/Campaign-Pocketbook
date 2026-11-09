@@ -97,6 +97,9 @@ final class ItemPreview {
         } else if (node.isMagicItem()) {
             dnd.model.MagicItem mi = store.magicItem(id);
             if (mi != null) return new MagicItemCardView(mi);
+        } else if (node.isQuest()) {
+            dnd.model.Quest qu = store.quest(id);
+            if (qu != null) return new QuestCardView(store, qu);
         } else if (node.isEncounter()) {
             Encounter e = store.encounter(id);
             if (e != null) return encounter(store, e);

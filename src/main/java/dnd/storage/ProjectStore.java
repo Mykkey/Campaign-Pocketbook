@@ -5,6 +5,7 @@ import dnd.model.Board;
 import dnd.model.Card;
 import dnd.model.MagicItem;
 import dnd.model.ProjectEntry;
+import dnd.model.Quest;
 import dnd.model.Encounter;
 import dnd.model.Spell;
 import dnd.model.Project;
@@ -59,6 +60,7 @@ public final class ProjectStore {
     /** The kinds of item that are plain "one JSON file each" entries (see ProjectEntry). */
     private final List<Kind<?>> kinds = new ArrayList<>();
     private final Kind<dnd.model.MagicItem> magicItems = register(new Kind<>("items", "item", TreeNode.KIND_ITEM, dnd.model.MagicItem.class));
+    private final Kind<Quest> quests = register(new Kind<>("quests", "quest", TreeNode.KIND_QUEST, Quest.class));
 
     private ProjectStore(Path dir, Project project) {
         this.dir = dir;
@@ -568,6 +570,27 @@ public final class ProjectStore {
         magicItems.markDirty(item);
     }
 
+    public boolean isQuest(String id) {
+        return quests.is(id);
+    }
+
+    /** Loads (and caches) a quest; null if it doesn't exist or can't be read. */
+    public Quest quest(String id) {
+        return quests.get(id);
+    }
+
+    public Quest createQuest(TreeNode parent, Quest quest) {
+        return quests.create(parent, quest);
+    }
+
+    public List<String> allQuestIds() {
+        return quests.ids();
+    }
+
+    public void markQuestDirty(Quest quest) {
+        quests.markDirty(quest);
+    }
+
     // ---------------------------------------------------------------- battlemaps
 
     private Path mapPath(String id) {
@@ -639,6 +662,7 @@ public final class ProjectStore {
             else if (isEncounter(id)) encounter(id);
             else if (isSpell(id)) spell(id);
             else if (isMagicItem(id)) magicItem(id);
+            else if (isQuest(id)) quest(id);
             else if (boardExists(id)) board(id);
         }
         assets();

@@ -34,11 +34,32 @@ class NameGeneratorTest {
     void poolsAreHealthy() {
         for (Race r : NameData.races()) {
             for (List<String> pool : List.of(r.masculine, r.feminine, r.last)) {
-                assertTrue(pool.size() >= 10, r + " pool too small");
+                assertTrue(pool.size() >= 50, r + " pool too small: " + pool.size());
                 Set<String> seen = new HashSet<>();
                 for (String s : pool) {
                     assertFalse(s.isBlank(), r + " has a blank entry");
                     assertTrue(seen.add(s.toLowerCase()), r + " duplicate: " + s);
+                }
+            }
+        }
+    }
+
+    @Test
+    void genderlessRacesShareOnePoolSoTheGenderOptionIsHidden() {
+        for (Race r : new Race[]{Race.GOBLIN, Race.KOBOLD, Race.TORTLE, Race.TABAXI, Race.GOLIATH}) {
+            assertTrue(r.unisex(), r + " should have one shared first-name pool");
+        }
+        assertFalse(Race.HUMAN.unisex());
+        assertFalse(Race.DWARF.unisex());
+    }
+
+    @Test
+    void namesLookClean() {
+        for (Race r : NameData.races()) {
+            for (List<String> pool : List.of(r.masculine, r.feminine, r.last)) {
+                for (String s : pool) {
+                    assertEquals(s.trim(), s, r + ": untrimmed '" + s + "'");
+                    assertFalse(s.contains("?") || s.contains("\""), r + ": stray character in '" + s + "'");
                 }
             }
         }

@@ -66,6 +66,13 @@ public class BoardView extends Pane implements ItemView {
     }
 
     @Override
+    public boolean deleteSelection() {
+        if (selected.isEmpty()) return false;
+        deleteSelected();
+        return true;
+    }
+
+    @Override
     public boolean selectTool(int index) {
         Tool[] tools = Tool.values();
         if (index < 0 || index >= tools.length) return false;

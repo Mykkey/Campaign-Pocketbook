@@ -167,4 +167,6 @@ public class MapEditor extends BorderPane implements ItemView {
     @Override public boolean shortcut(javafx.scene.input.KeyEvent e) { return view.shortcut(e); }
 
     @Override public boolean escape() { return view.escape(); }
+
+    @Override public boolean deleteSelection() { return view.deleteSelection(); }
 }

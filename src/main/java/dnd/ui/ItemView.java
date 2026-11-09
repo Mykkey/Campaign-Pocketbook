@@ -21,6 +21,14 @@ public interface ItemView {
     }
 
     /**
+     * Delete / Backspace pressed while the tab is showing (even if focus is on a toolbar control): removes the
+     * selected objects. Returns true if there was a selection and it was deleted.
+     */
+    default boolean deleteSelection() {
+        return false;
+    }
+
+    /**
      * Escape pressed while the tab is showing (even if focus is on a toolbar control): drop the selection and
      * any armed tool. Returns true if it handled the key.
      */

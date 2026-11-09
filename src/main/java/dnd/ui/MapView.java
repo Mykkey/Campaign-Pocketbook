@@ -915,6 +915,13 @@ public class MapView extends Pane implements ItemView {
         return true;
     }
 
+    @Override
+    public boolean deleteSelection() {
+        if (selected.isEmpty()) return false;
+        deleteSelected();
+        return true;
+    }
+
     /** Esc: deselect everything, clear the ruler, stop placing pieces and go back to the Select tool. */
     @Override
     public boolean escape() {

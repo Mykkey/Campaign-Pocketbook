@@ -160,6 +160,10 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
                     if (v.escape()) ev.consume();
                     return;
                 }
+                if (k == KeyCode.DELETE || k == KeyCode.BACK_SPACE) {
+                    if (v.deleteSelection()) ev.consume();
+                    return;
+                }
                 int idx = k.isDigitKey() ? Integer.parseInt(k.getName()) : -1;
                 if (idx < 0) return;
                 int toolIndex = (idx + 9) % 10; // 1 -> 0 ... 9 -> 8, 0 -> 9

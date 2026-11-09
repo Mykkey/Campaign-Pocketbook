@@ -220,6 +220,18 @@ public final class ProjectStore {
         return dir.resolve("assets");
     }
 
+    /**
+     * Reads everything needed to show the tabs that were open last time (their files and the piece library).
+     * Safe to call on a background thread; the results are cached for when the UI is built.
+     */
+    public void preload() {
+        for (String id : new ArrayList<>(project.openBoards)) {
+            if (isBattleMap(id)) battleMap(id);
+            else if (boardExists(id)) board(id);
+        }
+        assets();
+    }
+
     private dnd.map.AssetLibrary assetLibrary;
 
     /** The shared asset library for this project (built-ins plus the project's imports). */

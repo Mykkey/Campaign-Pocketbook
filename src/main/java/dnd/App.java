@@ -40,7 +40,8 @@ public class App extends Application {
         workspace = null;
         BorderPane root = new BorderPane();
         root.setTop(new UpdateBanner(getHostServices()));
-        root.setCenter(new StackPane(new ProjectLauncher(this::showWorkspace)));
+        ProjectLauncher launcher = new ProjectLauncher(this::showWorkspace);
+        root.setCenter(new StackPane(launcher, launcher.loadingOverlay()));
         stage.setScene(new Scene(root, stage.getWidth(), stage.getHeight()));
         stage.setTitle(TITLE);
     }

@@ -905,6 +905,17 @@ public class BoardView extends Pane {
         return t;
     }
 
+    /** Drops a finished (non-editing) text object at the centre of the current view. Undoable. */
+    public void addTextAtCenter(String text) {
+        if (text == null || text.isBlank()) return;
+        commitEdit();
+        BoardObject t = createText(viewCenterX(), viewCenterY(), text);
+        commitEdit(); // closes the editor straight away; the text stays because it is non-blank
+        selected.clear();
+        selected.add(t.id);
+        redraw();
+    }
+
     private void createSticky(double px, double py) {
         BoardObject s = new BoardObject(Type.STICKY);
         s.x = px - 20;

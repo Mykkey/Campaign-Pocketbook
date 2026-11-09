@@ -91,7 +91,10 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         search.setOnAction(e -> runSearch());
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        HBox nav = new HBox(8, projects, backBtn, fwdBtn, trail, spacer, backlinks, search);
+        Button names = new Button("Names...");
+        names.setTooltip(new Tooltip("Random character name generator (Ctrl+G)"));
+        names.setOnAction(e -> openNameGenerator());
+        HBox nav = new HBox(8, projects, backBtn, fwdBtn, trail, spacer, names, backlinks, search);
         nav.setAlignment(Pos.CENTER_LEFT);
         nav.setPadding(new Insets(6, 8, 0, 8));
 
@@ -160,6 +163,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             scene.getAccelerators().put(new KeyCodeCombination(KeyCode.RIGHT, KeyCombination.ALT_DOWN), this::goForward);
             scene.getAccelerators().put(new KeyCodeCombination(KeyCode.W, KeyCombination.SHORTCUT_DOWN), this::closeCurrentTab);
             scene.getAccelerators().put(new KeyCodeCombination(KeyCode.F, KeyCombination.SHORTCUT_DOWN), () -> search.requestFocus());
+            scene.getAccelerators().put(new KeyCodeCombination(KeyCode.G, KeyCombination.SHORTCUT_DOWN), this::openNameGenerator);
         });
 
         refreshTree();
@@ -369,6 +373,17 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             BoardView v = viewFor(r.boardId);
             if (v != null) Platform.runLater(() -> v.focusObject(r.objectId));
         }
+    }
+
+    private void openNameGenerator() {
+        NameGeneratorDialog.show(getScene().getWindow(), name -> {
+            BoardView v = currentView();
+            if (v == null) {
+                new Alert(Alert.AlertType.INFORMATION, "Open a whiteboard first, then add the name to it.").show();
+            } else {
+                v.addTextAtCenter(name);
+            }
+        });
     }
 
     private void style(String what) {

@@ -51,6 +51,9 @@ Projects are saved as plain files in `~/DnDCampaignNotes/<project name>/` (`proj
 ### Tool shortcuts
 Press a number key to switch tools: **1** Select, **2** Hand, **3** Text, **4** Sticky, **5** Pen, **6** Eraser, **7** Rect, **8** Ellipse, **9** Line, **0** Arrow. The eraser only removes pen drawings.
 
+## Name generator
+Click **Names...** in the top bar (or press Ctrl+G), pick a race and optionally a gender, and it rolls first + last names. Select one and hit **Copy**, or **Add to board** (or double-click a name) to drop it onto the current whiteboard as text. Races: Human, Elf, Dwarf, Halfling, Gnome, Half-Elf, Half-Orc, Tiefling, Dragonborn, Orc, Goblin, Tabaxi, Aasimar, Genasi, Goliath, Kobold and Tortle.
+
 ## For developers
 ```
 mvn test           # run the unit tests

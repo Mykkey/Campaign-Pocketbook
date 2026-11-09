@@ -41,6 +41,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
     private final Button backBtn = new Button("<");
     private final Button fwdBtn = new Button(">");
     private final MenuButton backlinks = new MenuButton("Backlinks");
+    private final MenuButton recentMenu = new MenuButton("Recent");
     private final TextField search = new TextField();
     private final javafx.stage.Popup searchPopup = new javafx.stage.Popup();
     private final VBox searchList = new VBox();
@@ -84,6 +85,15 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             }
         });
         tree.setContextMenu(buildTreeMenu());
+        tree.setOnKeyPressed(e -> {
+            if (e.getCode() == KeyCode.F2) {
+                renameSelected();
+                e.consume();
+            } else if (e.getCode() == KeyCode.DELETE) {
+                deleteSelected();
+                e.consume();
+            }
+        });
         VBox left = new VBox(6, treeTitle, treeButtons, tree);
         left.setPadding(new Insets(8));
         VBox.setVgrow(tree, Priority.ALWAYS);
@@ -127,7 +137,9 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Button library = new Button("Library...");
         library.setTooltip(new Tooltip("Browse imported SRD monsters and spells"));
         library.setOnAction(e -> openLibrary());
-        HBox nav = new HBox(8, projects, backBtn, fwdBtn, trail, spacer, names, npc, loot, library, Theme.toggleButton(), backlinks, search);
+        recentMenu.setTooltip(new Tooltip("The last items you opened"));
+        recentMenu.setOnShowing(e -> rebuildRecent());
+        HBox nav = new HBox(8, projects, backBtn, fwdBtn, trail, spacer, names, npc, loot, library, Theme.toggleButton(), recentMenu, backlinks, search);
         nav.setAlignment(Pos.CENTER_LEFT);
         nav.setPadding(new Insets(6, 8, 0, 8));
 
@@ -190,6 +202,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
                     return;
                 }
                 if (k == KeyCode.DELETE || k == KeyCode.BACK_SPACE) {
+                    if (scene.getFocusOwner() == tree) return; // the tree deletes its own selected item
                     if (v.deleteSelection()) ev.consume();
                     return;
                 }
@@ -285,6 +298,10 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
 
     @Override
     public void openItem(String id) {
+        if (!restoring && store.itemExists(id)) {
+            dnd.model.RecentItems.add(store.project.recent, id); // also when the tab was already open
+            store.markProjectDirty();
+        }
         Tab t = open.get(id);
         if (t == null) {
             Node view;
@@ -319,6 +336,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             }
             t = new Tab(store.boardName(id), view);
             t.setUserData(id);
+            decorateTab(t, id);
             t.setOnClosed(e -> {
                 open.remove(id);
                 persistTabs();
@@ -327,6 +345,32 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             tabs.getTabs().add(t);
         }
         tabs.getSelectionModel().select(t);
+    }
+
+    /** Icon (in the item's colour) and right-click menu for a tab. */
+    private void decorateTab(Tab t, String id) {
+        TreeNode node = store.project.root.find(id);
+        if (node != null) t.setGraphic(NodeIcons.icon(node, false));
+        MenuItem close = new MenuItem("Close");
+        close.setOnAction(e -> closeTab(id));
+        MenuItem others = new MenuItem("Close others");
+        others.setOnAction(e -> {
+            for (String other : new ArrayList<>(open.keySet())) if (!other.equals(id)) closeTab(other);
+        });
+        MenuItem all = new MenuItem("Close all");
+        all.setOnAction(e -> {
+            for (String other : new ArrayList<>(open.keySet())) closeTab(other);
+        });
+        MenuItem reveal = new MenuItem("Reveal in tree");
+        reveal.setOnAction(e -> selectInTree(id));
+        t.setContextMenu(new ContextMenu(close, others, all, new SeparatorMenuItem(), reveal));
+    }
+
+    private void refreshTabIcons() {
+        for (Tab t : tabs.getTabs()) {
+            TreeNode node = store.project.root.find((String) t.getUserData());
+            if (node != null) t.setGraphic(NodeIcons.icon(node, false));
+        }
     }
 
     private void onTabChanged(Tab t) {
@@ -422,6 +466,20 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             MenuItem m = new MenuItem(r.boardName + "  -  " + r.snippet);
             m.setOnAction(e -> showResult(r));
             backlinks.getItems().add(m);
+        }
+    }
+
+    private void rebuildRecent() {
+        recentMenu.getItems().clear();
+        List<String> ids = dnd.model.RecentItems.existing(store.project.recent, store::itemExists);
+        if (ids.isEmpty()) recentMenu.getItems().add(disabled("Nothing opened yet"));
+        for (String id : ids) {
+            TreeNode n = store.project.root.find(id);
+            if (n == null) continue;
+            MenuItem mi = new MenuItem(n.name);
+            mi.setGraphic(NodeIcons.icon(n, false));
+            mi.setOnAction(e -> openItem(id));
+            recentMenu.getItems().add(mi);
         }
     }
 
@@ -562,6 +620,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             expanded.add(store.project.root.id);
         }
         tree.setRoot(buildItem(store.project.root, expanded));
+        refreshTabIcons();
         Tab t = tabs.getSelectionModel().getSelectedItem();
         if (t != null) selectInTree((String) t.getUserData());
     }
@@ -583,10 +642,31 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
 
     private TreeCell<TreeNode> createTreeCell(boolean draggable) {
         TreeCell<TreeNode> cell = new TreeCell<>() {
+            private final javafx.beans.value.ChangeListener<Boolean> expandedListener = (o, was, now) -> show(getItem());
+
+            {
+                // the folder icon opens and closes with the folder
+                treeItemProperty().addListener((o, old, now) -> {
+                    if (old != null) old.expandedProperty().removeListener(expandedListener);
+                    if (now != null) now.expandedProperty().addListener(expandedListener);
+                });
+            }
+
+            private void show(TreeNode n) {
+                if (n == null || isEmpty()) {
+                    setText(null);
+                    setGraphic(null);
+                    return;
+                }
+                int count = n.folder ? n.countItems() : 0;
+                setText(count > 0 ? n.name + "  (" + count + ")" : n.name);
+                setGraphic(NodeIcons.icon(n, n.folder && getTreeItem() != null && getTreeItem().isExpanded()));
+            }
+
             @Override
             protected void updateItem(TreeNode n, boolean empty) {
                 super.updateItem(n, empty);
-                setText(empty || n == null ? null : (n.folder ? "[+] " : n.isBattleMap() ? "[map] " : n.isCard() ? "[card] " : n.isEncounter() ? "[enc] " : "") + n.name);
+                show(empty ? null : n);
             }
         };
         if (draggable) {
@@ -636,16 +716,28 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         dup.setOnAction(e -> duplicateSelectedCard());
         MenuItem nf = new MenuItem("New folder");
         nf.setOnAction(e -> newFolder(selectedFolder()));
-        MenuItem rn = new MenuItem("Rename");
+        MenuItem rn = new MenuItem("Rename   (F2)");
         rn.setOnAction(e -> renameSelected());
+        Menu colour = new Menu("Set colour");
+        for (NodeColors.Swatch s : NodeColors.PALETTE) {
+            MenuItem mi = new MenuItem(s.name());
+            javafx.scene.shape.Circle dot = new javafx.scene.shape.Circle(6, javafx.scene.paint.Color.web(s.hex()));
+            mi.setGraphic(dot);
+            mi.setOnAction(e -> setSelectedColour(s.hex()));
+            colour.getItems().add(mi);
+        }
+        MenuItem defaultColour = new MenuItem("Default colour");
+        defaultColour.setOnAction(e -> setSelectedColour(null));
+        colour.getItems().addAll(new SeparatorMenuItem(), defaultColour);
         MenuItem del = new MenuItem("Delete");
         del.setOnAction(e -> deleteSelected());
-        ContextMenu m = new ContextMenu(nb, nm, nc, ne, nf, new SeparatorMenuItem(), dup, rn, del);
+        ContextMenu m = new ContextMenu(nb, nm, nc, ne, nf, new SeparatorMenuItem(), dup, rn, colour, del);
         m.setOnShowing(e -> {
             TreeItem<TreeNode> it = tree.getSelectionModel().getSelectedItem();
             boolean isRoot = it == null || it.getValue() == store.project.root;
             dup.setDisable(it == null || !(it.getValue().isCard() || it.getValue().isEncounter()));
             rn.setDisable(it == null);
+            colour.setDisable(it == null);
             del.setDisable(isRoot);
         });
         return m;
@@ -736,6 +828,15 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             store.createFolder(parent, name);
             refreshTree();
         });
+    }
+
+    /** Gives the selected folder or item a colour (null = back to its default) and refreshes everything that shows it. */
+    private void setSelectedColour(String hex) {
+        TreeItem<TreeNode> it = tree.getSelectionModel().getSelectedItem();
+        if (it == null) return;
+        it.getValue().color = hex;
+        store.markProjectDirty();
+        refreshTree();
     }
 
     private void renameSelected() {

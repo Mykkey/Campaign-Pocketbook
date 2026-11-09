@@ -10,6 +10,8 @@ public class Project {
     /** Tabs that were open when the project was last closed, in order. */
     public List<String> openBoards = new ArrayList<>();
     public String activeBoard;
+    /** Ids of the items opened most recently, newest first (see RecentItems). */
+    public List<String> recent = new ArrayList<>();
     /** The adventuring party the encounter builder rates fights against. */
     public int partySize = 4;
     public int partyLevel = 3;

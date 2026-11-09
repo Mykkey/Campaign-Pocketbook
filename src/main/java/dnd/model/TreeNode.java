@@ -21,6 +21,8 @@ public class TreeNode {
     /** null (older projects) or "board" = whiteboard, "battlemap" = battlemap. Ignored for folders. */
     public String kind;
     public List<TreeNode> children = new ArrayList<>();
+    /** Chosen colour as "#RRGGBB", or null for the default colour of its kind. */
+    public String color;
 
     public TreeNode() { }
 
@@ -84,6 +86,14 @@ public class TreeNode {
     public void collectCards(List<TreeNode> out) {
         if (isCard()) out.add(this);
         for (TreeNode c : children) c.collectCards(out);
+    }
+
+    /** How many items (not folders) are inside this node, at any depth. */
+    @JsonIgnore
+    public int countItems() {
+        int n = 0;
+        for (TreeNode c : children) n += c.folder ? c.countItems() : 1;
+        return n;
     }
 
     /** Appends every encounter at or below this node. */

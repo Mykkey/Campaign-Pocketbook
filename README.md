@@ -137,6 +137,13 @@ When the party talks to someone you had not planned, press **NPC...** in the top
 - **You choose what happens to them.** Rolling only shows the NPC. **Add to board** puts the description on the open whiteboard as a note, **Save as NPC card** makes a card in an "NPCs" folder (stats borrowed from a matching creature, e.g. a guard gets guard stats, with the description in its notes, ready for a battle), and **Copy** copies the text. Each does only its own thing, so you can add one to the board without creating a card.
 - **Your own professions:** **Edit professions...** lets you add professions (name, category, which creature's stats suit them, and what they might know). They appear next to the built-in ones in every project; the built-in ones cannot be changed. They are stored in `npc-professions.json` next to your projects.
 
+## Organising your project
+- **Icons:** the project tree and the tabs show a small drawn icon for each kind of item: a folder (it opens when expanded), a whiteboard, a battlemap, a card and an encounter (crossed swords). Folders show how many items are inside them, for example `NPCs (7)`.
+- **Colours:** right-click any folder or item and choose **Set colour** to pick from ten colours (or **Default colour** to go back). The icon takes the colour in the tree and on the item's tab, so you can spot your NPCs, your maps or the current session's folder at a glance.
+- **Keyboard:** with the project tree selected, **F2** renames the selected item and **Delete** deletes it (with the usual confirmation). Delete only touches the tree item here, never the open whiteboard.
+- **Tabs:** right-click a tab for **Close**, **Close others**, **Close all** and **Reveal in tree**.
+- **Recent:** the **Recent** button in the top bar lists the last ten items you opened, newest first, for jumping back quickly.
+
 ## Credits
 The example creature cards, and any monsters and spells you import into the library, use content from the System Reference Document 5.1 by Wizards of the Coast, licensed under [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/). This app is not affiliated with or endorsed by Wizards of the Coast.
 

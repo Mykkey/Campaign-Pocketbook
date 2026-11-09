@@ -20,6 +20,14 @@ public interface ItemView {
         return false;
     }
 
+    /**
+     * Escape pressed while the tab is showing (even if focus is on a toolbar control): drop the selection and
+     * any armed tool. Returns true if it handled the key.
+     */
+    default boolean escape() {
+        return false;
+    }
+
     /** Number-key tool shortcut: switch to the tool at {@code index} (0-based). Returns true if handled. */
     boolean selectTool(int index);
 }

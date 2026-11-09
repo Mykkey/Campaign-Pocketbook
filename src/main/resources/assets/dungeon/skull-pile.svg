@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" stroke-linejoin="round" stroke-linecap="round">
+<defs><radialGradient id="r1" cx="0.4" cy="0.35" r="0.85"><stop offset="0" stop-color="#fffaf0"/><stop offset="1" stop-color="#c9c1a8"/></radialGradient><filter id="s2" x="-35%" y="-35%" width="170%" height="170%"><feDropShadow dx="2" dy="3" stdDeviation="2" flood-color="#000" flood-opacity="0.5"/></filter><radialGradient id="r3" cx="0.4" cy="0.35" r="0.85"><stop offset="0" stop-color="#fffaf0"/><stop offset="1" stop-color="#c9c1a8"/></radialGradient><radialGradient id="r4" cx="0.4" cy="0.35" r="0.85"><stop offset="0" stop-color="#fffaf0"/><stop offset="1" stop-color="#c9c1a8"/></radialGradient><radialGradient id="r5" cx="0.4" cy="0.35" r="0.85"><stop offset="0" stop-color="#fffaf0"/><stop offset="1" stop-color="#c9c1a8"/></radialGradient><radialGradient id="r6" cx="0.4" cy="0.35" r="0.85"><stop offset="0" stop-color="#fffaf0"/><stop offset="1" stop-color="#c9c1a8"/></radialGradient></defs>
+<g filter="url(#s2)"><circle cx="36" cy="60" r="14" fill="url(#r1)" stroke="#2b211c" stroke-width="1.8"/></g>
+<circle cx="31.38" cy="58.6" r="3.36" fill="#1a1612" stroke="none"/><circle cx="40.62" cy="58.6" r="3.36" fill="#1a1612" stroke="none"/><path d="M31.8 67h8.4" fill="none" stroke="#1a1612" stroke-width="1.2"/>
+<g filter="url(#s2)"><circle cx="64" cy="62" r="13" fill="url(#r3)" stroke="#2b211c" stroke-width="1.8"/></g>
+<circle cx="59.71" cy="60.7" r="3.12" fill="#1a1612" stroke="none"/><circle cx="68.29" cy="60.7" r="3.12" fill="#1a1612" stroke="none"/><path d="M60.1 68.5h7.8" fill="none" stroke="#1a1612" stroke-width="1.2"/>
+<g filter="url(#s2)"><circle cx="50" cy="36" r="14" fill="url(#r4)" stroke="#2b211c" stroke-width="1.8"/></g>
+<circle cx="45.38" cy="34.6" r="3.36" fill="#1a1612" stroke="none"/><circle cx="54.62" cy="34.6" r="3.36" fill="#1a1612" stroke="none"/><path d="M45.8 43h8.4" fill="none" stroke="#1a1612" stroke-width="1.2"/>
+<g filter="url(#s2)"><circle cx="28" cy="34" r="10" fill="url(#r5)" stroke="#2b211c" stroke-width="1.8"/></g>
+<circle cx="24.7" cy="33" r="2.4" fill="#1a1612" stroke="none"/><circle cx="31.3" cy="33" r="2.4" fill="#1a1612" stroke="none"/><path d="M25 39h6" fill="none" stroke="#1a1612" stroke-width="1.2"/>
+<g filter="url(#s2)"><circle cx="74" cy="36" r="10" fill="url(#r6)" stroke="#2b211c" stroke-width="1.8"/></g>
+<circle cx="70.7" cy="35" r="2.4" fill="#1a1612" stroke="none"/><circle cx="77.3" cy="35" r="2.4" fill="#1a1612" stroke="none"/><path d="M71 41h6" fill="none" stroke="#1a1612" stroke-width="1.2"/>
+</svg>

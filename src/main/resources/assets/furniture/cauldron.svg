@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" stroke-linejoin="round" stroke-linecap="round">
+<defs><radialGradient id="r1" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#ff7a1a" stop-opacity="0.35"/><stop offset="1" stop-color="#ff7a1a" stop-opacity="0"/></radialGradient><radialGradient id="r2" cx="0.38" cy="0.33" r="0.85"><stop offset="0" stop-color="#6b7078"/><stop offset="1" stop-color="#1c1d21"/></radialGradient><filter id="s3" x="-35%" y="-35%" width="170%" height="170%"><feDropShadow dx="3" dy="4" stdDeviation="3" flood-color="#000" flood-opacity="0.5"/></filter><radialGradient id="r4" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#9aea6a"/><stop offset="0.6" stop-color="#4aa03a"/><stop offset="1" stop-color="#245a22"/></radialGradient><filter id="s5" x="-35%" y="-35%" width="170%" height="170%"><feDropShadow dx="1.5" dy="2" stdDeviation="1.2" flood-color="#000" flood-opacity="0.5"/></filter></defs>
+<circle cx="50" cy="52" r="46" fill="url(#r1)" stroke="none"/>
+<g filter="url(#s3)"><circle cx="50" cy="50" r="34" fill="url(#r2)" stroke="#2b211c" stroke-width="2.6"/></g>
+<circle cx="50" cy="50" r="27" fill="url(#r4)" stroke="#15161a" stroke-width="2"/>
+<circle cx="48.27" cy="40.4" r="4.93" fill="none" stroke="#d6f8b0" stroke-width="1.2" opacity="0.85"/>
+<circle cx="44.55" cy="42.23" r="4.47" fill="none" stroke="#d6f8b0" stroke-width="1.2" opacity="0.85"/>
+<circle cx="41.61" cy="54.62" r="3.37" fill="none" stroke="#d6f8b0" stroke-width="1.2" opacity="0.85"/>
+<circle cx="65.63" cy="35.36" r="2.53" fill="none" stroke="#d6f8b0" stroke-width="1.2" opacity="0.85"/>
+<circle cx="59.34" cy="33.03" r="4.16" fill="none" stroke="#d6f8b0" stroke-width="1.2" opacity="0.85"/>
+<circle cx="35.53" cy="52.54" r="4.27" fill="none" stroke="#d6f8b0" stroke-width="1.2" opacity="0.85"/>
+<circle cx="37.75" cy="40.1" r="4.05" fill="none" stroke="#d6f8b0" stroke-width="1.2" opacity="0.85"/>
+<circle cx="60.91" cy="59.31" r="2.6" fill="none" stroke="#d6f8b0" stroke-width="1.2" opacity="0.85"/>
+<circle cx="48.47" cy="36.67" r="3.61" fill="none" stroke="#d6f8b0" stroke-width="1.2" opacity="0.85"/>
+<g filter="url(#s5)"><circle cx="84.39" cy="60.64" r="5" fill="#25272b" stroke="#2b211c" stroke-width="1.2"/></g>
+<g filter="url(#s5)"><circle cx="23.59" cy="74.47" r="5" fill="#25272b" stroke="#2b211c" stroke-width="1.2"/></g>
+<g filter="url(#s5)"><circle cx="42.02" cy="14.9" r="5" fill="#25272b" stroke="#2b211c" stroke-width="1.2"/></g>
+</svg>

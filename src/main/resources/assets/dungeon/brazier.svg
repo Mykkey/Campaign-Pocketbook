@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" stroke-linejoin="round" stroke-linecap="round">
+<defs><radialGradient id="r1" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#ff9a2a" stop-opacity="0.5"/><stop offset="1" stop-color="#ff9a2a" stop-opacity="0"/></radialGradient><radialGradient id="r2" cx="0.38" cy="0.33" r="0.85"><stop offset="0" stop-color="#6b7078"/><stop offset="1" stop-color="#25272b"/></radialGradient><filter id="s3" x="-35%" y="-35%" width="170%" height="170%"><feDropShadow dx="3" dy="4" stdDeviation="3" flood-color="#000" flood-opacity="0.5"/></filter><radialGradient id="r4" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#c2300c"/><stop offset="1" stop-color="#3a1410"/></radialGradient><radialGradient id="r5" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#ffb347" stop-opacity="0.5"/><stop offset="1" stop-color="#ff6a00" stop-opacity="0"/></radialGradient><linearGradient id="l6" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe27a"/><stop offset="0.5" stop-color="#f0861c"/><stop offset="1" stop-color="#c2300c"/></linearGradient><linearGradient id="l7" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff6c2"/><stop offset="1" stop-color="#ffc83a"/></linearGradient></defs>
+<circle cx="50" cy="50" r="48" fill="url(#r1)" stroke="none"/>
+<g filter="url(#s3)"><circle cx="50" cy="50" r="28" fill="url(#r2)" stroke="#2b211c" stroke-width="2.6"/></g>
+<circle cx="50" cy="50" r="21" fill="url(#r4)" stroke="#15161a" stroke-width="1.8"/>
+<circle cx="50" cy="50" r="23.8" fill="url(#r5)" stroke="none"/><path d="M50 31.8C61.2 44.4 64.0 55.6 50 62.6C36.0 55.6 38.8 44.4 50 31.8Z" fill="url(#l6)" stroke="#8a2a08" stroke-width="1.2"/><path d="M50 40.2C56.3 48.6 57.0 54.2 50 58.4C43.0 54.2 43.7 48.6 50 40.2Z" fill="url(#l7)" stroke="none"/>
+<circle cx="73.69" cy="62.94" r="3.6" fill="#25272b" stroke="#2b211c" stroke-width="1"/>
+<circle cx="26.94" cy="64.05" r="3.6" fill="#25272b" stroke="#2b211c" stroke-width="1"/>
+<circle cx="49.36" cy="23.01" r="3.6" fill="#25272b" stroke="#2b211c" stroke-width="1"/>
+</svg>

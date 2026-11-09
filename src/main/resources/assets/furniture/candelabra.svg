@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" stroke-linejoin="round" stroke-linecap="round">
+<defs><radialGradient id="r1" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#ffb347" stop-opacity="0.5"/><stop offset="1" stop-color="#ffb347" stop-opacity="0"/></radialGradient><radialGradient id="r2" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#ffe27a"/><stop offset="1" stop-color="#a8842c"/></radialGradient><filter id="s3" x="-35%" y="-35%" width="170%" height="170%"><feDropShadow dx="2" dy="3" stdDeviation="2" flood-color="#000" flood-opacity="0.5"/></filter><radialGradient id="r4" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#fff8e0"/><stop offset="1" stop-color="#d8c89a"/></radialGradient><filter id="s5" x="-35%" y="-35%" width="170%" height="170%"><feDropShadow dx="1.5" dy="2" stdDeviation="1.2" flood-color="#000" flood-opacity="0.5"/></filter><radialGradient id="r6" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#fff8e0"/><stop offset="1" stop-color="#d8c89a"/></radialGradient><radialGradient id="r7" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#fff8e0"/><stop offset="1" stop-color="#d8c89a"/></radialGradient></defs>
+<circle cx="50" cy="50" r="46" fill="url(#r1)" stroke="none"/>
+<g filter="url(#s3)"><path d="M20 56Q50 70 80 56" fill="none" stroke="#d4a838" stroke-width="4"/><path d="M50 40V66" fill="none" stroke="#d4a838" stroke-width="4"/><circle cx="50" cy="68" r="8" fill="url(#r2)" stroke="#2b211c" stroke-width="1.6"/></g>
+<g filter="url(#s5)"><circle cx="24" cy="54" r="6" fill="url(#r4)" stroke="#2b211c" stroke-width="1.2"/></g>
+<circle cx="24" cy="54" r="2.6" fill="#ffb02a" stroke="none"/>
+<g filter="url(#s5)"><circle cx="50" cy="38" r="6" fill="url(#r6)" stroke="#2b211c" stroke-width="1.2"/></g>
+<circle cx="50" cy="38" r="2.6" fill="#ffb02a" stroke="none"/>
+<g filter="url(#s5)"><circle cx="76" cy="54" r="6" fill="url(#r7)" stroke="#2b211c" stroke-width="1.2"/></g>
+<circle cx="76" cy="54" r="2.6" fill="#ffb02a" stroke="none"/>
+</svg>

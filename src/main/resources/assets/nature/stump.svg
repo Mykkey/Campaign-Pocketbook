@@ -1,8 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
-<g stroke="#3a2e28" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
-<circle cx="50" cy="50" r="34" fill="#8a5a2b"/>
-<circle cx="50" cy="50" r="24" fill="#c99a5f" stroke-width="2"/>
-<circle cx="50" cy="50" r="14" fill="none" stroke="#8a5a2b" stroke-width="2"/>
-<circle cx="50" cy="50" r="5" fill="none" stroke="#8a5a2b" stroke-width="2"/>
-</g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" stroke-linejoin="round" stroke-linecap="round">
+<defs><radialGradient id="r1" cx="0.4" cy="0.35" r="0.85"><stop offset="0" stop-color="#a8723a"/><stop offset="1" stop-color="#5e3f22"/></radialGradient><filter id="s2" x="-35%" y="-35%" width="170%" height="170%"><feDropShadow dx="3" dy="4" stdDeviation="3" flood-color="#000" flood-opacity="0.5"/></filter><radialGradient id="r3" cx="0.45" cy="0.4" r="0.8"><stop offset="0" stop-color="#e8c898"/><stop offset="1" stop-color="#c9995e"/></radialGradient></defs>
+<g filter="url(#s2)"><path d="M88.39 50 C88.82 55.97 87.34 63.56 84.02 68.61 C80.7 73.66 74.15 77.15 68.48 80.32 C62.81 83.5 56.39 87.28 50 87.66 C43.61 88.04 35.9 85.74 30.11 82.63 C24.33 79.52 18.41 74.42 15.29 68.98 C12.18 63.54 10.99 56.1 11.4 50 C11.82 43.9 14.62 37.76 17.76 32.37 C20.91 26.97 24.9 20.41 30.27 17.63 C35.64 14.84 43.53 15.51 50 15.68 C56.47 15.85 63.86 15.79 69.11 18.64 C74.36 21.49 78.26 27.56 81.47 32.78 C84.69 38.01 87.97 44.03 88.39 50Z" fill="url(#r1)" stroke="#2b211c" stroke-width="2.6"/></g>
+<circle cx="50" cy="50" r="28" fill="url(#r3)" stroke="#7a5230" stroke-width="1.6"/>
+<circle cx="50" cy="50" r="22" fill="none" stroke="#9a6e3e" stroke-width="1.2" opacity="0.9"/>
+<circle cx="50" cy="50" r="16" fill="none" stroke="#9a6e3e" stroke-width="1.2" opacity="0.9"/>
+<circle cx="50" cy="50" r="10" fill="none" stroke="#9a6e3e" stroke-width="1.2" opacity="0.9"/>
+<circle cx="50" cy="50" r="5" fill="none" stroke="#9a6e3e" stroke-width="1.2" opacity="0.9"/>
+<path d="M50 50L76 44" fill="none" stroke="#8a5f35" stroke-width="1" opacity="0.6"/>
+<circle cx="78" cy="70" r="5" fill="#f0e6d0" stroke="#8a6a46" stroke-width="1"/>
+<circle cx="78" cy="70" r="5" fill="#c0392b" stroke="none" opacity="0.0"/>
+<circle cx="22" cy="70" r="4" fill="#6aa04a" stroke="none" opacity="0.8"/>
 </svg>

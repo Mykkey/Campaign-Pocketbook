@@ -26,6 +26,10 @@ public class MapEditor extends BorderPane implements ItemView {
 
     public MapEditor(BattleMap map, ProjectStore store) {
         this.view = new MapView(map, store, ts);
+        // render the pieces this map uses in the background so the first draw doesn't stall
+        java.util.List<String> used = new java.util.ArrayList<>();
+        for (dnd.model.MapObject o : map.objects) used.add(o.assetId);
+        store.assets().warmUp(used, 256);
         setCenter(view);
         setLeft(new AssetPanel(store, ts));
         setTop(buildToolbar(map, store));
@@ -161,4 +165,6 @@ public class MapEditor extends BorderPane implements ItemView {
     @Override public boolean selectTool(int index) { return view.selectTool(index); }
 
     @Override public boolean shortcut(javafx.scene.input.KeyEvent e) { return view.shortcut(e); }
+
+    @Override public boolean escape() { return view.escape(); }
 }

@@ -111,12 +111,28 @@ public class AssetPanel extends VBox {
         }
     }
 
+    /** Renders thumbnails off the UI thread so opening the panel never stalls. */
+    private static final java.util.concurrent.ExecutorService THUMBS =
+            java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
+                Thread t = new Thread(r, "asset-thumbnails");
+                t.setDaemon(true);
+                return t;
+            });
+
     private Node tile(AssetLibrary.Asset a) {
-        Image img = lib.image(a.id, 64);
-        ImageView iv = new ImageView(img);
+        ImageView iv = new ImageView();
         iv.setFitWidth(64);
         iv.setFitHeight(56);
         iv.setPreserveRatio(true);
+        Image cached = lib.cachedImage(a.id, 64);
+        if (cached != null) {
+            iv.setImage(cached);
+        } else {
+            THUMBS.submit(() -> {
+                Image rendered = lib.image(a.id, 64);
+                if (rendered != null) javafx.application.Platform.runLater(() -> iv.setImage(rendered));
+            });
+        }
         Label name = new Label(a.name);
         name.setStyle("-fx-font-size: 10px;");
         name.setMaxWidth(70);
@@ -137,7 +153,7 @@ public class AssetPanel extends VBox {
             ClipboardContent c = new ClipboardContent();
             c.putString("asset:" + a.id);
             db.setContent(c);
-            if (img != null) db.setDragView(img, 32, 32);
+            if (iv.getImage() != null) db.setDragView(iv.getImage(), 32, 32);
             e.consume();
         });
         return box;

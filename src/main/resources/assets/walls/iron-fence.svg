@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100" width="200" height="100" stroke-linejoin="round" stroke-linecap="round">
+<defs><filter id="s1" x="-35%" y="-35%" width="170%" height="170%"><feDropShadow dx="2" dy="3" stdDeviation="1.5" flood-color="#000" flood-opacity="0.5"/></filter><radialGradient id="r2" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#6b7078"/><stop offset="1" stop-color="#25272b"/></radialGradient><radialGradient id="r3" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#6b7078"/><stop offset="1" stop-color="#25272b"/></radialGradient><radialGradient id="r4" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#6b7078"/><stop offset="1" stop-color="#25272b"/></radialGradient><radialGradient id="r5" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#6b7078"/><stop offset="1" stop-color="#25272b"/></radialGradient><radialGradient id="r6" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#6b7078"/><stop offset="1" stop-color="#25272b"/></radialGradient><radialGradient id="r7" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#6b7078"/><stop offset="1" stop-color="#25272b"/></radialGradient><radialGradient id="r8" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#6b7078"/><stop offset="1" stop-color="#25272b"/></radialGradient><radialGradient id="r9" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#6b7078"/><stop offset="1" stop-color="#25272b"/></radialGradient><radialGradient id="r10" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#6b7078"/><stop offset="1" stop-color="#25272b"/></radialGradient><radialGradient id="r11" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#6b7078"/><stop offset="1" stop-color="#25272b"/></radialGradient><radialGradient id="r12" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#6b7078"/><stop offset="1" stop-color="#25272b"/></radialGradient></defs>
+<g filter="url(#s1)"><path d="M0 42H200M0 58H200" fill="none" stroke="#2c2f34" stroke-width="3.4"/></g>
+<g filter="url(#s1)"><circle cx="6" cy="50" r="3.6" fill="url(#r2)" stroke="#15161a" stroke-width="1.2"/></g>
+<polygon points="6,42 3.8,46 8.2,46" fill="#25272b" stroke="none"/>
+<g filter="url(#s1)"><circle cx="24.8" cy="50" r="3.6" fill="url(#r3)" stroke="#15161a" stroke-width="1.2"/></g>
+<polygon points="24.8,42 22.6,46 27,46" fill="#25272b" stroke="none"/>
+<g filter="url(#s1)"><circle cx="43.6" cy="50" r="3.6" fill="url(#r4)" stroke="#15161a" stroke-width="1.2"/></g>
+<polygon points="43.6,42 41.4,46 45.8,46" fill="#25272b" stroke="none"/>
+<g filter="url(#s1)"><circle cx="62.4" cy="50" r="3.6" fill="url(#r5)" stroke="#15161a" stroke-width="1.2"/></g>
+<polygon points="62.4,42 60.2,46 64.6,46" fill="#25272b" stroke="none"/>
+<g filter="url(#s1)"><circle cx="81.2" cy="50" r="3.6" fill="url(#r6)" stroke="#15161a" stroke-width="1.2"/></g>
+<polygon points="81.2,42 79,46 83.4,46" fill="#25272b" stroke="none"/>
+<g filter="url(#s1)"><circle cx="100" cy="50" r="3.6" fill="url(#r7)" stroke="#15161a" stroke-width="1.2"/></g>
+<polygon points="100,42 97.8,46 102.2,46" fill="#25272b" stroke="none"/>
+<g filter="url(#s1)"><circle cx="118.8" cy="50" r="3.6" fill="url(#r8)" stroke="#15161a" stroke-width="1.2"/></g>
+<polygon points="118.8,42 116.6,46 121,46" fill="#25272b" stroke="none"/>
+<g filter="url(#s1)"><circle cx="137.6" cy="50" r="3.6" fill="url(#r9)" stroke="#15161a" stroke-width="1.2"/></g>
+<polygon points="137.6,42 135.4,46 139.8,46" fill="#25272b" stroke="none"/>
+<g filter="url(#s1)"><circle cx="156.4" cy="50" r="3.6" fill="url(#r10)" stroke="#15161a" stroke-width="1.2"/></g>
+<polygon points="156.4,42 154.2,46 158.6,46" fill="#25272b" stroke="none"/>
+<g filter="url(#s1)"><circle cx="175.2" cy="50" r="3.6" fill="url(#r11)" stroke="#15161a" stroke-width="1.2"/></g>
+<polygon points="175.2,42 173,46 177.4,46" fill="#25272b" stroke="none"/>
+<g filter="url(#s1)"><circle cx="194" cy="50" r="3.6" fill="url(#r12)" stroke="#15161a" stroke-width="1.2"/></g>
+<polygon points="194,42 191.8,46 196.2,46" fill="#25272b" stroke="none"/>
+</svg>

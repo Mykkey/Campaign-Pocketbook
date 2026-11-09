@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.weisj.jsvg.SVGDocument;
 import com.github.weisj.jsvg.geometry.size.FloatSize;
+import com.github.weisj.jsvg.parser.DocumentLimits;
+import com.github.weisj.jsvg.parser.LoaderContext;
 import com.github.weisj.jsvg.parser.SVGLoader;
 import com.github.weisj.jsvg.attributes.ViewBox;
 import javafx.embed.swing.SwingFXUtils;
@@ -50,6 +52,14 @@ public class AssetLibrary {
 
     private static List<Asset> builtIn;
     private static final SVGLoader LOADER = new SVGLoader();
+    /**
+     * The built-in pieces are detailed (tiled shingles, stonework, ...), so they need more shapes than
+     * JSVG's default safety cap of 2000 allows. Files the user imports keep the strict default.
+     */
+    private static final LoaderContext BUILT_IN_CONTEXT = LoaderContext.builder()
+            .documentLimits(new DocumentLimits(DocumentLimits.DEFAULT_MAX_NESTING_DEPTH,
+                    DocumentLimits.DEFAULT_MAX_USE_NESTING_DEPTH, 20000))
+            .build();
 
     private final Path importDir; // may be null (tests)
     private final Map<String, Asset> byId = new LinkedHashMap<>();
@@ -63,7 +73,7 @@ public class AssetLibrary {
     }
 
     /** Rescans built-ins and the import folder (call after importing a file). */
-    public final void reload() {
+    public final synchronized void reload() {
         byId.clear();
         for (Asset a : builtIn()) byId.put(a.id, a);
         if (importDir != null && Files.isDirectory(importDir)) {
@@ -114,16 +124,16 @@ public class AssetLibrary {
         return builtIn;
     }
 
-    public List<Asset> assets() {
+    public synchronized List<Asset> assets() {
         return new ArrayList<>(byId.values());
     }
 
-    public Asset get(String id) {
+    public synchronized Asset get(String id) {
         return byId.get(id);
     }
 
     /** Category names in display order (built-in categories first, Imported last). */
-    public List<String> categories() {
+    public synchronized List<String> categories() {
         LinkedHashSet<String> cats = new LinkedHashSet<>();
         for (Asset a : byId.values()) if (!a.imported) cats.add(a.category);
         cats.add(IMPORTED);
@@ -147,7 +157,7 @@ public class AssetLibrary {
                 }
             } else {
                 URL u = builtInUrl(id);
-                if (u != null) doc = LOADER.load(u);
+                if (u != null) doc = LOADER.load(u, BUILT_IN_CONTEXT);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -192,7 +202,7 @@ public class AssetLibrary {
      * Renders the asset so its longer side is {@code px} pixels, keeping the artwork's aspect ratio.
      * Returns null if the asset can't be loaded. Does not need the JavaFX toolkit.
      */
-    public BufferedImage render(String id, int px) {
+    public synchronized BufferedImage render(String id, int px) {
         if (id == null || px < 1) return null;
         double[] nat = naturalSize(id);
         double max = Math.max(nat[0], nat[1]);
@@ -219,8 +229,25 @@ public class AssetLibrary {
         return out;
     }
 
+    /** The cached image for this asset and size, or null if it hasn't been rendered yet (never renders). */
+    public synchronized Image cachedImage(String id, double wantedPx) {
+        int bucket = 64;
+        while (bucket < wantedPx && bucket < 1024) bucket *= 2;
+        return imageCache.get(id + "@" + bucket);
+    }
+
+    /** Renders the pieces used on a map in the background, so drawing the map doesn't hitch the first time. */
+    public void warmUp(java.util.Collection<String> assetIds, double px) {
+        java.util.Set<String> ids = new java.util.LinkedHashSet<>(assetIds);
+        Thread t = new Thread(() -> {
+            for (String id : ids) image(id, px);
+        }, "asset-warmup");
+        t.setDaemon(true);
+        t.start();
+    }
+
     /** A JavaFX image of the asset, cached per size bucket (64, 128, 256, 512, 1024 px). */
-    public Image image(String id, double wantedPx) {
+    public synchronized Image image(String id, double wantedPx) {
         int bucket = 64;
         while (bucket < wantedPx && bucket < 1024) bucket *= 2;
         String key = id + "@" + bucket;

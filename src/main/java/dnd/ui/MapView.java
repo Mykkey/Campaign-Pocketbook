@@ -915,6 +915,17 @@ public class MapView extends Pane implements ItemView {
         return true;
     }
 
+    /** Esc: deselect everything, clear the ruler, stop placing pieces and go back to the Select tool. */
+    @Override
+    public boolean escape() {
+        selected.clear();
+        rulerA = rulerB = null;
+        ts.armedAsset.set(null);
+        ts.tool.set(MapTool.SELECT);
+        redraw();
+        return true;
+    }
+
     private void onKeyPressed(KeyEvent e) {
         KeyCode k = e.getCode();
         if (k == KeyCode.SPACE) {
@@ -930,13 +941,7 @@ public class MapView extends Pane implements ItemView {
         if (e.isShortcutDown()) return;
         switch (k) {
             case DELETE, BACK_SPACE -> deleteSelected();
-            case ESCAPE -> {
-                selected.clear();
-                rulerA = rulerB = null;
-                ts.armedAsset.set(null);
-                ts.tool.set(MapTool.SELECT);
-                redraw();
-            }
+            case ESCAPE -> escape();
             case OPEN_BRACKET -> rotateSelected(-15);
             case CLOSE_BRACKET -> rotateSelected(15);
             case F -> flipSelected();

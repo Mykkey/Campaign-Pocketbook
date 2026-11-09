@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100" width="200" height="100" stroke-linejoin="round" stroke-linecap="round">
+<defs><radialGradient id="r1" cx="0.38" cy="0.33" r="0.85"><stop offset="0" stop-color="#c89a64"/><stop offset="1" stop-color="#7a5230"/></radialGradient><filter id="s2" x="-35%" y="-35%" width="170%" height="170%"><feDropShadow dx="3" dy="4" stdDeviation="3" flood-color="#000" flood-opacity="0.5"/></filter><radialGradient id="r3" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#d2a572"/><stop offset="1" stop-color="#8a5f35"/></radialGradient><radialGradient id="r4" cx="0.38" cy="0.33" r="0.85"><stop offset="0" stop-color="#c89a64"/><stop offset="1" stop-color="#7a5230"/></radialGradient><radialGradient id="r5" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#d2a572"/><stop offset="1" stop-color="#8a5f35"/></radialGradient><radialGradient id="r6" cx="0.38" cy="0.33" r="0.85"><stop offset="0" stop-color="#c89a64"/><stop offset="1" stop-color="#7a5230"/></radialGradient><radialGradient id="r7" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#d2a572"/><stop offset="1" stop-color="#8a5f35"/></radialGradient></defs>
+<g filter="url(#s2)"><circle cx="50" cy="54" r="34" fill="url(#r1)" stroke="#2b211c" stroke-width="2.4"/></g>
+<circle cx="50" cy="54" r="26.52" fill="url(#r3)" stroke="#5e3f22" stroke-width="1.5"/>
+<circle cx="50" cy="54" r="34" fill="none" stroke="#3a3f46" stroke-width="2.6"/>
+<path d="M50 30.200000000000003V77.8M38.1 33.6V74.4M61.9 33.6V74.4" fill="none" stroke="#6e4a28" stroke-width="1" opacity="0.8"/>
+<g filter="url(#s2)"><circle cx="140" cy="42" r="30" fill="url(#r4)" stroke="#2b211c" stroke-width="2.4"/></g>
+<circle cx="140" cy="42" r="23.4" fill="url(#r5)" stroke="#5e3f22" stroke-width="1.5"/>
+<circle cx="140" cy="42" r="30" fill="none" stroke="#3a3f46" stroke-width="2.6"/>
+<path d="M140 21.0V63.0M129.5 24.0V60.0M150.5 24.0V60.0" fill="none" stroke="#6e4a28" stroke-width="1" opacity="0.8"/>
+<g filter="url(#s2)"><circle cx="146" cy="76" r="20" fill="url(#r6)" stroke="#2b211c" stroke-width="2.4"/></g>
+<circle cx="146" cy="76" r="15.6" fill="url(#r7)" stroke="#5e3f22" stroke-width="1.5"/>
+<circle cx="146" cy="76" r="20" fill="none" stroke="#3a3f46" stroke-width="2.6"/>
+<path d="M146 62.0V90.0M139.0 64.0V88.0M153.0 64.0V88.0" fill="none" stroke="#6e4a28" stroke-width="1" opacity="0.8"/>
+</svg>

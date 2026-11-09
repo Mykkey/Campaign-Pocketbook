@@ -1,8 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
-<g stroke="#3a2e28" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
-<ellipse cx="22" cy="30" rx="14" ry="11" fill="#a3a3a3"/>
-<ellipse cx="52" cy="52" rx="15" ry="12" fill="#b0b0b0"/>
-<ellipse cx="80" cy="76" rx="13" ry="10" fill="#a3a3a3"/>
-<ellipse cx="78" cy="26" rx="9" ry="7" fill="#b0b0b0"/>
-</g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" stroke-linejoin="round" stroke-linecap="round">
+<defs><radialGradient id="r1" cx="0.4" cy="0.35" r="0.8"><stop offset="0" stop-color="#c4c0b6"/><stop offset="1" stop-color="#8d897f"/></radialGradient><filter id="s2" x="-35%" y="-35%" width="170%" height="170%"><feDropShadow dx="2" dy="3" stdDeviation="2" flood-color="#000" flood-opacity="0.5"/></filter><radialGradient id="r3" cx="0.4" cy="0.35" r="0.8"><stop offset="0" stop-color="#c4c0b6"/><stop offset="1" stop-color="#8d897f"/></radialGradient><radialGradient id="r4" cx="0.4" cy="0.35" r="0.8"><stop offset="0" stop-color="#c4c0b6"/><stop offset="1" stop-color="#8d897f"/></radialGradient><radialGradient id="r5" cx="0.4" cy="0.35" r="0.8"><stop offset="0" stop-color="#c4c0b6"/><stop offset="1" stop-color="#8d897f"/></radialGradient><radialGradient id="r6" cx="0.4" cy="0.35" r="0.8"><stop offset="0" stop-color="#c4c0b6"/><stop offset="1" stop-color="#8d897f"/></radialGradient></defs>
+<g filter="url(#s2)"><path d="M36.85 28 C36.68 30.43 35.43 33.34 33.35 34.98 C31.26 36.62 27.57 37.33 24.37 37.84 C21.16 38.35 16.92 39.03 14.1 38.04 C11.27 37.05 8.53 34.21 7.42 31.89 C6.3 29.57 6.24 26.34 7.42 24.11 C8.61 21.88 11.66 19.75 14.54 18.53 C17.42 17.31 21.39 16.48 24.69 16.79 C28 17.1 32.34 18.52 34.37 20.39 C36.4 22.26 37.02 25.57 36.85 28Z" fill="url(#r1)" stroke="#2b211c" stroke-width="2"/></g>
+<ellipse cx="18.25" cy="24.7" rx="6" ry="3.3" fill="#ffffff" stroke="none" opacity="0.35"/>
+<g filter="url(#s2)"><path d="M68.61 52 C68.61 54.49 66.15 57.35 63.88 59.48 C61.61 61.6 58.26 64.33 55 64.76 C51.73 65.18 47.09 63.51 44.29 62.01 C41.5 60.51 39.31 58.08 38.22 55.76 C37.12 53.44 36.75 50.46 37.71 48.1 C38.68 45.74 41.13 43.08 44.01 41.61 C46.88 40.15 51.67 38.84 54.98 39.33 C58.29 39.81 61.61 42.41 63.88 44.52 C66.16 46.63 68.62 49.51 68.61 52Z" fill="url(#r3)" stroke="#2b211c" stroke-width="2"/></g>
+<ellipse cx="48" cy="48.4" rx="6.4" ry="3.6" fill="#ffffff" stroke="none" opacity="0.35"/>
+<g filter="url(#s2)"><path d="M94.45 76 C94.23 78.39 92.27 81.11 90.23 82.74 C88.19 84.38 85.18 85.19 82.2 85.81 C79.22 86.42 74.93 87.43 72.33 86.43 C69.74 85.43 67.55 82.18 66.65 79.82 C65.75 77.46 65.93 74.55 66.94 72.27 C67.96 69.99 70.2 67.19 72.75 66.14 C75.31 65.09 79.12 65.59 82.25 65.97 C85.38 66.34 89.5 66.72 91.53 68.4 C93.57 70.07 94.67 73.61 94.45 76Z" fill="url(#r4)" stroke="#2b211c" stroke-width="2"/></g>
+<ellipse cx="76.5" cy="72.7" rx="5.6" ry="3.3" fill="#ffffff" stroke="none" opacity="0.35"/>
+<g filter="url(#s2)"><path d="M87.6 24 C87.77 25.76 87.69 28.39 86.36 29.61 C85.03 30.84 81.84 31.15 79.62 31.36 C77.4 31.57 74.81 31.66 73.04 30.88 C71.26 30.09 69.74 28.24 68.96 26.63 C68.19 25.02 67.64 22.69 68.38 21.2 C69.13 19.71 71.57 18.41 73.44 17.68 C75.31 16.95 77.59 16.6 79.58 16.82 C81.57 17.05 84.05 17.84 85.39 19.04 C86.73 20.24 87.44 22.24 87.6 24Z" fill="url(#r5)" stroke="#2b211c" stroke-width="2"/></g>
+<ellipse cx="75.5" cy="21.6" rx="4" ry="2.4" fill="#ffffff" stroke="none" opacity="0.35"/>
+<g filter="url(#s2)"><path d="M32.2 78 C32.26 79.56 32.45 81.72 31.33 82.78 C30.2 83.84 27.39 84.19 25.44 84.37 C23.5 84.54 21.33 84.49 19.67 83.83 C18.02 83.17 16.08 81.74 15.5 80.4 C14.93 79.07 15.6 77.29 16.19 75.79 C16.79 74.29 17.54 72.12 19.09 71.39 C20.64 70.66 23.52 71.05 25.5 71.39 C27.48 71.74 29.87 72.34 30.98 73.44 C32.1 74.54 32.15 76.44 32.2 78Z" fill="url(#r6)" stroke="#2b211c" stroke-width="2"/></g>
+<ellipse cx="21.75" cy="75.9" rx="3.6" ry="2.1" fill="#ffffff" stroke="none" opacity="0.35"/>
 </svg>

@@ -1,8 +1,45 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
-<g stroke="#3a2e28" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
-<circle cx="108" cy="108" r="80" fill="#1d3320" stroke="none" opacity="0.35"/>
-<path d="M100 12L124 64L186 56L140 100L184 144L120 140L100 190L80 140L16 144L60 100L14 56L76 64Z" fill="#2f5d3a"/>
-<path d="M100 40L116 76L152 74L126 100L150 128L112 124L100 156L88 124L50 128L74 100L48 74L84 76Z" fill="#3d7549" stroke="none"/>
-<circle cx="100" cy="100" r="7" fill="#6b4a2b" stroke="none"/>
-</g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" stroke-linejoin="round" stroke-linecap="round">
+<defs><radialGradient id="r1" cx="0.4" cy="0.35" r="0.8"><stop offset="0" stop-color="#2f6a3c"/><stop offset="1" stop-color="#244d2e"/></radialGradient><radialGradient id="r2" cx="0.4" cy="0.35" r="0.8"><stop offset="0" stop-color="#3a7a46"/><stop offset="1" stop-color="#2b5a35"/></radialGradient><radialGradient id="r3" cx="0.4" cy="0.35" r="0.8"><stop offset="0" stop-color="#46904f"/><stop offset="1" stop-color="#33683d"/></radialGradient><radialGradient id="r4" cx="0.4" cy="0.35" r="0.8"><stop offset="0" stop-color="#5cb065"/><stop offset="1" stop-color="#3d7a46"/></radialGradient><radialGradient id="r5" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#9a7a52"/><stop offset="1" stop-color="#5a4026"/></radialGradient></defs>
+<ellipse cx="112" cy="114" rx="86" ry="82" fill="#000" stroke="none" opacity="0.28"/>
+<polygon points="100,8 115.73,56.77 159.14,29.52 139.84,77 190.6,84.02 145.3,107.99 179.67,146 129.57,135.24 131.47,186.45 100,146 68.53,186.45 70.43,135.24 20.33,146 54.7,107.99 9.4,84.02 60.16,77 40.86,29.52 84.27,56.77" fill="url(#r1)" stroke="#102315" stroke-width="1.8"/>
+<line x1="100" y1="100" x2="100" y2="8" stroke="#142a19" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="159.14" y2="29.52" stroke="#142a19" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="190.6" y2="84.02" stroke="#142a19" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="179.67" y2="146" stroke="#142a19" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="131.47" y2="186.45" stroke="#142a19" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="68.53" y2="186.45" stroke="#142a19" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="20.33" y2="146" stroke="#142a19" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="9.4" y2="84.02" stroke="#142a19" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="40.86" y2="29.52" stroke="#142a19" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<polygon points="113.74,29.32 118.54,69.14 155.95,54.69 134.04,88.28 171.99,101.26 133.61,112.9 154.34,147.24 117.45,131.49 111.26,171.11 93.13,135.34 62.92,161.72 72.02,122.66 31.92,123.44 64.01,99.37 32.78,74.2 72.83,76.38 65.09,37.03 94.37,64.44" fill="url(#r2)" stroke="#132818" stroke-width="1.8"/>
+<line x1="100" y1="100" x2="113.74" y2="29.32" stroke="#18321d" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="155.95" y2="54.69" stroke="#18321d" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="171.99" y2="101.26" stroke="#18321d" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="154.34" y2="147.24" stroke="#18321d" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="111.26" y2="171.11" stroke="#18321d" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="62.92" y2="161.72" stroke="#18321d" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="31.92" y2="123.44" stroke="#18321d" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="32.78" y2="74.2" stroke="#18321d" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="65.09" y2="37.03" stroke="#18321d" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<polygon points="119.48,51.79 117.4,80.68 145.91,75.59 125.75,96.38 150.86,110.81 122.05,113.78 132.01,140.98 108.03,124.73 98.19,151.97 90.26,124.11 65.21,138.64 77.04,112.21 48.51,107.24 74.57,94.59 55.9,72.44 83.99,79.51 83.93,50.55 100.91,74.02" fill="url(#r3)" stroke="#172f1b" stroke-width="1.8"/>
+<line x1="100" y1="100" x2="119.48" y2="51.79" stroke="#1c3922" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="145.91" y2="75.59" stroke="#1c3922" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="150.86" y2="110.81" stroke="#1c3922" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="132.01" y2="140.98" stroke="#1c3922" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="98.19" y2="151.97" stroke="#1c3922" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="65.21" y2="138.64" stroke="#1c3922" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="48.51" y2="107.24" stroke="#1c3922" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="55.9" y2="72.44" stroke="#1c3922" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="83.93" y2="50.55" stroke="#1c3922" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<polygon points="117.43,73.16 112.78,90.37 130.6,90.64 115.98,100.84 129.46,112.5 111.7,110.91 114.53,128.51 101.95,115.88 92.8,131.18 91.29,113.42 74.44,119.26 84.7,104.68 68.04,98.33 85.27,93.75 76.6,78.18 92.74,85.74 96.1,68.24 103.6,84.41" fill="url(#r4)" stroke="#1b3720" stroke-width="1.8"/>
+<line x1="100" y1="100" x2="117.43" y2="73.16" stroke="#224326" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="130.6" y2="90.64" stroke="#224326" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="129.46" y2="112.5" stroke="#224326" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="114.53" y2="128.51" stroke="#224326" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="92.8" y2="131.18" stroke="#224326" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="74.44" y2="119.26" stroke="#224326" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="68.04" y2="98.33" stroke="#224326" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="76.6" y2="78.18" stroke="#224326" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<line x1="100" y1="100" x2="96.1" y2="68.24" stroke="#224326" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<circle cx="100" cy="100" r="8" fill="url(#r5)" stroke="#2b211c" stroke-width="1.6"/>
 </svg>

@@ -101,7 +101,7 @@ On a whiteboard, links and notes work on **selected words**, not just whole text
 - Whiteboards that link to an item show up in that item's **Backlinks** (notes are not links, so they do not). Project search also finds text inside notes.
 
 ### Name hints
-When the name of one of your cards or spell cards appears in a block of text, it gets a faint dotted underline. Hover it and a small box offers **Link** (the words become a link to that card, which then previews it on hover) or **Dismiss** (stop underlining that name in that text block; other blocks are unaffected). Names are matched as whole words, ignoring case, longest name first (so "Mira Stonehelm" wins over "Mira"), and names under three letters are ignored. **Aliases:** a card's name is matched in full, so "Jasper" alone does not match a card called "Jasper Egan". Give the card **Also known as** names (for example `Jasper, Jas, Captain Egan`, separated by commas, at least three letters each) in its Identity section, and any of those words now offers the same link. The hint box shows which card it means ("Jasper -> Jasper Egan"). A card's real name always wins if an alias clashes with another card's name, and a duplicate card does not copy the aliases. Aliases are also found by project search. Words that already have a link or note are left alone. Untick **Name hints** in the whiteboard toolbar to switch the underlines off; the choice is remembered.
+When the name of one of your cards or spell cards appears in a block of text, it gets a faint dotted underline. Hover it and a small box offers **Link** (the words become a link to that card, which then previews it on hover) or **Dismiss** (stop underlining that name in that text block; other blocks are unaffected). Names are matched as whole words, ignoring case, longest name first (so "Mira Stonehelm" wins over "Mira"), and card names under three letters are ignored (aliases can be two). **Aliases:** a card's name is matched in full, so "Jasper" alone does not match a card called "Jasper Egan". Give the card **Also known as** names (for example `Jasper, Jas, Captain Egan`, separated by commas, at least two letters each, so initials like JE work) in its Identity section, and any of those words now offers the same link. The hint box shows which card it means ("Jasper -> Jasper Egan"). A card's real name always wins if an alias clashes with another card's name, and a duplicate card does not copy the aliases. Aliases are also found by project search. Words that already have a link or note are left alone. Untick **Name hints** in the whiteboard toolbar to switch the underlines off; the choice is remembered.
 
 ## Cards (characters and monsters)
 Cards are their own item type (`+ Card` in the project tree, saved as `cards/<id>.card`). Each is a 5e-style stat block: name, kind (player / NPC / monster), size, type, alignment, AC, HP and hit dice, speed, the six ability scores (with live modifiers), saves, skills, resistances, senses, languages, CR/XP, initiative bonus, a portrait, traits, **attacks** (to-hit, damage dice, type, reach/range, extra effect), other actions, reactions, legendary actions and notes. A parchment-style stat block updates live beside the form.
@@ -178,6 +178,16 @@ When the party talks to someone you had not planned, press **NPC...** in the top
 The example creature cards, and any monsters and spells you import into the library, use content from the System Reference Document 5.1 by Wizards of the Coast, licensed under [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/). This app is not affiliated with or endorsed by Wizards of the Coast.
 
 ## For developers
+**Versions** are `1.y.z`. The `1` only changes if there is ever a second generation of the app; `y` goes up for every new feature (and `z` resets to 0); `z` goes up for a fix or small change. The version lives in `pom.xml`.
+
+**Branches.** The app's update banner reads the version in `pom.xml` on `main`, so everything that is pushed to `main` is a release. Day-to-day work happens on the `dev` branch (push it as often as you like, nobody is told about it); when a set of changes is ready, merge `dev` into `main` and push, and that is when users see the banner:
+```
+git checkout main
+git merge dev
+git push
+git checkout dev
+```
+
 ```
 mvn test           # run the unit tests
 mvn javafx:run     # run the app

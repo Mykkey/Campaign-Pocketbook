@@ -189,7 +189,7 @@ public class CardEditor extends BorderPane implements ItemView {
             for (String part : v.split(",")) if (!part.isBlank()) card.aliases.add(part.trim());
         }, "e.g. Jasper, Jas, Captain Egan");
         aliases.setTooltip(new Tooltip("Other names this card goes by, separated by commas. On whiteboards, typing one of them "
-                + "(at least 3 letters) offers to link or preview this card, just like its full name."));
+                + "(at least 2 letters) offers to link or preview this card, just like its full name."));
         VBox left = new VBox(8, labelled("Name (press Enter to apply)", name),
                 labelled("Also known as (comma separated, for name hints on whiteboards)", aliases),
                 row(labelled("Kind", kind), labelled("Size", size),

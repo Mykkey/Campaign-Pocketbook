@@ -1480,7 +1480,14 @@ public class BoardView extends Pane implements ItemView {
         if (editor == null) return null;
         javafx.scene.control.IndexRange sel = editor.getSelection();
         if (sel.getLength() == 0) return null;
-        int[] r = dnd.text.RichText.toPlainRange(editor.getText(), sel.getStart(), sel.getEnd());
+        String markup = editor.getText();
+        int[] r = dnd.text.RichText.toPlainRange(markup, sel.getStart(), sel.getEnd());
+        // double-clicking a word also selects the space after it: leave spaces at either end out of the link or note
+        String plain = dnd.text.RichText.plain(markup);
+        int end = Math.min(r[1], plain.length());
+        while (r[0] < end && Character.isWhitespace(plain.charAt(r[0]))) r[0]++;
+        while (end > r[0] && Character.isWhitespace(plain.charAt(end - 1))) end--;
+        r[1] = end;
         return r[0] < r[1] ? r : null;
     }
 

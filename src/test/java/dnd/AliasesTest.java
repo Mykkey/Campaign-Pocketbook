@@ -52,9 +52,18 @@ class AliasesTest {
 
     @Test
     void shortOrBlankAliasesAreIgnoredAndAliasesCanBeDismissed() {
-        List<ItemNames> items = List.of(new ItemNames("c", "Jasper Egan", List.of("Jp", " ", "Jasper")));
-        assertEquals(1, find("Jp and Jasper", items).size());
+        List<ItemNames> items = List.of(new ItemNames("c", "Jasper Egan", List.of("J", " ", "Jasper")));
+        assertEquals(1, find("J and Jasper", items).size());
         assertTrue(find("Jasper", items, "jasper").isEmpty());
+    }
+
+    @Test
+    void twoLetterAliasesLikeInitialsWorkButTwoLetterRealNamesStillDoNot() {
+        List<ItemNames> items = List.of(new ItemNames("c", "Jasper Egan", List.of("JE")), new ItemNames("d", "Al", List.of()));
+        List<Hint> h = find("JE nodded at je and Al", items);
+        assertEquals(2, h.size());
+        assertEquals("c", h.get(0).itemId());
+        assertEquals("c", h.get(1).itemId());
     }
 
     @Test

@@ -9,15 +9,21 @@ import java.util.Set;
 /**
  * Finds the names of cards and spell cards inside a piece of text, so the whiteboard can offer to link them. Pure
  * logic (no UI). A name matches as whole words, ignoring case, with the longest names taking priority; names inside
- * existing link/tooltip spans, names the DM dismissed and names shorter than {@link #MIN_LENGTH} are skipped.
+ * existing link/tooltip spans, names the DM dismissed and names shorter than {@link #MIN_LENGTH} (or {@link #MIN_ALIAS_LENGTH} for aliases) are skipped.
  */
 public final class NameHints {
     private NameHints() { }
 
     public static final int MIN_LENGTH = 3;
+    /** Aliases are typed in on purpose (initials like "JE"), so they may be shorter than a real name. */
+    public static final int MIN_ALIAS_LENGTH = 2;
 
     /** A name that can be offered, and the item it belongs to. */
-    public record Entry(String name, String itemId) { }
+    public record Entry(String name, String itemId, boolean alias) {
+        public Entry(String name, String itemId) {
+            this(name, itemId, false);
+        }
+    }
 
     /** A name found in the text: characters {@code start} up to {@code end} (plain-text positions). */
     public record Hint(int start, int end, String itemId, String name) { }
@@ -34,7 +40,7 @@ public final class NameHints {
         for (ItemNames i : items) out.add(new Entry(i.name(), i.itemId()));
         for (ItemNames i : items) {
             if (i.aliases() == null) continue;
-            for (String alias : i.aliases()) out.add(new Entry(alias, i.itemId()));
+            for (String alias : i.aliases()) out.add(new Entry(alias, i.itemId(), true));
         }
         return out;
     }
@@ -46,8 +52,8 @@ public final class NameHints {
         for (Entry e : entries) {
             if (e.name() == null) continue;
             String n = e.name().trim();
-            if (n.length() < MIN_LENGTH || !seen.add(n.toLowerCase(Locale.ROOT))) continue;
-            out.add(new Entry(n, e.itemId()));
+            if (n.length() < (e.alias() ? MIN_ALIAS_LENGTH : MIN_LENGTH) || !seen.add(n.toLowerCase(Locale.ROOT))) continue;
+            out.add(new Entry(n, e.itemId(), e.alias()));
         }
         out.sort(Comparator.comparingInt((Entry e) -> e.name().length()).reversed().thenComparing(e -> e.name().toLowerCase(Locale.ROOT)));
         return out;

@@ -9,7 +9,8 @@ import java.util.UUID;
  * handling, copy/paste and undo trivial. Which fields matter depends on {@link #type}.
  */
 public class BoardObject {
-    public enum Type { TEXT, STICKY, IMAGE, RECT, ELLIPSE, LINE, ARROW, STROKE }
+    /** MAP_PREVIEW shows a live thumbnail of the battlemap whose id is in {@link #link}. */
+    public enum Type { TEXT, STICKY, IMAGE, RECT, ELLIPSE, LINE, ARROW, STROKE, MAP_PREVIEW }
 
     public String id = UUID.randomUUID().toString();
     public Type type = Type.TEXT;

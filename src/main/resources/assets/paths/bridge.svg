@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100" width="200" height="100">
+<g stroke="#3a2e28" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+<rect x="0" y="14" width="200" height="72" fill="#a9794a"/>
+<path d="M20 14V86M40 14V86M60 14V86M80 14V86M100 14V86M120 14V86M140 14V86M160 14V86M180 14V86" fill="none" stroke="#7a5230" stroke-width="2"/>
+<path d="M0 14H200M0 86H200" fill="none" stroke="#5e3b1a" stroke-width="6"/>
+</g>
+</svg>

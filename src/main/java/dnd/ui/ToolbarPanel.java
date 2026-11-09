@@ -38,6 +38,8 @@ public class ToolbarPanel extends FlowPane {
 
         getChildren().add(action("Image...", "Add a picture (you can also drag files in, or paste with Ctrl+V)",
                 v -> v.addImageFromChooser(), current));
+        getChildren().add(action("Battlemap...", "Insert a live preview of a battlemap; double-click it to open the map",
+                v -> v.insertMapPreview(), current));
         getChildren().add(new Separator(Orientation.VERTICAL));
 
         // --- style

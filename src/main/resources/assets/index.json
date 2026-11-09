@@ -1,0 +1,303 @@
+[
+    {
+        "id":  "buildings/cottage",
+        "name":  "Cottage",
+        "category":  "Buildings",
+        "w":  2,
+        "h":  2
+    },
+    {
+        "id":  "buildings/house",
+        "name":  "House",
+        "category":  "Buildings",
+        "w":  3,
+        "h":  2
+    },
+    {
+        "id":  "buildings/manor",
+        "name":  "Manor",
+        "category":  "Buildings",
+        "w":  4,
+        "h":  3
+    },
+    {
+        "id":  "buildings/tavern",
+        "name":  "Tavern",
+        "category":  "Buildings",
+        "w":  3,
+        "h":  3
+    },
+    {
+        "id":  "buildings/shop",
+        "name":  "Shop",
+        "category":  "Buildings",
+        "w":  2,
+        "h":  2
+    },
+    {
+        "id":  "buildings/barn",
+        "name":  "Barn",
+        "category":  "Buildings",
+        "w":  3,
+        "h":  2
+    },
+    {
+        "id":  "buildings/tower",
+        "name":  "Tower",
+        "category":  "Buildings",
+        "w":  2,
+        "h":  2
+    },
+    {
+        "id":  "buildings/keep",
+        "name":  "Keep",
+        "category":  "Buildings",
+        "w":  4,
+        "h":  4
+    },
+    {
+        "id":  "walls/straight",
+        "name":  "Wall",
+        "category":  "Walls",
+        "w":  2,
+        "h":  1
+    },
+    {
+        "id":  "walls/corner",
+        "name":  "Wall corner",
+        "category":  "Walls",
+        "w":  1,
+        "h":  1
+    },
+    {
+        "id":  "walls/gate",
+        "name":  "Gatehouse",
+        "category":  "Walls",
+        "w":  3,
+        "h":  1
+    },
+    {
+        "id":  "walls/tower",
+        "name":  "Wall tower",
+        "category":  "Walls",
+        "w":  1,
+        "h":  1
+    },
+    {
+        "id":  "walls/battlement",
+        "name":  "Battlement",
+        "category":  "Walls",
+        "w":  2,
+        "h":  1
+    },
+    {
+        "id":  "walls/fence",
+        "name":  "Fence",
+        "category":  "Walls",
+        "w":  2,
+        "h":  1
+    },
+    {
+        "id":  "walls/door",
+        "name":  "Door",
+        "category":  "Walls",
+        "w":  1,
+        "h":  1
+    },
+    {
+        "id":  "walls/window",
+        "name":  "Window",
+        "category":  "Walls",
+        "w":  1,
+        "h":  1
+    },
+    {
+        "id":  "paths/dirt-straight",
+        "name":  "Dirt road",
+        "category":  "Paths",
+        "w":  1,
+        "h":  1
+    },
+    {
+        "id":  "paths/dirt-corner",
+        "name":  "Dirt road corner",
+        "category":  "Paths",
+        "w":  1,
+        "h":  1
+    },
+    {
+        "id":  "paths/dirt-cross",
+        "name":  "Dirt crossroads",
+        "category":  "Paths",
+        "w":  1,
+        "h":  1
+    },
+    {
+        "id":  "paths/stone-straight",
+        "name":  "Stone road",
+        "category":  "Paths",
+        "w":  1,
+        "h":  1
+    },
+    {
+        "id":  "paths/stone-corner",
+        "name":  "Stone road corner",
+        "category":  "Paths",
+        "w":  1,
+        "h":  1
+    },
+    {
+        "id":  "paths/bridge",
+        "name":  "Bridge",
+        "category":  "Paths",
+        "w":  2,
+        "h":  1
+    },
+    {
+        "id":  "paths/stairs",
+        "name":  "Stairs",
+        "category":  "Paths",
+        "w":  1,
+        "h":  1
+    },
+    {
+        "id":  "paths/stepping-stones",
+        "name":  "Stepping stones",
+        "category":  "Paths",
+        "w":  1,
+        "h":  1
+    },
+    {
+        "id":  "camp/tent",
+        "name":  "Tent",
+        "category":  "Camp",
+        "w":  2,
+        "h":  2
+    },
+    {
+        "id":  "camp/tent-round",
+        "name":  "Pavilion",
+        "category":  "Camp",
+        "w":  2,
+        "h":  2
+    },
+    {
+        "id":  "camp/campfire",
+        "name":  "Campfire",
+        "category":  "Camp",
+        "w":  1,
+        "h":  1
+    },
+    {
+        "id":  "camp/bedroll",
+        "name":  "Bedroll",
+        "category":  "Camp",
+        "w":  1,
+        "h":  2
+    },
+    {
+        "id":  "camp/barrel",
+        "name":  "Barrel",
+        "category":  "Camp",
+        "w":  1,
+        "h":  1
+    },
+    {
+        "id":  "camp/crate",
+        "name":  "Crate",
+        "category":  "Camp",
+        "w":  1,
+        "h":  1
+    },
+    {
+        "id":  "camp/cart",
+        "name":  "Cart",
+        "category":  "Camp",
+        "w":  2,
+        "h":  1
+    },
+    {
+        "id":  "camp/table",
+        "name":  "Table",
+        "category":  "Camp",
+        "w":  2,
+        "h":  1
+    },
+    {
+        "id":  "camp/chair",
+        "name":  "Chair",
+        "category":  "Camp",
+        "w":  1,
+        "h":  1
+    },
+    {
+        "id":  "camp/chest",
+        "name":  "Chest",
+        "category":  "Camp",
+        "w":  1,
+        "h":  1
+    },
+    {
+        "id":  "camp/logs",
+        "name":  "Firewood",
+        "category":  "Camp",
+        "w":  1,
+        "h":  1
+    },
+    {
+        "id":  "nature/tree-oak",
+        "name":  "Oak tree",
+        "category":  "Nature",
+        "w":  2,
+        "h":  2
+    },
+    {
+        "id":  "nature/tree-pine",
+        "name":  "Pine tree",
+        "category":  "Nature",
+        "w":  2,
+        "h":  2
+    },
+    {
+        "id":  "nature/bush",
+        "name":  "Bush",
+        "category":  "Nature",
+        "w":  1,
+        "h":  1
+    },
+    {
+        "id":  "nature/rock",
+        "name":  "Rock",
+        "category":  "Nature",
+        "w":  1,
+        "h":  1
+    },
+    {
+        "id":  "nature/boulders",
+        "name":  "Boulders",
+        "category":  "Nature",
+        "w":  2,
+        "h":  2
+    },
+    {
+        "id":  "nature/pond",
+        "name":  "Pond",
+        "category":  "Nature",
+        "w":  3,
+        "h":  2
+    },
+    {
+        "id":  "nature/flowers",
+        "name":  "Flowers",
+        "category":  "Nature",
+        "w":  1,
+        "h":  1
+    },
+    {
+        "id":  "nature/stump",
+        "name":  "Tree stump",
+        "category":  "Nature",
+        "w":  1,
+        "h":  1
+    }
+]

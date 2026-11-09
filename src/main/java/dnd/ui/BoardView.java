@@ -42,13 +42,35 @@ import java.util.*;
  * The whiteboard editor for one {@link Board}: an infinite canvas with pan/zoom, selection,
  * drawing tools, in-place text editing, undo/redo and object links.
  */
-public class BoardView extends Pane {
+public class BoardView extends Pane implements ItemView {
 
     /** What the board needs from the surrounding workspace. */
     public interface Host {
-        void openBoard(String boardId);
+        /** Opens (or focuses) the tab for a whiteboard or battlemap. */
+        void openItem(String itemId);
 
+        /** Lets the user pick any whiteboard or battlemap (for links). */
         Optional<String> pickBoard(String title);
+
+        /** Lets the user pick a battlemap only (for inserting previews). */
+        Optional<String> pickMap(String title);
+    }
+
+    @Override public String itemId() { return board.id; }
+
+    @Override
+    public void activated() {
+        refreshCursor();
+        redraw(); // battlemap previews may be out of date after editing a map in another tab
+        requestFocus();
+    }
+
+    @Override
+    public boolean selectTool(int index) {
+        Tool[] tools = Tool.values();
+        if (index < 0 || index >= tools.length) return false;
+        ts.tool.set(tools[index]);
+        return true;
     }
 
     private enum Mode { NONE, PAN, MOVE, MARQUEE, RESIZE, DRAW, SHAPE, ERASE }
@@ -245,7 +267,8 @@ public class BoardView extends Pane {
         for (String id : selected) {
             BoardObject o = board.find(id);
             if (o == null) continue;
-            double pad = 4 / zoom() + (o.type == Type.TEXT || o.type == Type.STICKY || o.type == Type.IMAGE ? 0 : o.strokeWidth / 2);
+            double pad = 4 / zoom() + (o.type == Type.TEXT || o.type == Type.STICKY || o.type == Type.IMAGE
+                    || o.type == Type.MAP_PREVIEW ? 0 : o.strokeWidth / 2);
             g.strokeRect(o.left() - pad, o.top() - pad, o.right() - o.left() + 2 * pad, o.bottom() - o.top() + 2 * pad);
         }
         g.setLineDashes((double[]) null);
@@ -330,6 +353,7 @@ public class BoardView extends Pane {
                     g.fillText("(missing image)", o.x + 6, o.y + 6);
                 }
             }
+            case MAP_PREVIEW -> drawMapPreview(g, o);
             case RECT -> {
                 if (o.fill != null) {
                     g.setFill(col(o.fill));
@@ -377,7 +401,7 @@ public class BoardView extends Pane {
     }
 
     private boolean linkOk(BoardObject o) {
-        return o.link != null && store.boardExists(o.link);
+        return o.link != null && store.itemExists(o.link);
     }
 
     private void drawLinkBadge(GraphicsContext g, BoardObject o) {
@@ -728,7 +752,7 @@ public class BoardView extends Pane {
             }
             o.w = nw;
             o.h = nh;
-        } else if (o.type == Type.IMAGE) {
+        } else if (o.type == Type.IMAGE || o.type == Type.MAP_PREVIEW) {
             o.w = Math.max(20, px - o.x);
             o.h = o.w * resizeRatio;
         } else {
@@ -778,8 +802,8 @@ public class BoardView extends Pane {
         selected.clear();
         selected.add(o.id);
         if (o.link != null) {
-            if (store.boardExists(o.link)) {
-                host.openBoard(o.link);
+            if (store.itemExists(o.link)) {
+                host.openItem(o.link);
             } else {
                 Alert a = new Alert(Alert.AlertType.INFORMATION,
                         "The whiteboard this object linked to no longer exists. Pick a new target?",
@@ -870,6 +894,7 @@ public class BoardView extends Pane {
         menu.getItems().add(item("Bring to front", !has, () -> reorder(true)));
         menu.getItems().add(item("Send to back", !has, () -> reorder(false)));
         menu.getItems().add(new SeparatorMenuItem());
+        menu.getItems().add(item("Insert battlemap preview...", false, this::insertMapPreview));
         menu.getItems().add(item("Add text here", false, () -> createText(ctxWX, ctxWY, "")));
         menu.getItems().add(item("Add sticky note here", false, () -> createSticky(ctxWX, ctxWY)));
         menu.show(this, e.getScreenX(), e.getScreenY());
@@ -1080,6 +1105,66 @@ public class BoardView extends Pane {
         }
     }
 
+    // ---- battlemap previews
+
+    private void drawMapPreview(GraphicsContext g, BoardObject o) {
+        dnd.model.BattleMap m = store.isBattleMap(o.link) ? store.battleMap(o.link) : null;
+        if (m == null) {
+            g.setFill(Color.web("#fde8e8"));
+            g.fillRect(o.x, o.y, o.w, o.h);
+            g.setStroke(Color.web("#dc2626"));
+            g.setLineWidth(2);
+            g.strokeRect(o.x, o.y, o.w, o.h);
+            g.setFill(Color.web("#dc2626"));
+            g.setFont(Font.font(16));
+            g.setTextBaseline(VPos.CENTER);
+            g.setTextAlign(TextAlignment.CENTER);
+            g.fillText("(battlemap was deleted)", o.x + o.w / 2, o.y + o.h / 2);
+            return;
+        }
+        Image img = dnd.map.MapRenderer.thumbnail(m, store.assets(), o.w * zoom());
+        g.drawImage(img, o.x, o.y, o.w, o.h);
+        g.setStroke(Color.web("#3a2e28"));
+        g.setLineWidth(2);
+        g.strokeRect(o.x, o.y, o.w, o.h);
+        // caption strip
+        double bar = Math.min(26, o.h * 0.25);
+        g.setFill(Color.web("#000000a0"));
+        g.fillRect(o.x, o.y + o.h - bar, o.w, bar);
+        g.setFill(Color.WHITE);
+        g.setFont(Font.font("System", FontWeight.BOLD, Math.max(9, bar * 0.55)));
+        g.setTextBaseline(VPos.CENTER);
+        g.setTextAlign(TextAlignment.LEFT);
+        g.fillText(m.name + "  (" + (m.gridType == dnd.model.BattleMap.GridType.HEX ? "hex" : "square") + " battlemap)",
+                o.x + 8, o.y + o.h - bar / 2);
+    }
+
+    /** Inserts a live preview of a battlemap at the centre of the view; double-clicking it opens the map. */
+    public void insertMapPreview() {
+        if (store.allMapIds().isEmpty()) {
+            Alert a = new Alert(Alert.AlertType.INFORMATION,
+                    "There are no battlemaps in this project yet. Create one with + Battlemap in the project tree.");
+            a.setHeaderText(null);
+            a.showAndWait();
+            return;
+        }
+        host.pickMap("Insert battlemap preview").ifPresent(mapId -> {
+            dnd.model.BattleMap m = store.battleMap(mapId);
+            if (m == null) return;
+            BoardObject o = new BoardObject(Type.MAP_PREVIEW);
+            o.link = mapId;
+            o.w = 360;
+            o.h = o.w / dnd.map.MapRenderer.aspect(m);
+            o.x = viewCenterX() - o.w / 2;
+            o.y = viewCenterY() - o.h / 2;
+            checkpoint();
+            board.objects.add(o);
+            selected.clear();
+            selected.add(o.id);
+            changed();
+        });
+    }
+
     // ---- images
 
     public void addImageFromChooser() {
@@ -1183,7 +1268,8 @@ public class BoardView extends Pane {
                     else if (o.type == Type.RECT || o.type == Type.ELLIPSE) o.fill = ts.useFill.get() ? hex(ts.fill.get()) : null;
                 }
                 case "width" -> {
-                    if (o.type != Type.TEXT && o.type != Type.STICKY && o.type != Type.IMAGE) o.strokeWidth = ts.width.get();
+                    if (o.type != Type.TEXT && o.type != Type.STICKY && o.type != Type.IMAGE
+                            && o.type != Type.MAP_PREVIEW) o.strokeWidth = ts.width.get();
                 }
                 case "font" -> {
                     if (o.type == Type.TEXT || o.type == Type.STICKY) {

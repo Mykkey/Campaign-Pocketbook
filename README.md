@@ -56,6 +56,21 @@ Projects are saved as plain files in `~/DnDCampaignNotes/<project name>/` (`proj
 ### Tool shortcuts
 Press a number key to switch tools: **1** Select, **2** Hand, **3** Text, **4** Sticky, **5** Pen, **6** Eraser, **7** Rect, **8** Ellipse, **9** Line, **0** Arrow. The eraser only removes pen drawings.
 
+## Battlemaps
+Battlemaps are a separate item type next to whiteboards, saved as `maps/<id>.battlemap` in your project folder.
+
+- **Create one:** **+ Battlemap** in the project tree (or right-click > New battlemap). Choose **Squares** or **Hexagons**, the map size in cells, and the cell size.
+- **Side panel of pieces:** ~40 built-in vector pieces (buildings, walls, paths, camp items, trees and rocks). Click a piece, then click the map to place it as often as you like (Esc to stop), or drag it onto the map. **Import SVG / PNG...** adds your own pieces; they are copied into the project's `assets` folder.
+- **Tools** (number keys 1-6): Select, Hand, Terrain, Piece, Token, Ruler.
+  - **Terrain:** paint grass, dirt, sand, stone, wood, water, snow or lava onto cells. Drag to paint, choose *Erase* to clear, change the brush size.
+  - **Select:** move pieces (with **Snap** they line up with the grid), drag the round handle to rotate in 15 degree steps (hold Alt for free rotation), drag the square corner to resize (hold Shift to stretch). `[` / `]` rotate, `F` flips, right-click for front/back, copy, duplicate and delete.
+  - **Selecting:** click a piece or token (clicking a transparent corner of a piece picks whatever is underneath). **Ctrl+click** (or Shift+click) adds or removes exactly that item from the selection; Ctrl+drag a box to add everything inside it; Ctrl+A selects all.
+  - **Copy / paste:** Ctrl+C, Ctrl+X, Ctrl+V and Ctrl+D (duplicate) work on pieces and tokens, including between maps, and keep working when you have just used the toolbar.
+  - **Token:** click a cell for a coloured token; double-click it to rename; right-click to set its size (medium to gargantuan).
+  - **Ruler:** drag to measure distance in cells and feet (5 ft per cell).
+- **Preview on a whiteboard:** on a whiteboard click **Battlemap...** (or right-click > Insert battlemap preview). It shows a live thumbnail that updates when you edit the map; double-click it to open the map. Previews also show up in Backlinks.
+- Map names and token labels are included in project search. Undo/redo, copy/paste and autosave work like on whiteboards.
+
 ## Name generator
 Click **Names...** in the top bar (or press Ctrl+G), pick a race and optionally a gender, and it rolls first + last names. Select one and hit **Copy**, or **Add to board** (or double-click a name) to drop it onto the current whiteboard as text. Races: Human, Elf, Dwarf, Halfling, Gnome, Half-Elf, Half-Orc, Tiefling, Dragonborn, Orc, Goblin, Tabaxi, Aasimar, Genasi, Goliath, Kobold and Tortle.
 

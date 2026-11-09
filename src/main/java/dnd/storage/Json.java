@@ -27,6 +27,14 @@ public final class Json {
         }
     }
 
+    public static <T> T read(String json, Class<T> type) {
+        try {
+            return MAPPER.readValue(json, type);
+        } catch (JsonProcessingException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     public static List<BoardObject> readObjects(String json) {
         try {
             return MAPPER.readValue(json, new TypeReference<List<BoardObject>>() { });

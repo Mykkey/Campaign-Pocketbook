@@ -48,6 +48,23 @@ public final class SearchService {
                 }
             }
         }
+
+        // battlemaps: by name, and by token label
+        List<TreeNode> maps = new ArrayList<>();
+        store.project.root.collectMaps(maps);
+        for (TreeNode n : maps) {
+            if (n.name.toLowerCase(Locale.ROOT).contains(q)) {
+                out.add(new Result(n.id, n.name, null, "Battlemap"));
+            }
+            dnd.model.BattleMap m = store.battleMap(n.id);
+            if (m == null) continue;
+            for (dnd.model.MapToken t : m.tokens) {
+                if (t.label != null && t.label.toLowerCase(Locale.ROOT).contains(q)) {
+                    out.add(new Result(n.id, n.name, null, "Token \"" + t.label + "\""));
+                    if (out.size() >= limit) return out;
+                }
+            }
+        }
         return out;
     }
 
@@ -68,6 +85,7 @@ public final class SearchService {
     }
 
     static String snippet(BoardObject o) {
+        if (o.type == BoardObject.Type.MAP_PREVIEW) return "battlemap preview";
         if (o.text == null || o.text.isBlank()) return o.type.name().toLowerCase(Locale.ROOT);
         String s = o.text.replace('\n', ' ').trim();
         return s.length() > 60 ? s.substring(0, 57) + "..." : s;

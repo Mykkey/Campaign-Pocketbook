@@ -44,6 +44,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
     private final TextField search = new TextField();
     private final ContextMenu searchResults = new ContextMenu();
     private final PauseTransition saver = new PauseTransition(Duration.seconds(1));
+    private final ToolbarPanel toolbar;
     private boolean suppressHistory;
     private boolean restoring;
 
@@ -61,12 +62,15 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         newBoard.setOnAction(e -> newBoard(selectedFolder()));
         Button newFolder = new Button("+ Folder");
         newFolder.setOnAction(e -> newFolder(selectedFolder()));
-        HBox treeButtons = new HBox(6, newBoard, newFolder);
+        Button newMap = new Button("+ Battlemap");
+        newMap.setTooltip(new Tooltip("Create a square or hex battlemap"));
+        newMap.setOnAction(e -> newBattleMap(selectedFolder()));
+        HBox treeButtons = new HBox(6, newBoard, newMap, newFolder);
         tree.setCellFactory(v -> createTreeCell(true));
         tree.setOnMouseClicked(e -> {
             if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2) {
                 TreeItem<TreeNode> it = tree.getSelectionModel().getSelectedItem();
-                if (it != null && !it.getValue().folder) openBoard(it.getValue().id);
+                if (it != null && !it.getValue().folder) openItem(it.getValue().id);
             }
         });
         tree.setContextMenu(buildTreeMenu());
@@ -98,13 +102,13 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         nav.setAlignment(Pos.CENTER_LEFT);
         nav.setPadding(new Insets(6, 8, 0, 8));
 
-        ToolbarPanel toolbar = new ToolbarPanel(ts, this::currentView);
+        toolbar = new ToolbarPanel(ts, this::currentView);
         VBox top = new VBox(new UpdateBanner(hostServices), nav, toolbar);
         setTop(top);
 
         // ---- centre: tabs (with a hint behind them while no board is open)
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
-        Label hint = new Label("Double-click a whiteboard in the project tree to open it.");
+        Label hint = new Label("Double-click a whiteboard or battlemap in the project tree to open it.");
         hint.setStyle("-fx-text-fill: #888;");
         tabs.visibleProperty().bind(Bindings.isNotEmpty(tabs.getTabs()));
         StackPane center = new StackPane(hint, tabs);
@@ -136,7 +140,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             // Ctrl+Z / Ctrl+Y and number keys 1..9,0 = tools, unless the user is typing in a text field.
             scene.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, ev -> {
                 if (scene.getFocusOwner() instanceof TextInputControl) return;
-                BoardView v = currentView();
+                ItemView v = currentItem();
                 if (v == null) return;
                 KeyCode k = ev.getCode();
                 if (ev.isShortcutDown() && !ev.isAltDown()) {
@@ -146,6 +150,8 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
                     } else if (k == KeyCode.Y) {
                         v.redo();
                         ev.consume();
+                    } else if (v.shortcut(ev)) {
+                        ev.consume();
                     }
                     return;
                 }
@@ -153,11 +159,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
                 int idx = k.isDigitKey() ? Integer.parseInt(k.getName()) : -1;
                 if (idx < 0) return;
                 int toolIndex = (idx + 9) % 10; // 1 -> 0 ... 9 -> 8, 0 -> 9
-                Tool[] tools = Tool.values();
-                if (toolIndex < tools.length) {
-                    ts.tool.set(tools[toolIndex]);
-                    ev.consume();
-                }
+                if (v.selectTool(toolIndex)) ev.consume();
             });
             scene.getAccelerators().put(new KeyCodeCombination(KeyCode.LEFT, KeyCombination.ALT_DOWN), this::goBack);
             scene.getAccelerators().put(new KeyCodeCombination(KeyCode.RIGHT, KeyCombination.ALT_DOWN), this::goForward);
@@ -197,15 +199,16 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
     }
 
     private void restoreTabs() {
+        // opening each tab overwrites activeBoard, so remember which one was selected before we start
+        String active = store.project.activeBoard;
         restoring = true;
         try {
             for (String id : new ArrayList<>(store.project.openBoards)) {
-                if (store.boardExists(id)) openBoard(id);
+                if (store.itemExists(id)) openItem(id);
             }
         } finally {
             restoring = false;
         }
-        String active = store.project.activeBoard;
         if (active != null && open.containsKey(active)) {
             tabs.getSelectionModel().select(open.get(active));
         }
@@ -223,26 +226,43 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
 
     // ================================================================ tabs & navigation
 
+    /** The whiteboard in the selected tab, or null if the tab is a battlemap (or nothing is open). */
     private BoardView currentView() {
         Tab t = tabs.getSelectionModel().getSelectedItem();
-        return t == null ? null : (BoardView) t.getContent();
+        return t != null && t.getContent() instanceof BoardView v ? v : null;
+    }
+
+    /** Whatever is in the selected tab, whiteboard or battlemap. */
+    private ItemView currentItem() {
+        Tab t = tabs.getSelectionModel().getSelectedItem();
+        return t != null && t.getContent() instanceof ItemView v ? v : null;
     }
 
     private BoardView viewFor(String boardId) {
         Tab t = open.get(boardId);
-        return t == null ? null : (BoardView) t.getContent();
+        return t != null && t.getContent() instanceof BoardView v ? v : null;
     }
 
     @Override
-    public void openBoard(String id) {
+    public void openItem(String id) {
         Tab t = open.get(id);
         if (t == null) {
-            Board b = store.board(id);
-            if (b == null) {
-                new Alert(Alert.AlertType.WARNING, "That whiteboard could not be found.").show();
-                return;
+            Node view;
+            if (store.isBattleMap(id)) {
+                dnd.model.BattleMap m = store.battleMap(id);
+                if (m == null) {
+                    new Alert(Alert.AlertType.WARNING, "That battlemap could not be found.").show();
+                    return;
+                }
+                view = new MapEditor(m, store);
+            } else {
+                Board b = store.board(id);
+                if (b == null) {
+                    new Alert(Alert.AlertType.WARNING, "That whiteboard could not be found.").show();
+                    return;
+                }
+                view = new BoardView(b, store, ts, this);
             }
-            BoardView view = new BoardView(b, store, ts, this);
             t = new Tab(store.boardName(id), view);
             t.setUserData(id);
             t.setOnClosed(e -> {
@@ -268,9 +288,11 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         updateTrail();
         updateNavButtons();
         selectInTree(id);
-        BoardView v = (BoardView) t.getContent();
-        v.refreshCursor();
-        Platform.runLater(v::requestFocus);
+        boolean whiteboard = t.getContent() instanceof BoardView;
+        toolbar.setVisible(whiteboard);
+        toolbar.setManaged(whiteboard);
+        ItemView v = (ItemView) t.getContent();
+        Platform.runLater(v::activated);
     }
 
     private void goBack() {
@@ -283,14 +305,14 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
 
     private void step(String id) {
         if (id == null) return;
-        if (!store.boardExists(id)) {
+        if (!store.itemExists(id)) {
             history.forget(id);
             updateNavButtons();
             return;
         }
         suppressHistory = true;
         try {
-            openBoard(id);
+            openItem(id);
         } finally {
             suppressHistory = false;
         }
@@ -326,7 +348,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
                 trail.getChildren().add(l);
             } else {
                 Hyperlink h = new Hyperlink(store.boardName(id));
-                h.setOnAction(e -> openBoard(id));
+                h.setOnAction(e -> openItem(id));
                 h.setFocusTraversable(false);
                 trail.getChildren().add(h);
             }
@@ -335,12 +357,12 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
 
     private void rebuildBacklinks() {
         backlinks.getItems().clear();
-        BoardView v = currentView();
+        ItemView v = currentItem();
         if (v == null) {
-            backlinks.getItems().add(disabled("No board open"));
+            backlinks.getItems().add(disabled("Nothing open"));
             return;
         }
-        List<SearchService.Result> res = SearchService.backlinks(store, v.board().id);
+        List<SearchService.Result> res = SearchService.backlinks(store, v.itemId());
         if (res.isEmpty()) backlinks.getItems().add(disabled("Nothing links here yet"));
         for (SearchService.Result r : res) {
             MenuItem m = new MenuItem(r.boardName + "  -  " + r.snippet);
@@ -368,7 +390,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
     }
 
     private void showResult(SearchService.Result r) {
-        openBoard(r.boardId);
+        openItem(r.boardId);
         if (r.objectId != null) {
             BoardView v = viewFor(r.boardId);
             if (v != null) Platform.runLater(() -> v.focusObject(r.objectId));
@@ -440,7 +462,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             @Override
             protected void updateItem(TreeNode n, boolean empty) {
                 super.updateItem(n, empty);
-                setText(empty || n == null ? null : (n.folder ? "[+] " : "") + n.name);
+                setText(empty || n == null ? null : (n.folder ? "[+] " : n.isBattleMap() ? "[map] " : "") + n.name);
             }
         };
         if (draggable) {
@@ -480,13 +502,15 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
     private ContextMenu buildTreeMenu() {
         MenuItem nb = new MenuItem("New whiteboard");
         nb.setOnAction(e -> newBoard(selectedFolder()));
+        MenuItem nm = new MenuItem("New battlemap...");
+        nm.setOnAction(e -> newBattleMap(selectedFolder()));
         MenuItem nf = new MenuItem("New folder");
         nf.setOnAction(e -> newFolder(selectedFolder()));
         MenuItem rn = new MenuItem("Rename");
         rn.setOnAction(e -> renameSelected());
         MenuItem del = new MenuItem("Delete");
         del.setOnAction(e -> deleteSelected());
-        ContextMenu m = new ContextMenu(nb, nf, new SeparatorMenuItem(), rn, del);
+        ContextMenu m = new ContextMenu(nb, nm, nf, new SeparatorMenuItem(), rn, del);
         m.setOnShowing(e -> {
             TreeItem<TreeNode> it = tree.getSelectionModel().getSelectedItem();
             boolean isRoot = it == null || it.getValue() == store.project.root;
@@ -518,7 +542,16 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         ask("New whiteboard", "Whiteboard name:", "New Whiteboard").ifPresent(name -> {
             Board b = store.createBoard(parent, name);
             refreshTree();
-            openBoard(b.id);
+            openItem(b.id);
+        });
+    }
+
+    private void newBattleMap(TreeNode parent) {
+        NewBattleMapDialog.show(getScene().getWindow()).ifPresent(spec -> {
+            dnd.model.BattleMap m = store.createBattleMap(parent, spec.name(), spec.type(),
+                    spec.cols(), spec.rows(), spec.cellSize());
+            refreshTree();
+            openItem(m.id);
         });
     }
 
@@ -549,12 +582,12 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Alert a = new Alert(Alert.AlertType.CONFIRMATION,
                 "Delete \"" + n.name + "\"" + (n.folder ? " and everything inside it" : "") + "? This cannot be undone.",
                 ButtonType.OK, ButtonType.CANCEL);
-        a.setHeaderText("Delete " + (n.folder ? "folder" : "whiteboard"));
+        a.setHeaderText("Delete " + (n.folder ? "folder" : n.isBattleMap() ? "battlemap" : "whiteboard"));
         Optional<ButtonType> r = a.showAndWait();
         if (r.isEmpty() || r.get() != ButtonType.OK) return;
 
         List<TreeNode> boards = new ArrayList<>();
-        n.collectBoards(boards);
+        n.collectItems(boards);
         for (TreeNode b : boards) {
             closeTab(b.id);
             history.forget(b.id);
@@ -571,11 +604,21 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
 
     @Override
     public Optional<String> pickBoard(String title) {
+        return pickItem(title, "Choose the whiteboard or battlemap to link to", false);
+    }
+
+    @Override
+    public Optional<String> pickMap(String title) {
+        return pickItem(title, "Choose a battlemap", true);
+    }
+
+    private Optional<String> pickItem(String title, String header, boolean mapsOnly) {
         Dialog<String> d = new Dialog<>();
         d.setTitle(title);
-        d.setHeaderText("Choose the whiteboard to link to");
+        d.setHeaderText(header);
         d.initOwner(getScene().getWindow());
 
+        java.util.function.Predicate<TreeNode> pickable = n -> mapsOnly ? n.isBattleMap() : !n.folder;
         TreeView<TreeNode> tv = new TreeView<>(buildItem(store.project.root, null));
         tv.setCellFactory(v -> createTreeCell(false));
         tv.setPrefSize(360, 420);
@@ -584,17 +627,17 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Node ok = d.getDialogPane().lookupButton(ButtonType.OK);
         ok.setDisable(true);
         tv.getSelectionModel().selectedItemProperty().addListener((o, a, n) ->
-                ok.setDisable(n == null || n.getValue().folder));
+                ok.setDisable(n == null || !pickable.test(n.getValue())));
         tv.setOnMouseClicked(e -> {
             TreeItem<TreeNode> s = tv.getSelectionModel().getSelectedItem();
-            if (e.getClickCount() == 2 && s != null && !s.getValue().folder) {
+            if (e.getClickCount() == 2 && s != null && pickable.test(s.getValue())) {
                 d.setResult(s.getValue().id);
                 d.close();
             }
         });
         d.setResultConverter(bt -> {
             TreeItem<TreeNode> s = tv.getSelectionModel().getSelectedItem();
-            return bt == ButtonType.OK && s != null && !s.getValue().folder ? s.getValue().id : null;
+            return bt == ButtonType.OK && s != null && pickable.test(s.getValue()) ? s.getValue().id : null;
         });
         return d.showAndWait();
     }

@@ -44,24 +44,24 @@ public class ToolbarPanel extends FlowPane {
 
         // --- style
         ColorPicker color = new ColorPicker(ts.color.get());
-        color.setTooltip(new Tooltip("Text / outline colour (applies to the selection too)"));
+        color.setTooltip(IconButtons.tip("Text / outline colour (applies to the selection too)"));
         color.setOnAction(e -> ts.color.set(color.getValue()));
         color.setStyle("-fx-color-label-visible: false;"); // just the swatch, not the hex code
         ColorPicker fill = new ColorPicker(ts.fill.get());
-        fill.setTooltip(new Tooltip("Sticky note colour / shape fill"));
+        fill.setTooltip(IconButtons.tip("Sticky note colour / shape fill"));
         fill.setOnAction(e -> ts.fill.set(fill.getValue()));
         fill.setStyle("-fx-color-label-visible: false;");
         ToggleButton useFill = IconButtons.switchToggle("fill-shapes", "Fill shapes: draw rectangles and ellipses filled with the fill colour", ts.useFill);
 
         Spinner<Integer> width = new Spinner<>(1, 60, ts.width.get());
         width.setPrefWidth(70);
-        width.setTooltip(new Tooltip("Line / pen width"));
+        width.setTooltip(IconButtons.tip("Line / pen width"));
         width.valueProperty().addListener((o, a, n) -> {
             if (n != null) ts.width.set(n);
         });
         Spinner<Integer> font = new Spinner<>(8, 200, ts.fontSize.get());
         font.setPrefWidth(75);
-        font.setTooltip(new Tooltip("Font size"));
+        font.setTooltip(IconButtons.tip("Font size"));
         font.valueProperty().addListener((o, a, n) -> {
             if (n != null) ts.fontSize.set(n);
         });
@@ -71,7 +71,7 @@ public class ToolbarPanel extends FlowPane {
         bold.setMinWidth(30);
         bold.setStyle("-fx-font-weight: bold;");
         bold.setFocusTraversable(false);
-        bold.setTooltip(new Tooltip("Bold. While typing: the selected words (Ctrl+B). Otherwise: the whole text or sticky note"));
+        bold.setTooltip(IconButtons.tip("Bold. While typing: the selected words (Ctrl+B). Otherwise: the whole text or sticky note"));
         bold.setSelected(ts.bold.get());
         ts.bold.addListener((o, a, n) -> bold.setSelected(n));
         bold.setOnAction(e -> {
@@ -88,7 +88,7 @@ public class ToolbarPanel extends FlowPane {
         italic.setMinWidth(30);
         italic.setStyle("-fx-font-style: italic;");
         italic.setFocusTraversable(false);
-        italic.setTooltip(new Tooltip("Italic. While typing: the selected words (Ctrl+I). Otherwise: the whole text or sticky note"));
+        italic.setTooltip(IconButtons.tip("Italic. While typing: the selected words (Ctrl+I). Otherwise: the whole text or sticky note"));
         italic.setSelected(ts.italic.get());
         ts.italic.addListener((o, a, n) -> italic.setSelected(n));
         italic.setOnAction(e -> {

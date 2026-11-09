@@ -144,7 +144,7 @@ final class BattleScreen implements BattleContext {
         ts.templateShape.addListener((o, a, n) -> shape.setValue(n));
         Spinner<Integer> feet = new Spinner<>(5, 300, ts.templateFeet.get(), 5);
         feet.setPrefWidth(78);
-        feet.setTooltip(new Tooltip("Size in feet: radius of a circle, length of a cone or line, side of a cube"));
+        feet.setTooltip(IconButtons.tip("Size in feet: radius of a circle, length of a cone or line, side of a cube"));
         feet.valueProperty().addListener((o, a, n) -> {
             if (n != null) ts.templateFeet.set(n);
         });

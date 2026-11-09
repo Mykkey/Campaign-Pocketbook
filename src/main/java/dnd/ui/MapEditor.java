@@ -107,7 +107,7 @@ public class MapEditor extends BorderPane implements ItemView {
         terrain.getItems().setAll(items);
         terrain.setValue(Terrain.GRASS);
         terrain.setFocusTraversable(false);
-        terrain.setTooltip(new Tooltip("Ground to paint with the Terrain tool"));
+        terrain.setTooltip(IconButtons.tip("Ground to paint with the Terrain tool"));
         terrain.setCellFactory(lv -> terrainCell());
         terrain.setButtonCell(terrainCell());
         terrain.valueProperty().addListener((o, a, n) -> {
@@ -116,14 +116,14 @@ public class MapEditor extends BorderPane implements ItemView {
         });
         Spinner<Integer> brush = new Spinner<>(1, 6, 1);
         brush.setPrefWidth(70);
-        brush.setTooltip(new Tooltip("Terrain brush size (cells)"));
+        brush.setTooltip(IconButtons.tip("Terrain brush size (cells)"));
         brush.valueProperty().addListener((o, a, n) -> {
             if (n != null) ts.brush.set(n);
         });
         bar.getChildren().add(toolGroup(MapTool.TERRAIN, new Label("Terrain"), terrain, new Label("Brush"), brush));
 
         ColorPicker tokenColor = new ColorPicker(ts.tokenColor.get());
-        tokenColor.setTooltip(new Tooltip("Token colour (also recolours selected tokens)"));
+        tokenColor.setTooltip(IconButtons.tip("Token colour (also recolours selected tokens)"));
         tokenColor.setStyle("-fx-color-label-visible: false;");
         tokenColor.setOnAction(e -> {
             ts.tokenColor.set(tokenColor.getValue());
@@ -146,7 +146,7 @@ public class MapEditor extends BorderPane implements ItemView {
         fogMode.getItems().setAll("Reveal brush", "Hide brush", "Reveal rectangle", "Hide rectangle");
         fogMode.setValue("Reveal brush");
         fogMode.setFocusTraversable(false);
-        fogMode.setTooltip(new Tooltip("What the Fog tool (key 7) does when you click or drag on the map"));
+        fogMode.setTooltip(IconButtons.tip("What the Fog tool (key 7) does when you click or drag on the map"));
         fogMode.setOnAction(e -> {
             int i = fogMode.getItems().indexOf(fogMode.getValue());
             ts.fogReveal.set(i == 0 || i == 2);
@@ -169,7 +169,7 @@ public class MapEditor extends BorderPane implements ItemView {
         ComboBox<dnd.model.AreaTemplate.Shape> shape = new ComboBox<>(FXCollections.observableArrayList(dnd.model.AreaTemplate.Shape.values()));
         shape.setValue(ts.templateShape.get());
         shape.setFocusTraversable(false);
-        shape.setTooltip(new Tooltip("Shape of the area the Area tool (key 8) lays over the map"));
+        shape.setTooltip(IconButtons.tip("Shape of the area the Area tool (key 8) lays over the map"));
         shape.valueProperty().addListener((o, a, n) -> {
             if (n == null) return;
             ts.templateShape.set(n);
@@ -177,7 +177,7 @@ public class MapEditor extends BorderPane implements ItemView {
         });
         Spinner<Integer> feet = new Spinner<>(5, 300, ts.templateFeet.get(), 5);
         feet.setPrefWidth(78);
-        feet.setTooltip(new Tooltip("Size in feet: radius of a circle, length of a cone or line, side of a cube"));
+        feet.setTooltip(IconButtons.tip("Size in feet: radius of a circle, length of a cone or line, side of a cube"));
         feet.valueProperty().addListener((o, a, n) -> {
             if (n != null) ts.templateFeet.set(n);
         });
@@ -189,7 +189,7 @@ public class MapEditor extends BorderPane implements ItemView {
         ComboBox<dnd.map.LightPresets.Preset> lightKind = new ComboBox<>(FXCollections.observableArrayList(dnd.map.LightPresets.ALL));
         lightKind.setValue(ts.lightPreset.get());
         lightKind.setFocusTraversable(false);
-        lightKind.setTooltip(new Tooltip("Kind of light the Light tool (key 0) places: bright light, then dim light, in feet"));
+        lightKind.setTooltip(IconButtons.tip("Kind of light the Light tool (key 0) places: bright light, then dim light, in feet"));
         lightKind.valueProperty().addListener((o, a, n) -> {
             if (n == null) return;
             ts.lightPreset.set(n);
@@ -306,7 +306,7 @@ public class MapEditor extends BorderPane implements ItemView {
     private Button action(String text, String tip, Runnable run) {
         Button b = new Button(text);
         b.setFocusTraversable(false);
-        b.setTooltip(new Tooltip(tip));
+        b.setTooltip(IconButtons.tip(tip));
         b.setOnAction(e -> {
             run.run();
             view.requestFocus();

@@ -1,0 +1,52 @@
+{
+  "kind": "MONSTER",
+  "size": "Medium",
+  "creatureType": "humanoid",
+  "alignment": "any non-lawful alignment",
+  "acNote": "leather armor",
+  "hitDice": "2d8+2",
+  "speed": "30 ft.",
+  "proficiency": 2,
+  "saves": "",
+  "skills": "",
+  "vulnerabilities": "",
+  "resistances": "",
+  "immunities": "",
+  "conditionImmunities": "",
+  "senses": "passive Perception 10",
+  "languages": "any one language (usually Common)",
+  "challenge": "1/8",
+  "xp": 25,
+  "traits": [],
+  "attacks": [
+    {
+      "name": "Scimitar",
+      "toHit": 3,
+      "damage": "1d6+1",
+      "damageType": "slashing",
+      "reach": "5 ft.",
+      "text": ""
+    },
+    {
+      "name": "Light Crossbow",
+      "toHit": 3,
+      "damage": "1d8+1",
+      "damageType": "piercing",
+      "reach": "80/320 ft.",
+      "text": ""
+    }
+  ],
+  "actions": [],
+  "reactions": [],
+  "legendary": [],
+  "notes": "",
+  "name": "Bandit",
+  "ac": 12,
+  "hpMax": 11,
+  "str": 11,
+  "dex": 12,
+  "con": 12,
+  "intel": 10,
+  "wis": 10,
+  "cha": 10
+}

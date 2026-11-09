@@ -1,0 +1,52 @@
+{
+  "kind": "MONSTER",
+  "size": "Medium",
+  "creatureType": "undead",
+  "alignment": "lawful evil",
+  "acNote": "armor scraps",
+  "hitDice": "2d8+4",
+  "speed": "30 ft.",
+  "proficiency": 2,
+  "saves": "",
+  "skills": "",
+  "vulnerabilities": "bludgeoning",
+  "resistances": "",
+  "immunities": "poison",
+  "conditionImmunities": "exhaustion, poisoned",
+  "senses": "darkvision 60 ft., passive Perception 9",
+  "languages": "understands the languages it knew in life but can't speak",
+  "challenge": "1/4",
+  "xp": 50,
+  "traits": [],
+  "attacks": [
+    {
+      "name": "Shortsword",
+      "toHit": 4,
+      "damage": "1d6+2",
+      "damageType": "piercing",
+      "reach": "5 ft.",
+      "text": ""
+    },
+    {
+      "name": "Shortbow",
+      "toHit": 4,
+      "damage": "1d6+2",
+      "damageType": "piercing",
+      "reach": "80/320 ft.",
+      "text": ""
+    }
+  ],
+  "actions": [],
+  "reactions": [],
+  "legendary": [],
+  "notes": "",
+  "name": "Skeleton",
+  "ac": 13,
+  "hpMax": 13,
+  "str": 10,
+  "dex": 14,
+  "con": 15,
+  "intel": 6,
+  "wis": 8,
+  "cha": 5
+}

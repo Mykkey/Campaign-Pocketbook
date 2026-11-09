@@ -2,6 +2,7 @@ package dnd.storage;
 
 import dnd.model.BattleMap;
 import dnd.model.Board;
+import dnd.model.Card;
 import dnd.model.Project;
 import dnd.model.TreeNode;
 
@@ -20,6 +21,7 @@ import java.util.stream.Stream;
  *   project.json          name + folder/board tree + open tabs
  *   boards/&lt;id&gt;.json     one file per whiteboard
  *   maps/&lt;id&gt;.battlemap  one file per battlemap
+ *   cards/&lt;id&gt;.card      one file per character / creature card
  *   assets/&lt;file&gt;        imported SVG/PNG pieces for battlemaps
  *   images/&lt;file&gt;        imported pictures
  * </pre>
@@ -36,6 +38,8 @@ public final class ProjectStore {
     private final Set<String> dirtyBoards = new HashSet<>();
     private final Map<String, BattleMap> mapCache = new HashMap<>();
     private final Set<String> dirtyMaps = new HashSet<>();
+    private final Map<String, Card> cardCache = new HashMap<>();
+    private final Set<String> dirtyCards = new HashSet<>();
     private boolean projectDirty;
 
     private ProjectStore(Path dir, Project project) {
@@ -90,6 +94,7 @@ public final class ProjectStore {
     private static void createSubfolders(Path dir) throws IOException {
         Files.createDirectories(dir.resolve("boards"));
         Files.createDirectories(dir.resolve("maps"));
+        Files.createDirectories(dir.resolve("cards"));
         Files.createDirectories(dir.resolve("images"));
         Files.createDirectories(dir.resolve("assets"));
     }
@@ -160,6 +165,70 @@ public final class ProjectStore {
         return boardName(id);
     }
 
+    // ---------------------------------------------------------------- cards
+
+    public boolean isCard(String id) {
+        TreeNode n = id == null ? null : project.root.find(id);
+        return n != null && n.isCard();
+    }
+
+    private Path cardPath(String id) {
+        return dir.resolve("cards").resolve(id + ".card");
+    }
+
+    /** Loads (and caches) a card; null if it doesn't exist or can't be read. */
+    public Card card(String id) {
+        Card c = cardCache.get(id);
+        if (c != null) return c;
+        Path p = cardPath(id);
+        if (!Files.isRegularFile(p)) return null;
+        try {
+            c = Json.readFile(p, Card.class);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+        cardCache.put(id, c);
+        return c;
+    }
+
+    /** Adds a card to the project under {@code parent}. The card gets a fresh id and becomes the tree node's id. */
+    public Card createCard(TreeNode parent, Card card) {
+        Card c = card;
+        c.id = java.util.UUID.randomUUID().toString();
+        TreeNode n = new TreeNode(c.name, false);
+        n.id = c.id;
+        n.kind = TreeNode.KIND_CARD;
+        parent.children.add(n);
+        cardCache.put(c.id, c);
+        markCardDirty(c);
+        markProjectDirty();
+        return c;
+    }
+
+    /** Copies a card next to the original (name + " (copy)"). */
+    public Card duplicateCard(TreeNode node) {
+        Card original = card(node.id);
+        if (original == null) return null;
+        Card copy = original.copy();
+        copy.name = original.name + " (copy)";
+        TreeNode parent = project.root.parentOf(node.id);
+        return createCard(parent == null ? project.root : parent, copy);
+    }
+
+    public List<String> allCardIds() {
+        List<TreeNode> nodes = new ArrayList<>();
+        project.root.collectCards(nodes);
+        List<String> ids = new ArrayList<>();
+        for (TreeNode n : nodes) ids.add(n.id);
+        return ids;
+    }
+
+    public void markCardDirty(Card c) {
+        dirtyCards.add(c.id);
+        onDirty.run();
+    }
+
     // ---------------------------------------------------------------- battlemaps
 
     private Path mapPath(String id) {
@@ -227,6 +296,7 @@ public final class ProjectStore {
     public void preload() {
         for (String id : new ArrayList<>(project.openBoards)) {
             if (isBattleMap(id)) battleMap(id);
+            else if (isCard(id)) card(id);
             else if (boardExists(id)) board(id);
         }
         assets();
@@ -296,6 +366,12 @@ public final class ProjectStore {
                 m.name = name;
                 markMapDirty(m);
             }
+        } else if (node.isCard()) {
+            Card c = card(node.id);
+            if (c != null) {
+                c.name = name;
+                markCardDirty(c);
+            }
         } else if (node == project.root) {
             project.name = name;
         }
@@ -312,9 +388,12 @@ public final class ProjectStore {
             dirtyBoards.remove(b.id);
             mapCache.remove(b.id);
             dirtyMaps.remove(b.id);
+            cardCache.remove(b.id);
+            dirtyCards.remove(b.id);
             try {
                 Files.deleteIfExists(boardPath(b.id));
                 Files.deleteIfExists(mapPath(b.id));
+                Files.deleteIfExists(cardPath(b.id));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -377,6 +456,11 @@ public final class ProjectStore {
                 if (m != null) Json.writeFile(mapPath(id), m);
             }
             dirtyMaps.clear();
+            for (String id : new ArrayList<>(dirtyCards)) {
+                Card c = cardCache.get(id);
+                if (c != null) Json.writeFile(cardPath(id), c);
+            }
+            dirtyCards.clear();
             if (projectDirty) {
                 Json.writeFile(dir.resolve(PROJECT_FILE), project);
                 projectDirty = false;

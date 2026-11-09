@@ -42,10 +42,20 @@ public final class SearchService {
             Board b = store.board(n.id);
             if (b == null) continue;
             for (BoardObject o : b.objects) {
-                if (o.text != null && o.text.toLowerCase(Locale.ROOT).contains(q)) {
+                if (o.text != null && dnd.text.RichText.plain(o.text).toLowerCase(Locale.ROOT).contains(q)) {
                     out.add(new Result(n.id, n.name, o.id, snippet(o)));
                     if (out.size() >= limit) return out;
                 }
+            }
+        }
+
+        // cards: by name
+        List<TreeNode> cards = new ArrayList<>();
+        store.project.root.collectCards(cards);
+        for (TreeNode n : cards) {
+            if (n.name.toLowerCase(Locale.ROOT).contains(q)) {
+                out.add(new Result(n.id, n.name, null, "Card"));
+                if (out.size() >= limit) return out;
             }
         }
 
@@ -87,7 +97,7 @@ public final class SearchService {
     static String snippet(BoardObject o) {
         if (o.type == BoardObject.Type.MAP_PREVIEW) return "battlemap preview";
         if (o.text == null || o.text.isBlank()) return o.type.name().toLowerCase(Locale.ROOT);
-        String s = o.text.replace('\n', ' ').trim();
+        String s = dnd.text.RichText.plain(o.text).replace('\n', ' ').trim();
         return s.length() > 60 ? s.substring(0, 57) + "..." : s;
     }
 }

@@ -1,0 +1,38 @@
+{
+  "kind": "MONSTER",
+  "size": "Medium",
+  "creatureType": "humanoid",
+  "alignment": "any alignment",
+  "acNote": "",
+  "hitDice": "1d8",
+  "speed": "30 ft.",
+  "proficiency": 2,
+  "saves": "",
+  "skills": "",
+  "vulnerabilities": "",
+  "resistances": "",
+  "immunities": "",
+  "conditionImmunities": "",
+  "senses": "passive Perception 10",
+  "languages": "any one language (usually Common)",
+  "challenge": "0",
+  "xp": 10,
+  "traits": [],
+  "attacks": [
+    {
+      "name": "Club",
+      "toHit": 2,
+      "damage": "1d4",
+      "damageType": "bludgeoning",
+      "reach": "5 ft.",
+      "text": ""
+    }
+  ],
+  "actions": [],
+  "reactions": [],
+  "legendary": [],
+  "notes": "",
+  "name": "Commoner",
+  "ac": 10,
+  "hpMax": 4
+}

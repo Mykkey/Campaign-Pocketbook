@@ -23,9 +23,22 @@ public class MapEditor extends BorderPane implements ItemView {
 
     private final MapView view;
     private final MapToolState ts = new MapToolState();
+    private BattlePanel battlePanel;
+    private final BattleMap map;
+    private final ProjectStore store;
+    private final java.util.function.Consumer<String> openItem;
 
     public MapEditor(BattleMap map, ProjectStore store) {
+        this(map, store, id -> { });
+    }
+
+    /** @param openItem opens another project item in a tab (used to jump from a battle to a creature's card) */
+    public MapEditor(BattleMap map, ProjectStore store, java.util.function.Consumer<String> openItem) {
+        this.map = map;
+        this.store = store;
+        this.openItem = openItem;
         this.view = new MapView(map, store, ts);
+        this.view.openCard = openItem;
         // render the pieces this map uses in the background so the first draw doesn't stall
         java.util.List<String> used = new java.util.ArrayList<>();
         for (dnd.model.MapObject o : map.objects) used.add(o.assetId);
@@ -33,6 +46,7 @@ public class MapEditor extends BorderPane implements ItemView {
         setCenter(view);
         setLeft(new AssetPanel(store, ts));
         setTop(buildToolbar(map, store));
+        if (map.battle != null && map.battle.active) setBattleVisible(true); // a fight was in progress when it was saved
         // first open: show the whole map
         javafx.application.Platform.runLater(() -> {
             if (map.revision == 0 && map.zoom == 1 && map.offsetX == 40 && map.offsetY == 40) view.fitToWindow();
@@ -104,17 +118,68 @@ public class MapEditor extends BorderPane implements ItemView {
         snap.selectedProperty().bindBidirectional(ts.snap);
         bar.getChildren().addAll(new Label("Token"), tokenColor, grid, snap, new Separator(Orientation.VERTICAL));
 
+        // ---- fog of war
+        CheckBox fog = new CheckBox("Fog");
+        fog.setFocusTraversable(false);
+        fog.setTooltip(new Tooltip("Hide the map from the players until you reveal it"));
+        fog.selectedProperty().bindBidirectional(ts.fogEnabled);
+        ComboBox<String> fogMode = new ComboBox<>();
+        fogMode.getItems().setAll("Reveal brush", "Hide brush", "Reveal rectangle", "Hide rectangle");
+        fogMode.setValue("Reveal brush");
+        fogMode.setFocusTraversable(false);
+        fogMode.setTooltip(new Tooltip("What the Fog tool (key 7) does when you click or drag on the map"));
+        fogMode.setOnAction(e -> {
+            int i = fogMode.getItems().indexOf(fogMode.getValue());
+            ts.fogReveal.set(i == 0 || i == 2);
+            ts.fogRect.set(i >= 2);
+            ts.tool.set(MapTool.FOG);
+        });
+        Button revealAll = action("Reveal all", "Remove all fog", () -> view.revealAllFog());
+        Button hideAll = action("Hide all", "Cover the whole map in fog (tokens that reveal fog keep their surroundings clear)",
+                () -> view.hideAllFog());
+        bar.getChildren().addAll(fog, fogMode, revealAll, hideAll, new Separator(Orientation.VERTICAL));
+
         Button popOut = action("Pop out", "Open this map in its own window for the players. Drag it to your "
                 + "playtable monitor and press F11 for fullscreen. It updates live as you edit",
                 () -> PlayerWindow.open(getScene() == null ? null : getScene().getWindow(), map, store));
         popOut.setStyle("-fx-font-weight: bold;");
+        ToggleButton battleBtn = new ToggleButton("Battle");
+        battleBtn.setFocusTraversable(false);
+        battleBtn.setStyle("-fx-font-weight: bold;");
+        battleBtn.setTooltip(new Tooltip("Battle mode: initiative tracker, HP and the attacks of whoever's turn it is"));
+        battleBtn.setSelected(map.battle != null && map.battle.active);
+        battleBtn.setOnAction(e -> setBattleVisible(battleBtn.isSelected()));
         bar.getChildren().addAll(
+                battleBtn,
                 popOut,
                 action("Fit", "Zoom to show the whole map (Ctrl+0)", view::fitToWindow),
                 action("Undo", "Ctrl+Z", view::undo),
                 action("Redo", "Ctrl+Y", view::redo),
                 action("Delete", "Delete the selection", view::deleteSelected));
         return bar;
+    }
+
+    private void setBattleVisible(boolean on) {
+        if (on) {
+            if (battlePanel == null) {
+                battlePanel = new BattlePanel(map, store, new BattlePanel.Host() {
+                    @Override public void changed() { view.battleChanged(); }
+
+                    @Override public void addTokens(java.util.List<dnd.model.Combatant> added) { view.addCombatantTokens(added); }
+
+                    @Override public void removeToken(String tokenId) { view.removeTokenById(tokenId); }
+
+                    @Override public void centerOn(String tokenId) { view.centerOnToken(tokenId); }
+
+                    @Override public void openCard(String cardId) { openItem.accept(cardId); }
+                });
+            } else {
+                battlePanel.refresh();
+            }
+            setRight(battlePanel);
+        } else {
+            setRight(null);
+        }
     }
 
     private static ListCell<Object> terrainCell() {

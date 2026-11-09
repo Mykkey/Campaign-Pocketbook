@@ -65,14 +65,37 @@ public class ToolbarPanel extends FlowPane {
         font.valueProperty().addListener((o, a, n) -> {
             if (n != null) ts.fontSize.set(n);
         });
+        // While a text is being typed, B and I style the selected words; otherwise they style the whole block.
         ToggleButton bold = new ToggleButton("B");
         bold.setStyle("-fx-font-weight: bold;");
         bold.setFocusTraversable(false);
-        bold.selectedProperty().bindBidirectional(ts.bold);
+        bold.setTooltip(new Tooltip("Bold. While typing: the selected words (Ctrl+B). Otherwise: the whole text or sticky note"));
+        bold.setSelected(ts.bold.get());
+        ts.bold.addListener((o, a, n) -> bold.setSelected(n));
+        bold.setOnAction(e -> {
+            BoardView v = current.get();
+            if (v != null && v.isEditingText()) {
+                bold.setSelected(!bold.isSelected()); // this click styled words, not the whole-block setting
+                v.styleSelectedWords(true);
+            } else {
+                ts.bold.set(bold.isSelected());
+            }
+        });
         ToggleButton italic = new ToggleButton("I");
         italic.setStyle("-fx-font-style: italic;");
         italic.setFocusTraversable(false);
-        italic.selectedProperty().bindBidirectional(ts.italic);
+        italic.setTooltip(new Tooltip("Italic. While typing: the selected words (Ctrl+I). Otherwise: the whole text or sticky note"));
+        italic.setSelected(ts.italic.get());
+        ts.italic.addListener((o, a, n) -> italic.setSelected(n));
+        italic.setOnAction(e -> {
+            BoardView v = current.get();
+            if (v != null && v.isEditingText()) {
+                italic.setSelected(!italic.isSelected());
+                v.styleSelectedWords(false);
+            } else {
+                ts.italic.set(italic.isSelected());
+            }
+        });
 
         getChildren().addAll(new Label("Colour"), color, new Label("Fill"), fill, useFill,
                 new Label("Width"), width, new Label("Font"), font, bold, italic,

@@ -13,5 +13,11 @@ public class MapToolState {
     /** Library id of the piece that the Piece tool stamps, or null. */
     public final StringProperty armedAsset = new SimpleStringProperty();
     public final BooleanProperty snap = new SimpleBooleanProperty(true);
+    /** Fog of war on for this map (mirrors {@code BattleMap.fogEnabled}). */
+    public final BooleanProperty fogEnabled = new SimpleBooleanProperty(false);
+    /** Fog tool: true = reveal cells, false = hide them. */
+    public final BooleanProperty fogReveal = new SimpleBooleanProperty(true);
+    /** Fog tool: true = drag a rectangle, false = paint with the brush. */
+    public final BooleanProperty fogRect = new SimpleBooleanProperty(false);
     public final ObjectProperty<Color> tokenColor = new SimpleObjectProperty<>(Color.web("#d33f49"));
 }

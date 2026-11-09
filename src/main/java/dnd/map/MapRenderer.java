@@ -55,9 +55,67 @@ public final class MapRenderer {
 
     /** Same as {@link #draw(GraphicsContext, BattleMap, Grid, AssetLibrary, double)} with the grid forced on or off. */
     public static void draw(GraphicsContext g, BattleMap m, Grid grid, AssetLibrary lib, double scale, boolean showGrid) {
+        draw(g, m, grid, lib, scale, showGrid, Audience.PLAIN);
+    }
+
+    /** Who the map is being drawn for. */
+    public enum Audience {
+        /** Everything, no fog: used for thumbnails on whiteboards. */
+        PLAIN,
+        /** The DM's editor: everything, hidden things shown ghosted, fog shaded but see-through. */
+        DM,
+        /** The player window: hidden things skipped, fog opaque. */
+        PLAYERS
+    }
+
+    public static void draw(GraphicsContext g, BattleMap m, Grid grid, AssetLibrary lib, double scale, boolean showGrid,
+                            Audience who) {
         drawGround(g, m, grid, scale, showGrid);
-        drawObjects(g, m, lib, scale);
-        drawTokens(g, m, grid);
+        for (MapObject o : m.objects) {
+            if (o.hidden && who == Audience.PLAYERS) continue;
+            drawObject(g, o, lib, scale, o.hidden && who == Audience.DM ? 0.45 : 1.0);
+        }
+        // battle state: whose turn it is and who is down, looked up by token id
+        java.util.Set<String> active = new java.util.HashSet<>(), down = new java.util.HashSet<>();
+        if (m.battle != null) {
+            for (dnd.model.Combatant co : m.battle.combatants) {
+                if (co.tokenId == null) continue;
+                if (co.defeated) down.add(co.tokenId);
+                if (dnd.battle.BattleEngine.isCurrent(m.battle, co)) active.add(co.tokenId);
+            }
+        }
+        for (MapToken t : m.tokens) {
+            if (t.hidden && who == Audience.PLAYERS) continue;
+            drawToken(g, t, grid, m.cellSize, t.hidden && who == Audience.DM ? 0.45 : 1.0,
+                    active.contains(t.id), down.contains(t.id));
+        }
+        if (who != Audience.PLAIN && m.fogEnabled) drawFog(g, m, grid, who == Audience.PLAYERS);
+    }
+
+    /**
+     * Covers every cell that is not revealed. For the players it is the same near-black as the window
+     * background (so unrevealed areas look like nothing is there); for the DM it is a translucent shade so the
+     * map can still be edited underneath.
+     */
+    public static void drawFog(GraphicsContext g, BattleMap m, Grid grid, boolean opaque) {
+        g.save();
+        g.beginPath();
+        boolean any = false;
+        for (int r = 0; r < grid.rows(); r++) {
+            for (int c = 0; c < grid.cols(); c++) {
+                if (m.revealed.contains(BattleMap.key(c, r))) continue;
+                double[] p = grid.polygon(c, r);
+                g.moveTo(p[0], p[1]);
+                for (int i = 2; i < p.length; i += 2) g.lineTo(p[i], p[i + 1]);
+                g.closePath();
+                any = true;
+            }
+        }
+        if (any) {
+            g.setFill(opaque ? Color.web("#0d0d0f") : Color.web("#0b0d1a", 0.62));
+            g.fill(); // one path, so neighbouring cells merge without hairline gaps
+        }
+        g.restore();
     }
 
     public static void drawGround(GraphicsContext g, BattleMap m, Grid grid, double scale, boolean showGrid) {
@@ -232,18 +290,43 @@ public final class MapRenderer {
     }
 
     public static void drawToken(GraphicsContext g, MapToken t, Grid grid, double cellSize, double opacity) {
+        drawToken(g, t, grid, cellSize, opacity, false, false);
+    }
+
+    /**
+     * @param active it is this creature's turn: a gold ring is drawn around it
+     * @param down   the creature is defeated: greyed out with a cross
+     */
+    public static void drawToken(GraphicsContext g, MapToken t, Grid grid, double cellSize, double opacity,
+                                 boolean active, boolean down) {
         if (!grid.inside(t.col, t.row)) return;
         double[] c = grid.center(t.col, t.row);
         double d = cellSize * (0.78 + 0.95 * (Math.max(1, t.size) - 1));
         g.save();
-        g.setGlobalAlpha(opacity);
+        g.setGlobalAlpha(down ? opacity * 0.6 : opacity);
+        if (active) {
+            double r = d / 2 + cellSize * 0.1;
+            g.setStroke(Color.web("#fbbf24", 0.35));
+            g.setLineWidth(cellSize * 0.2);
+            g.strokeOval(c[0] - r, c[1] - r, 2 * r, 2 * r);
+            g.setStroke(Color.web("#f59e0b"));
+            g.setLineWidth(Math.max(2, cellSize * 0.07));
+            g.strokeOval(c[0] - r, c[1] - r, 2 * r, 2 * r);
+        }
         g.setFill(Color.web("#00000040"));
         g.fillOval(c[0] - d / 2 + d * 0.05, c[1] - d / 2 + d * 0.07, d, d);
-        g.setFill(color(t.color));
+        g.setFill(down ? Color.web("#6b6b6b") : color(t.color));
         g.fillOval(c[0] - d / 2, c[1] - d / 2, d, d);
         g.setStroke(Color.web("#1d1b1a"));
         g.setLineWidth(Math.max(1.5, d * 0.05));
         g.strokeOval(c[0] - d / 2, c[1] - d / 2, d, d);
+        if (down) {
+            g.setStroke(Color.web("#7f1d1d"));
+            g.setLineWidth(Math.max(2, d * 0.09));
+            double k = d * 0.28;
+            g.strokeLine(c[0] - k, c[1] - k, c[0] + k, c[1] + k);
+            g.strokeLine(c[0] - k, c[1] + k, c[0] + k, c[1] - k);
+        }
         String label = t.label == null ? "" : t.label.trim();
         if (!label.isEmpty()) {
             String shown = label.length() > 3 ? label.substring(0, 3) : label;

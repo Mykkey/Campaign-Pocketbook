@@ -13,6 +13,8 @@ public class MapObject {
     /** Degrees, clockwise. */
     public double rotation;
     public boolean flipX;
+    /** When true the players don't see this piece (traps, secret doors), even in revealed areas. */
+    public boolean hidden;
 
     public MapObject() { }
 
@@ -20,7 +22,7 @@ public class MapObject {
         MapObject o = new MapObject();
         o.assetId = assetId;
         o.x = x; o.y = y; o.w = w; o.h = h;
-        o.rotation = rotation; o.flipX = flipX;
+        o.rotation = rotation; o.flipX = flipX; o.hidden = hidden;
         return o;
     }
 

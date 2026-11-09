@@ -2,8 +2,10 @@ package dnd.ui;
 
 import dnd.map.AssetLibrary;
 import dnd.map.Grid;
+import dnd.map.Fog;
 import dnd.map.MapRenderer;
 import dnd.model.BattleMap;
+import dnd.model.Combatant;
 import dnd.model.MapObject;
 import dnd.model.MapToken;
 import dnd.model.Terrain;
@@ -14,6 +16,7 @@ import javafx.scene.Cursor;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TextInputDialog;
@@ -29,7 +32,7 @@ import java.util.*;
 
 /** The battlemap canvas: pan/zoom, terrain painting, placing and editing pieces, tokens and the ruler. */
 public class MapView extends Pane implements ItemView {
-    private enum Mode { NONE, PAN, MOVE, MARQUEE, RESIZE, ROTATE, PAINT, RULER }
+    private enum Mode { NONE, PAN, MOVE, MARQUEE, RESIZE, ROTATE, PAINT, RULER, FOG_BRUSH, FOG_RECT }
 
     private static final Color SELECT_COLOR = Color.web("#2563eb");
     private static String clipboardJson;
@@ -58,7 +61,11 @@ public class MapView extends Pane implements ItemView {
     private final Map<String, double[]> startObj = new HashMap<>();
     private final Map<String, int[]> startTok = new HashMap<>();
     private final Set<String> marqueeBase = new LinkedHashSet<>();
+    /** Opens a card in a tab (set by the map editor; used by a token's "Open card" menu item). */
+    public java.util.function.Consumer<String> openCard = id -> { };
     private double[] rulerA, rulerB;
+    private double fogX0, fogY0, fogX1, fogY1;
+    private String pendingSnapshot;
 
     public MapView(BattleMap map, ProjectStore store, MapToolState ts) {
         this.map = map;
@@ -113,6 +120,14 @@ public class MapView extends Pane implements ItemView {
             redraw();
         });
         ts.armedAsset.addListener((o, a, n) -> redraw());
+        // fog on/off lives in the map file; turning it on clears fog around tokens that can see
+        ts.fogEnabled.set(map.fogEnabled);
+        ts.fogEnabled.addListener((o, a, n) -> {
+            map.fogEnabled = n;
+            if (n) for (MapToken t : map.tokens) autoReveal(t);
+            store.markMapDirty(map);
+            redraw();
+        });
         refreshCursor();
     }
 
@@ -184,11 +199,12 @@ public class MapView extends Pane implements ItemView {
         double z = zoom();
         g.setTransform(z, 0, 0, z, map.offsetX, map.offsetY);
         g.setLineCap(StrokeLineCap.ROUND);
-        MapRenderer.draw(g, map, grid, lib, z);
+        MapRenderer.draw(g, map, grid, lib, z, map.showGrid, MapRenderer.Audience.DM);
 
         drawHover(g);
         drawSelection(g);
         drawRuler(g);
+        drawFogRect(g);
         if (mode == Mode.MARQUEE) {
             g.setFill(Color.web("#2563eb33"));
             g.setStroke(SELECT_COLOR);
@@ -206,12 +222,12 @@ public class MapView extends Pane implements ItemView {
         if (t == MapTool.ASSET && ts.armedAsset.get() != null) {
             MapObject ghost = newObject(ts.armedAsset.get(), hoverWX, hoverWY);
             if (ghost != null) MapRenderer.drawObject(g, ghost, lib, z, 0.6);
-        } else if (t == MapTool.TERRAIN || t == MapTool.TOKEN) {
+        } else if (t == MapTool.TERRAIN || t == MapTool.TOKEN || (t == MapTool.FOG && !ts.fogRect.get())) {
             int[] c = grid.cellAt(hoverWX, hoverWY);
             if (c == null) return;
-            g.setStroke(SELECT_COLOR);
+            g.setStroke(t == MapTool.FOG ? (ts.fogReveal.get() ? Color.web("#16a34a") : Color.web("#dc2626")) : SELECT_COLOR);
             g.setLineWidth(2 / z);
-            int b = t == MapTool.TERRAIN ? ts.brush.get() : 1;
+            int b = t == MapTool.TOKEN ? 1 : ts.brush.get();
             for (int r = Math.max(0, c[1] - b); r <= Math.min(grid.rows() - 1, c[1] + b); r++) {
                 for (int cc = Math.max(0, c[0] - b); cc <= Math.min(grid.cols() - 1, c[0] + b); cc++) {
                     if (grid.distance(c[0], c[1], cc, r) < b) MapRenderer.strokeCell(g, grid, cc, r);
@@ -387,6 +403,7 @@ public class MapView extends Pane implements ItemView {
         s.terrain = new LinkedHashMap<>(map.terrain);
         s.objects = map.objects;
         s.tokens = map.tokens;
+        s.revealed = new java.util.LinkedHashSet<>(map.revealed);
         return Json.write(s);
     }
 
@@ -425,6 +442,8 @@ public class MapView extends Pane implements ItemView {
         map.objects.addAll(s.objects);
         map.tokens.clear();
         map.tokens.addAll(s.tokens);
+        map.revealed.clear();
+        map.revealed.addAll(s.revealed);
         selected.removeIf(id -> map.findObject(id) == null && map.findToken(id) == null);
         changed();
     }
@@ -472,6 +491,7 @@ public class MapView extends Pane implements ItemView {
                 stampAsset(ts.armedAsset.get(), pressWX, pressWY);
             }
             case TOKEN -> placeToken(pressWX, pressWY);
+            case FOG -> pressFog();
             case RULER -> {
                 int[] c = grid.cellAt(pressWX, pressWY);
                 if (c != null) {
@@ -582,6 +602,11 @@ public class MapView extends Pane implements ItemView {
                 }
             }
             case PAINT -> paintStroke(px, py);
+            case FOG_BRUSH -> fogStroke(px, py);
+            case FOG_RECT -> {
+                fogX1 = px;
+                fogY1 = py;
+            }
             case RULER -> {
                 int[] c = grid.cellAt(px, py);
                 if (c != null) rulerB = grid.center(c[0], c[1]);
@@ -637,6 +662,10 @@ public class MapView extends Pane implements ItemView {
                 }
             }
         }
+        for (String id : startTok.keySet()) {
+            MapToken t = map.findToken(id);
+            if (t != null) autoReveal(t);
+        }
         store.markMapDirty(map);
     }
 
@@ -665,11 +694,10 @@ public class MapView extends Pane implements ItemView {
             store.markMapDirty(map);
             refreshCursor();
         }
-        if (mode == Mode.MOVE && ts.snap.get() && dragStarted) {
-            // nothing more to do; objects were snapped while dragging
-        }
+        if (mode == Mode.FOG_RECT) finishFogRect();
         mode = Mode.NONE;
         gestureCheckpointed = false;
+        pendingSnapshot = null;
         redraw();
     }
 
@@ -757,6 +785,219 @@ public class MapView extends Pane implements ItemView {
         changed();
     }
 
+    // ================================================================ battle support
+
+    /** The battle state changed (HP, turn, ...): save and redraw so the turn ring and fallen tokens update. */
+    public void battleChanged() {
+        store.markMapDirty(map);
+        redraw();
+    }
+
+    private static final java.util.Map<Combatant.Side, String> SIDE_COLORS = java.util.Map.of(
+            Combatant.Side.PLAYER, "#2b6cb0", Combatant.Side.ALLY, "#2f855a", Combatant.Side.ENEMY, "#c0392b");
+
+    /** A short token label: "Goblin 2" -> "Go2", "Wolf" -> "Wol". */
+    static String tokenLabel(String name) {
+        String n = name == null ? "" : name.trim();
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("^(.*?)\\s*(\\d+)$").matcher(n);
+        if (m.matches() && !m.group(1).isEmpty()) {
+            String base = m.group(1);
+            String num = m.group(2);
+            return base.substring(0, Math.min(base.length(), num.length() > 1 ? 1 : 2)) + num;
+        }
+        return n.substring(0, Math.min(3, n.length()));
+    }
+
+    private static int tokenSizeFor(String cardSize) {
+        if (cardSize == null) return 1;
+        switch (cardSize.toLowerCase()) {
+            case "large": return 2;
+            case "huge": return 3;
+            case "gargantuan": return 4;
+            default: return 1;
+        }
+    }
+
+    /**
+     * Puts a token for each new combatant on free cells around the middle of the view, linked both ways
+     * (combatant.tokenId and token.cardId). Players' tokens clear fog around themselves.
+     */
+    public void addCombatantTokens(java.util.List<Combatant> added) {
+        if (added.isEmpty()) return;
+        checkpoint();
+        int[] start = grid.cellAt(wx(getWidth() / 2), wy(getHeight() / 2));
+        if (start == null) start = new int[]{grid.cols() / 2, grid.rows() / 2};
+        final int[] origin = start;
+        java.util.Set<String> taken = new java.util.HashSet<>();
+        for (MapToken t : map.tokens) taken.add(BattleMap.key(t.col, t.row));
+        java.util.List<int[]> cells = new java.util.ArrayList<>();
+        for (int r = 0; r < grid.rows(); r++) for (int c = 0; c < grid.cols(); c++) cells.add(new int[]{c, r});
+        cells.sort(java.util.Comparator.comparingInt((int[] a) -> grid.distance(origin[0], origin[1], a[0], a[1]))
+                .thenComparingInt(a -> a[1]).thenComparingInt(a -> a[0]));
+        int next = 0;
+        selected.clear();
+        for (Combatant co : added) {
+            while (next < cells.size() && taken.contains(BattleMap.key(cells.get(next)[0], cells.get(next)[1]))) next++;
+            if (next >= cells.size()) break;
+            int[] cell = cells.get(next++);
+            taken.add(BattleMap.key(cell[0], cell[1]));
+            dnd.model.Card card = co.cardId == null ? null : store.card(co.cardId);
+            MapToken t = new MapToken();
+            t.col = cell[0];
+            t.row = cell[1];
+            t.label = tokenLabel(co.name);
+            t.color = SIDE_COLORS.get(co.side);
+            t.size = card == null ? 1 : tokenSizeFor(card.size);
+            t.cardId = co.cardId;
+            t.revealRadius = co.side == Combatant.Side.PLAYER ? 6 : 0;
+            map.tokens.add(t);
+            co.tokenId = t.id;
+            autoReveal(t);
+            selected.add(t.id);
+        }
+        changed();
+    }
+
+    public void removeTokenById(String tokenId) {
+        if (tokenId == null) return;
+        checkpoint();
+        map.tokens.removeIf(t -> t.id.equals(tokenId));
+        selected.remove(tokenId);
+        changed();
+    }
+
+    /** Selects a token and pans the view so it is in the middle. */
+    public void centerOnToken(String tokenId) {
+        MapToken t = map.findToken(tokenId);
+        if (t == null || !grid.inside(t.col, t.row)) return;
+        double[] c = grid.center(t.col, t.row);
+        selected.clear();
+        selected.add(t.id);
+        map.offsetX = getWidth() / 2 - c[0] * zoom();
+        map.offsetY = getHeight() / 2 - c[1] * zoom();
+        store.markMapDirty(map);
+        redraw();
+    }
+
+    // ================================================================ fog of war
+
+    /** Starts a fog gesture. The state before it is remembered so the first real change undoes as one step. */
+    private void pressFog() {
+        if (!ts.fogEnabled.get()) ts.fogEnabled.set(true);
+        pendingSnapshot = snapshot();
+        if (ts.fogRect.get()) {
+            mode = Mode.FOG_RECT;
+            fogX0 = fogX1 = pressWX;
+            fogY0 = fogY1 = pressWY;
+        } else {
+            mode = Mode.FOG_BRUSH;
+            fogStroke(pressWX, pressWY);
+        }
+    }
+
+    /** Pushes the remembered pre-gesture state onto the undo stack (once), now that something changed. */
+    private void commitPending() {
+        if (!gestureCheckpointed && pendingSnapshot != null) {
+            undoStack.addLast(pendingSnapshot);
+            if (undoStack.size() > 200) undoStack.removeFirst();
+            redoStack.clear();
+            gestureCheckpointed = true;
+        }
+    }
+
+    private void fogStroke(double px, double py) {
+        boolean any = false;
+        if (Double.isNaN(lastPaintWX)) {
+            any = fogAround(px, py);
+        } else {
+            double dist = Math.hypot(px - lastPaintWX, py - lastPaintWY);
+            int steps = Math.max(1, (int) Math.ceil(dist / (map.cellSize / 3)));
+            for (int i = 1; i <= steps; i++) {
+                double t = (double) i / steps;
+                any |= fogAround(lastPaintWX + (px - lastPaintWX) * t, lastPaintWY + (py - lastPaintWY) * t);
+            }
+        }
+        lastPaintWX = px;
+        lastPaintWY = py;
+        if (any) store.markMapDirty(map);
+    }
+
+    private boolean fogAround(double px, double py) {
+        int[] c = grid.cellAt(px, py);
+        if (c == null) return false;
+        int n = Fog.paint(map, grid, c[0], c[1], Math.max(1, ts.brush.get()), ts.fogReveal.get());
+        if (n > 0) commitPending();
+        return n > 0;
+    }
+
+    private void finishFogRect() {
+        int n = Fog.setRect(map, grid, fogX0, fogY0, fogX1, fogY1, ts.fogReveal.get());
+        if (n > 0) {
+            commitPending();
+            store.markMapDirty(map);
+        }
+    }
+
+    private void drawFogRect(GraphicsContext g) {
+        if (mode != Mode.FOG_RECT) return;
+        Color c = ts.fogReveal.get() ? Color.web("#16a34a") : Color.web("#dc2626");
+        double l = Math.min(fogX0, fogX1), t = Math.min(fogY0, fogY1);
+        g.setFill(Color.color(c.getRed(), c.getGreen(), c.getBlue(), 0.25));
+        g.setStroke(c);
+        g.setLineWidth(2 / zoom());
+        g.fillRect(l, t, Math.abs(fogX1 - fogX0), Math.abs(fogY1 - fogY0));
+        g.strokeRect(l, t, Math.abs(fogX1 - fogX0), Math.abs(fogY1 - fogY0));
+    }
+
+    /** Clears fog around a token that reveals fog (called whenever it is placed or moved). */
+    private void autoReveal(MapToken t) {
+        if (map.fogEnabled && t.revealRadius > 0 && grid.inside(t.col, t.row)) {
+            Fog.revealRadius(map, grid, t.col, t.row, t.revealRadius);
+        }
+    }
+
+    public void revealAllFog() {
+        checkpoint();
+        Fog.revealAll(map, grid);
+        changed();
+    }
+
+    public void hideAllFog() {
+        checkpoint();
+        Fog.hideAll(map);
+        for (MapToken t : map.tokens) autoReveal(t); // tokens that see keep their surroundings clear
+        changed();
+    }
+
+    private void setHiddenForSelection(boolean hidden) {
+        boolean any = false;
+        for (String id : selected) if (map.findObject(id) != null || map.findToken(id) != null) any = true;
+        if (!any) return;
+        checkpoint();
+        for (String id : selected) {
+            MapObject o = map.findObject(id);
+            if (o != null) o.hidden = hidden;
+            MapToken t = map.findToken(id);
+            if (t != null) t.hidden = hidden;
+        }
+        changed();
+    }
+
+    private void setRevealRadiusForSelection(int radius) {
+        boolean any = false;
+        for (String id : selected) if (map.findToken(id) != null) any = true;
+        if (!any) return;
+        checkpoint();
+        for (String id : selected) {
+            MapToken t = map.findToken(id);
+            if (t != null) {
+                t.revealRadius = radius;
+                autoReveal(t);
+            }
+        }
+        changed();
+    }
+
     private void placeToken(double px, double py) {
         int[] c = grid.cellAt(px, py);
         if (c == null) return;
@@ -767,6 +1008,7 @@ public class MapView extends Pane implements ItemView {
         t.color = hex(ts.tokenColor.get());
         t.label = String.valueOf(map.tokens.size() + 1);
         map.tokens.add(t);
+        autoReveal(t);
         selected.clear();
         selected.add(t.id);
         changed();
@@ -883,6 +1125,7 @@ public class MapView extends Pane implements ItemView {
             c.col = Math.min(grid.cols() - 1, c.col + pasteCount);
             c.row = Math.min(grid.rows() - 1, c.row + pasteCount);
             map.tokens.add(c);
+            autoReveal(c);
             selected.add(c.id);
         }
         changed();
@@ -990,13 +1233,40 @@ public class MapView extends Pane implements ItemView {
             menu.getItems().add(new SeparatorMenuItem());
         }
         if (hasObj) {
-            menu.getItems().add(item("Rotate left 15°  ( [ )", false, () -> rotateSelected(-15)));
-            menu.getItems().add(item("Rotate right 15°  ( ] )", false, () -> rotateSelected(15)));
+            menu.getItems().add(item("Rotate left 15\u00b0  ( [ )", false, () -> rotateSelected(-15)));
+            menu.getItems().add(item("Rotate right 15\u00b0  ( ] )", false, () -> rotateSelected(15)));
             menu.getItems().add(item("Flip  ( F )", false, this::flipSelected));
             menu.getItems().add(item("Bring to front", false, () -> reorder(true)));
             menu.getItems().add(item("Send to back", false, () -> reorder(false)));
             menu.getItems().add(new SeparatorMenuItem());
         }
+        if (has) {
+            boolean allHidden = true;
+            for (String s : selected) {
+                MapObject so = map.findObject(s);
+                MapToken st = map.findToken(s);
+                if ((so != null && !so.hidden) || (st != null && !st.hidden)) allHidden = false;
+            }
+            final boolean makeVisible = allHidden;
+            menu.getItems().add(item(makeVisible ? "Show to players" : "Hide from players", false, () -> setHiddenForSelection(!makeVisible)));
+        }
+        if (hasTok) {
+            MapToken cardToken = null;
+            for (String s : selected) {
+                MapToken st = map.findToken(s);
+                if (st != null && st.cardId != null && store.isCard(st.cardId)) cardToken = st;
+            }
+            if (cardToken != null) {
+                final String cardId = cardToken.cardId;
+                menu.getItems().add(item("Open card", false, () -> openCard.accept(cardId)));
+            }
+            Menu fogMenu = new Menu("Reveals fog around it");
+            for (int rad : new int[]{0, 3, 6, 9, 12}) {
+                fogMenu.getItems().add(item(rad == 0 ? "Off" : rad + " cells (" + rad * 5 + " ft)", false, () -> setRevealRadiusForSelection(rad)));
+            }
+            menu.getItems().add(fogMenu);
+        }
+        if (has) menu.getItems().add(new SeparatorMenuItem());
         menu.getItems().add(item("Copy  (Ctrl+C)", !has, this::copy));
         menu.getItems().add(item("Cut  (Ctrl+X)", !has, () -> { copy(); deleteSelected(); }));
         menu.getItems().add(item("Paste  (Ctrl+V)", clipboardJson == null, this::paste));

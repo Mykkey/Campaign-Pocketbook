@@ -1,0 +1,53 @@
+{
+  "kind": "MONSTER",
+  "size": "Medium",
+  "creatureType": "beast",
+  "alignment": "unaligned",
+  "acNote": "natural armor",
+  "hitDice": "2d8+2",
+  "speed": "40 ft.",
+  "proficiency": 2,
+  "saves": "",
+  "skills": "Perception +3, Stealth +4",
+  "vulnerabilities": "",
+  "resistances": "",
+  "immunities": "",
+  "conditionImmunities": "",
+  "senses": "passive Perception 13",
+  "languages": "",
+  "challenge": "1/4",
+  "xp": 50,
+  "traits": [
+    {
+      "name": "Keen Hearing and Smell",
+      "text": "The wolf has advantage on Wisdom (Perception) checks that rely on hearing or smell."
+    },
+    {
+      "name": "Pack Tactics",
+      "text": "The wolf has advantage on an attack roll against a creature if at least one of the wolf's allies is within 5 feet of the creature and the ally isn't incapacitated."
+    }
+  ],
+  "attacks": [
+    {
+      "name": "Bite",
+      "toHit": 4,
+      "damage": "2d4+2",
+      "damageType": "piercing",
+      "reach": "5 ft.",
+      "text": "DC 11 Strength saving throw or be knocked prone."
+    }
+  ],
+  "actions": [],
+  "reactions": [],
+  "legendary": [],
+  "notes": "",
+  "name": "Wolf",
+  "ac": 13,
+  "hpMax": 11,
+  "str": 12,
+  "dex": 15,
+  "con": 12,
+  "intel": 3,
+  "wis": 12,
+  "cha": 6
+}

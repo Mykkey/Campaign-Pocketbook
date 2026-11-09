@@ -1,0 +1,61 @@
+{
+  "kind": "MONSTER",
+  "size": "Small",
+  "creatureType": "humanoid (kobold)",
+  "alignment": "lawful evil",
+  "acNote": "",
+  "hitDice": "2d6-2",
+  "speed": "30 ft.",
+  "proficiency": 2,
+  "saves": "",
+  "skills": "",
+  "vulnerabilities": "",
+  "resistances": "",
+  "immunities": "",
+  "conditionImmunities": "",
+  "senses": "darkvision 60 ft., passive Perception 8",
+  "languages": "Common, Draconic",
+  "challenge": "1/8",
+  "xp": 25,
+  "traits": [
+    {
+      "name": "Sunlight Sensitivity",
+      "text": "While in sunlight, the kobold has disadvantage on attack rolls, as well as on Wisdom (Perception) checks that rely on sight."
+    },
+    {
+      "name": "Pack Tactics",
+      "text": "The kobold has advantage on an attack roll against a creature if at least one of the kobold's allies is within 5 feet of the creature and the ally isn't incapacitated."
+    }
+  ],
+  "attacks": [
+    {
+      "name": "Dagger",
+      "toHit": 4,
+      "damage": "1d4+2",
+      "damageType": "piercing",
+      "reach": "5 ft.",
+      "text": ""
+    },
+    {
+      "name": "Sling",
+      "toHit": 4,
+      "damage": "1d4+2",
+      "damageType": "bludgeoning",
+      "reach": "30/120 ft.",
+      "text": ""
+    }
+  ],
+  "actions": [],
+  "reactions": [],
+  "legendary": [],
+  "notes": "",
+  "name": "Kobold",
+  "ac": 12,
+  "hpMax": 5,
+  "str": 7,
+  "dex": 15,
+  "con": 9,
+  "intel": 8,
+  "wis": 7,
+  "cha": 8
+}

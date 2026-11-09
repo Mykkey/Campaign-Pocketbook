@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dnd.model.BoardObject;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,6 +34,10 @@ public final class Json {
         } catch (JsonProcessingException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    public static <T> T readStream(InputStream in, Class<T> type) throws IOException {
+        return MAPPER.readValue(in, type);
     }
 
     public static List<BoardObject> readObjects(String json) {

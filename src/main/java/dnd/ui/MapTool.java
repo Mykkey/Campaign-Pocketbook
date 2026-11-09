@@ -6,7 +6,8 @@ public enum MapTool {
     TERRAIN("Terrain", "Paint ground onto the grid (drag to paint). Pick Erase in the terrain list to clear cells"),
     ASSET("Piece", "Place the piece picked in the side panel. Click to stamp it as many times as you like; Esc to stop"),
     TOKEN("Token", "Click a cell to place a labelled token for a player or monster"),
-    RULER("Ruler", "Drag to measure distance in cells (5 ft each)");
+    RULER("Ruler", "Drag to measure distance in cells (5 ft each)"),
+    FOG("Fog", "Reveal or hide parts of the map for the players. Pick brush or rectangle and reveal or hide in the Fog menu");
 
     public final String label;
     public final String tip;

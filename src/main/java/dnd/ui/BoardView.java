@@ -205,38 +205,47 @@ public class BoardView extends Pane implements ItemView {
     /** Recomputes the size of a TEXT object from its content. */
     static void measure(BoardObject o) {
         if (o.type != Type.TEXT) return;
-        Text t = new Text(o.text.isEmpty() ? " " : o.text);
-        t.setFont(fontFor(o));
-        Bounds b = t.getLayoutBounds();
-        o.w = Math.max(10, b.getWidth());
-        o.h = Math.max(o.fontSize * 1.3, b.getHeight());
+        List<RichLayout.Line> lines = RichLayout.layout(o.text, o, 0);
+        o.w = Math.max(10, RichLayout.maxWidth(lines));
+        o.h = Math.max(o.fontSize * 1.3, lines.size() * RichLayout.lineHeight(o));
     }
 
-    private List<String> wrappedLines(BoardObject o) {
+    /** Draws laid-out lines (each word in its own bold/italic) starting at (x, y), top-aligned. */
+    private static void drawLines(GraphicsContext g, List<RichLayout.Line> lines, BoardObject o, double x, double y,
+                                  double maxY) {
+        double lh = RichLayout.lineHeight(o);
+        for (RichLayout.Line line : lines) {
+            if (y + lh > maxY) break;
+            for (RichLayout.Seg s : line.segs()) {
+                g.setFont(RichLayout.font(o, s.bold(), s.italic()));
+                g.fillText(s.text(), x + s.x(), y);
+            }
+            y += lh;
+        }
+    }
+
+    /** Lines of a TEXT object (no wrapping), cached so redraws while panning don't re-measure every word. */
+    private List<RichLayout.Line> textLines(BoardObject o) {
+        String key = "T|" + o.text + "|" + o.fontSize + o.bold + o.italic;
+        Object[] cached = wrapCache.get(o.id);
+        if (cached != null && cached[0].equals(key)) {
+            @SuppressWarnings("unchecked") List<RichLayout.Line> l = (List<RichLayout.Line>) cached[1];
+            return l;
+        }
+        List<RichLayout.Line> out = RichLayout.layout(o.text, o, 0);
+        wrapCache.put(o.id, new Object[]{key, out});
+        return out;
+    }
+
+    private List<RichLayout.Line> wrappedLines(BoardObject o) {
         double width = o.w - 20;
         String key = o.text + "|" + width + "|" + o.fontSize + o.bold + o.italic;
         Object[] cached = wrapCache.get(o.id);
         if (cached != null && cached[0].equals(key)) {
-            @SuppressWarnings("unchecked") List<String> l = (List<String>) cached[1];
+            @SuppressWarnings("unchecked") List<RichLayout.Line> l = (List<RichLayout.Line>) cached[1];
             return l;
         }
-        List<String> out = new ArrayList<>();
-        Text probe = new Text();
-        probe.setFont(fontFor(o));
-        for (String para : o.text.split("\n", -1)) {
-            StringBuilder line = new StringBuilder();
-            for (String word : para.split(" ", -1)) {
-                String test = line.length() == 0 ? word : line + " " + word;
-                probe.setText(test);
-                if (probe.getLayoutBounds().getWidth() > width && line.length() > 0) {
-                    out.add(line.toString());
-                    line = new StringBuilder(word);
-                } else {
-                    line = new StringBuilder(test);
-                }
-            }
-            out.add(line.toString());
-        }
+        List<RichLayout.Line> out = RichLayout.layout(o.text, o, width);
         wrapCache.put(o.id, new Object[]{key, out});
         return out;
     }
@@ -314,11 +323,10 @@ public class BoardView extends Pane implements ItemView {
         switch (o.type) {
             case TEXT -> {
                 if (o != editing) {
-                    g.setFont(fontFor(o));
                     g.setFill(col(o.color));
                     g.setTextBaseline(VPos.TOP);
                     g.setTextAlign(TextAlignment.LEFT);
-                    g.fillText(o.text, o.x, o.y);
+                    drawLines(g, textLines(o), o, o.x, o.y, Double.MAX_VALUE);
                 }
                 if (o.link != null) {
                     g.setStroke(col(linkOk(o) ? "#2563eb" : "#dc2626"));
@@ -332,16 +340,10 @@ public class BoardView extends Pane implements ItemView {
                 g.setFill(col(o.fill != null ? o.fill : DEFAULT_STICKY));
                 g.fillRoundRect(o.x, o.y, o.w, o.h, 6, 6);
                 if (o != editing) {
-                    g.setFont(fontFor(o));
                     g.setFill(col(o.color));
                     g.setTextBaseline(VPos.TOP);
                     g.setTextAlign(TextAlignment.LEFT);
-                    double lh = o.fontSize * 1.3, y = o.y + 10;
-                    for (String line : wrappedLines(o)) {
-                        if (y + lh > o.y + o.h) break;
-                        g.fillText(line, o.x + 10, y);
-                        y += lh;
-                    }
+                    drawLines(g, wrappedLines(o), o, o.x + 10, o.y + 10, o.y + o.h);
                 }
             }
             case IMAGE -> {
@@ -992,6 +994,10 @@ public class BoardView extends Pane implements ItemView {
             if (ev.getCode() == KeyCode.ESCAPE || (ev.getCode() == KeyCode.ENTER && ev.isShortcutDown())) {
                 commitEdit();
                 ev.consume();
+            } else if (ev.isShortcutDown() && !ev.isAltDown() && !ev.isShiftDown()
+                    && (ev.getCode() == KeyCode.B || ev.getCode() == KeyCode.I)) {
+                styleSelectedWords(ev.getCode() == KeyCode.B);
+                ev.consume();
             }
         });
         getChildren().add(ta);
@@ -1000,6 +1006,26 @@ public class BoardView extends Pane implements ItemView {
             ta.requestFocus();
             ta.positionCaret(ta.getText().length());
         });
+    }
+
+    /** True while a text or sticky note is being typed into. */
+    public boolean isEditingText() {
+        return editor != null;
+    }
+
+    /**
+     * Makes the words selected in the text being edited bold (or italic), or plain again if they all already are.
+     * Returns false if no text is being edited or nothing is selected.
+     */
+    public boolean styleSelectedWords(boolean bold) {
+        if (editor == null) return false;
+        javafx.scene.control.IndexRange sel = editor.getSelection();
+        if (sel.getLength() == 0) return false;
+        dnd.text.RichText.Edit e = dnd.text.RichText.toggle(editor.getText(), sel.getStart(), sel.getEnd(), bold);
+        editor.setText(e.markup());
+        editor.selectRange(e.selStart(), e.selEnd());
+        editor.requestFocus();
+        return true;
     }
 
     private static String cssRgb(Color c) {
@@ -1073,7 +1099,9 @@ public class BoardView extends Pane implements ItemView {
             }
             if (clipboardJson == null) {
                 if (cb.hasString() && !cb.getString().isBlank()) {
-                    createText(atX != null ? atX : viewCenterX(), atY != null ? atY : viewCenterY(), cb.getString());
+                    // text from elsewhere is shown exactly as it was written, asterisks and all
+                    createText(atX != null ? atX : viewCenterX(), atY != null ? atY : viewCenterY(),
+                            dnd.text.RichText.escape(cb.getString()));
                     commitEdit();
                 }
                 return;

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "goblin",
+    "name": "Goblin",
+    "kind": "MONSTER",
+    "summary": "Small skirmisher, CR 1/4"
+  },
+  {
+    "id": "kobold",
+    "name": "Kobold",
+    "kind": "MONSTER",
+    "summary": "Small pack fighter, CR 1/8"
+  },
+  {
+    "id": "skeleton",
+    "name": "Skeleton",
+    "kind": "MONSTER",
+    "summary": "Undead soldier, CR 1/4"
+  },
+  {
+    "id": "zombie",
+    "name": "Zombie",
+    "kind": "MONSTER",
+    "summary": "Slow, tough undead, CR 1/4"
+  },
+  {
+    "id": "wolf",
+    "name": "Wolf",
+    "kind": "MONSTER",
+    "summary": "Pack hunter, CR 1/4"
+  },
+  {
+    "id": "giant-rat",
+    "name": "Giant Rat",
+    "kind": "MONSTER",
+    "summary": "Small beast, CR 1/8"
+  },
+  {
+    "id": "orc",
+    "name": "Orc",
+    "kind": "MONSTER",
+    "summary": "Aggressive warrior, CR 1/2"
+  },
+  {
+    "id": "bandit",
+    "name": "Bandit",
+    "kind": "MONSTER",
+    "summary": "Common outlaw, CR 1/8"
+  },
+  {
+    "id": "guard",
+    "name": "Guard",
+    "kind": "MONSTER",
+    "summary": "Town watch, CR 1/8"
+  },
+  {
+    "id": "commoner",
+    "name": "Commoner",
+    "kind": "MONSTER",
+    "summary": "Ordinary person, CR 0"
+  }
+]

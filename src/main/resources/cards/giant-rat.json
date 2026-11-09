@@ -1,0 +1,53 @@
+{
+  "kind": "MONSTER",
+  "size": "Small",
+  "creatureType": "beast",
+  "alignment": "unaligned",
+  "acNote": "",
+  "hitDice": "2d6",
+  "speed": "30 ft.",
+  "proficiency": 2,
+  "saves": "",
+  "skills": "",
+  "vulnerabilities": "",
+  "resistances": "",
+  "immunities": "",
+  "conditionImmunities": "",
+  "senses": "darkvision 60 ft., passive Perception 10",
+  "languages": "",
+  "challenge": "1/8",
+  "xp": 25,
+  "traits": [
+    {
+      "name": "Keen Smell",
+      "text": "The rat has advantage on Wisdom (Perception) checks that rely on smell."
+    },
+    {
+      "name": "Pack Tactics",
+      "text": "The rat has advantage on an attack roll against a creature if at least one of the rat's allies is within 5 feet of the creature and the ally isn't incapacitated."
+    }
+  ],
+  "attacks": [
+    {
+      "name": "Bite",
+      "toHit": 4,
+      "damage": "1d4+2",
+      "damageType": "piercing",
+      "reach": "5 ft.",
+      "text": ""
+    }
+  ],
+  "actions": [],
+  "reactions": [],
+  "legendary": [],
+  "notes": "",
+  "name": "Giant Rat",
+  "ac": 12,
+  "hpMax": 7,
+  "str": 7,
+  "dex": 15,
+  "con": 11,
+  "intel": 2,
+  "wis": 10,
+  "cha": 4
+}

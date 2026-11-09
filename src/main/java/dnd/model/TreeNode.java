@@ -12,6 +12,7 @@ import java.util.UUID;
  */
 public class TreeNode {
     public static final String KIND_BATTLEMAP = "battlemap";
+    public static final String KIND_CARD = "card";
 
     public String id = UUID.randomUUID().toString();
     public String name = "";
@@ -33,8 +34,13 @@ public class TreeNode {
     }
 
     @JsonIgnore
+    public boolean isCard() {
+        return !folder && KIND_CARD.equals(kind);
+    }
+
+    @JsonIgnore
     public boolean isBoard() {
-        return !folder && !KIND_BATTLEMAP.equals(kind);
+        return !folder && !KIND_BATTLEMAP.equals(kind) && !KIND_CARD.equals(kind);
     }
 
     public TreeNode find(String nodeId) {
@@ -68,7 +74,13 @@ public class TreeNode {
         for (TreeNode c : children) c.collectMaps(out);
     }
 
-    /** Appends every whiteboard and battlemap at or below this node. */
+    /** Appends every card at or below this node. */
+    public void collectCards(List<TreeNode> out) {
+        if (isCard()) out.add(this);
+        for (TreeNode c : children) c.collectCards(out);
+    }
+
+    /** Appends every whiteboard, battlemap and card at or below this node. */
     public void collectItems(List<TreeNode> out) {
         if (!folder) out.add(this);
         for (TreeNode c : children) c.collectItems(out);

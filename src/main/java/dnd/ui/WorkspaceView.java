@@ -65,7 +65,10 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Button newMap = new Button("+ Battlemap");
         newMap.setTooltip(new Tooltip("Create a square or hex battlemap"));
         newMap.setOnAction(e -> newBattleMap(selectedFolder()));
-        HBox treeButtons = new HBox(6, newBoard, newMap, newFolder);
+        Button newCard = new Button("+ Card");
+        newCard.setTooltip(new Tooltip("Create a character or creature card (stat block)"));
+        newCard.setOnAction(e -> newCard(selectedFolder()));
+        FlowPane treeButtons = new FlowPane(6, 6, newBoard, newMap, newCard, newFolder);
         tree.setCellFactory(v -> createTreeCell(true));
         tree.setOnMouseClicked(e -> {
             if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2) {
@@ -263,7 +266,14 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
                     new Alert(Alert.AlertType.WARNING, "That battlemap could not be found.").show();
                     return;
                 }
-                view = new MapEditor(m, store);
+                view = new MapEditor(m, store, this::openItem);
+            } else if (store.isCard(id)) {
+                dnd.model.Card c = store.card(id);
+                if (c == null) {
+                    new Alert(Alert.AlertType.WARNING, "That card could not be found.").show();
+                    return;
+                }
+                view = new CardEditor(c, store, newName -> renameFromEditor(id, newName));
             } else {
                 Board b = store.board(id);
                 if (b == null) {
@@ -471,7 +481,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             @Override
             protected void updateItem(TreeNode n, boolean empty) {
                 super.updateItem(n, empty);
-                setText(empty || n == null ? null : (n.folder ? "[+] " : n.isBattleMap() ? "[map] " : "") + n.name);
+                setText(empty || n == null ? null : (n.folder ? "[+] " : n.isBattleMap() ? "[map] " : n.isCard() ? "[card] " : "") + n.name);
             }
         };
         if (draggable) {
@@ -513,16 +523,21 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         nb.setOnAction(e -> newBoard(selectedFolder()));
         MenuItem nm = new MenuItem("New battlemap...");
         nm.setOnAction(e -> newBattleMap(selectedFolder()));
+        MenuItem nc = new MenuItem("New card...");
+        nc.setOnAction(e -> newCard(selectedFolder()));
+        MenuItem dup = new MenuItem("Duplicate card");
+        dup.setOnAction(e -> duplicateSelectedCard());
         MenuItem nf = new MenuItem("New folder");
         nf.setOnAction(e -> newFolder(selectedFolder()));
         MenuItem rn = new MenuItem("Rename");
         rn.setOnAction(e -> renameSelected());
         MenuItem del = new MenuItem("Delete");
         del.setOnAction(e -> deleteSelected());
-        ContextMenu m = new ContextMenu(nb, nm, nf, new SeparatorMenuItem(), rn, del);
+        ContextMenu m = new ContextMenu(nb, nm, nc, nf, new SeparatorMenuItem(), dup, rn, del);
         m.setOnShowing(e -> {
             TreeItem<TreeNode> it = tree.getSelectionModel().getSelectedItem();
             boolean isRoot = it == null || it.getValue() == store.project.root;
+            dup.setDisable(it == null || !it.getValue().isCard());
             rn.setDisable(it == null);
             del.setDisable(isRoot);
         });
@@ -553,6 +568,34 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             refreshTree();
             openItem(b.id);
         });
+    }
+
+    private void newCard(TreeNode parent) {
+        NewCardDialog.show(getScene().getWindow()).ifPresent(res -> {
+            dnd.model.Card c = store.createCard(parent, dnd.rules.CardTemplates.create(res.templateId(), res.name()));
+            refreshTree();
+            openItem(c.id);
+        });
+    }
+
+    private void duplicateSelectedCard() {
+        TreeItem<TreeNode> it = tree.getSelectionModel().getSelectedItem();
+        if (it == null || !it.getValue().isCard()) return;
+        dnd.model.Card copy = store.duplicateCard(it.getValue());
+        if (copy == null) return;
+        refreshTree();
+        openItem(copy.id);
+    }
+
+    /** The card editor renamed its card: keep the tree, the tab title and the trail in step. */
+    private void renameFromEditor(String id, String newName) {
+        TreeNode node = store.project.root.find(id);
+        if (node == null) return;
+        store.renameNode(node, newName);
+        Tab t = open.get(id);
+        if (t != null) t.setText(newName);
+        refreshTree();
+        updateTrail();
     }
 
     private void newBattleMap(TreeNode parent) {
@@ -591,7 +634,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Alert a = new Alert(Alert.AlertType.CONFIRMATION,
                 "Delete \"" + n.name + "\"" + (n.folder ? " and everything inside it" : "") + "? This cannot be undone.",
                 ButtonType.OK, ButtonType.CANCEL);
-        a.setHeaderText("Delete " + (n.folder ? "folder" : n.isBattleMap() ? "battlemap" : "whiteboard"));
+        a.setHeaderText("Delete " + (n.folder ? "folder" : n.isBattleMap() ? "battlemap" : n.isCard() ? "card" : "whiteboard"));
         Optional<ButtonType> r = a.showAndWait();
         if (r.isEmpty() || r.get() != ButtonType.OK) return;
 

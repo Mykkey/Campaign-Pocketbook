@@ -2,8 +2,10 @@ package dnd.model;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -27,6 +29,14 @@ public class BattleMap {
     public List<MapObject> objects = new ArrayList<>();
     public List<MapToken> tokens = new ArrayList<>();
 
+    /** When on, cells not in {@link #revealed} are hidden from the players (and shaded for the DM). */
+    public boolean fogEnabled;
+    /** Revealed cells, as "col,row" keys (same format as {@link #terrain}). */
+    public Set<String> revealed = new LinkedHashSet<>();
+
+    /** Combat state for Battle mode; null until a battle is first started. */
+    public Battle battle;
+
     /** Bumped on every change so cached thumbnails know to refresh. Not saved. */
     public transient int revision;
 
@@ -49,5 +59,6 @@ public class BattleMap {
         public Map<String, String> terrain = new LinkedHashMap<>();
         public List<MapObject> objects = new ArrayList<>();
         public List<MapToken> tokens = new ArrayList<>();
+        public Set<String> revealed = new LinkedHashSet<>();
     }
 }

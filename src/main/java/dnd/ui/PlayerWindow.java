@@ -71,7 +71,7 @@ public final class PlayerWindow {
         this.view = new PlayerView(map, store);
 
         Label hint = new Label("Drag this window to the playtable screen   |   F11 fullscreen   |   scroll to zoom, drag to pan"
-                + "   |   F fit   |   G grid");
+                + "   |   F fit   |   G grid   |   I turn order");
         hint.setStyle("-fx-background-color: #000000b0; -fx-text-fill: white; -fx-padding: 6 14 6 14; -fx-background-radius: 14;");
         hint.setMouseTransparent(true);
         StackPane.setAlignment(hint, Pos.BOTTOM_CENTER);
@@ -88,6 +88,8 @@ public final class PlayerWindow {
                 view.fit();
             } else if (k == KeyCode.G) {
                 view.toggleGrid();
+            } else if (k == KeyCode.I) {
+                view.toggleInitiative();
             } else if (k == KeyCode.PLUS || k == KeyCode.EQUALS || k == KeyCode.ADD) {
                 view.zoomBy(1.2);
             } else if (k == KeyCode.MINUS || k == KeyCode.SUBTRACT) {

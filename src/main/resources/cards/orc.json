@@ -1,0 +1,57 @@
+{
+  "kind": "MONSTER",
+  "size": "Medium",
+  "creatureType": "humanoid (orc)",
+  "alignment": "chaotic evil",
+  "acNote": "hide armor",
+  "hitDice": "2d8+6",
+  "speed": "30 ft.",
+  "proficiency": 2,
+  "saves": "",
+  "skills": "Intimidation +2",
+  "vulnerabilities": "",
+  "resistances": "",
+  "immunities": "",
+  "conditionImmunities": "",
+  "senses": "darkvision 60 ft., passive Perception 10",
+  "languages": "Common, Orc",
+  "challenge": "1/2",
+  "xp": 100,
+  "traits": [
+    {
+      "name": "Aggressive",
+      "text": "As a bonus action, the orc can move up to its speed toward a hostile creature that it can see."
+    }
+  ],
+  "attacks": [
+    {
+      "name": "Greataxe",
+      "toHit": 5,
+      "damage": "1d12+3",
+      "damageType": "slashing",
+      "reach": "5 ft.",
+      "text": ""
+    },
+    {
+      "name": "Javelin",
+      "toHit": 5,
+      "damage": "1d6+3",
+      "damageType": "piercing",
+      "reach": "30/120 ft.",
+      "text": ""
+    }
+  ],
+  "actions": [],
+  "reactions": [],
+  "legendary": [],
+  "notes": "",
+  "name": "Orc",
+  "ac": 13,
+  "hpMax": 15,
+  "str": 16,
+  "dex": 12,
+  "con": 16,
+  "intel": 7,
+  "wis": 11,
+  "cha": 10
+}

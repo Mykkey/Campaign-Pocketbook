@@ -1,0 +1,57 @@
+{
+  "kind": "MONSTER",
+  "size": "Small",
+  "creatureType": "humanoid (goblinoid)",
+  "alignment": "neutral evil",
+  "acNote": "leather armor, shield",
+  "hitDice": "2d6",
+  "speed": "30 ft.",
+  "proficiency": 2,
+  "saves": "",
+  "skills": "Stealth +6",
+  "vulnerabilities": "",
+  "resistances": "",
+  "immunities": "",
+  "conditionImmunities": "",
+  "senses": "darkvision 60 ft., passive Perception 9",
+  "languages": "Common, Goblin",
+  "challenge": "1/4",
+  "xp": 50,
+  "traits": [
+    {
+      "name": "Nimble Escape",
+      "text": "The goblin can take the Disengage or Hide action as a bonus action on each of its turns."
+    }
+  ],
+  "attacks": [
+    {
+      "name": "Scimitar",
+      "toHit": 4,
+      "damage": "1d6+2",
+      "damageType": "slashing",
+      "reach": "5 ft.",
+      "text": ""
+    },
+    {
+      "name": "Shortbow",
+      "toHit": 4,
+      "damage": "1d6+2",
+      "damageType": "piercing",
+      "reach": "80/320 ft.",
+      "text": ""
+    }
+  ],
+  "actions": [],
+  "reactions": [],
+  "legendary": [],
+  "notes": "",
+  "name": "Goblin",
+  "ac": 15,
+  "hpMax": 7,
+  "str": 8,
+  "dex": 14,
+  "con": 10,
+  "intel": 10,
+  "wis": 8,
+  "cha": 8
+}

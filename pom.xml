@@ -6,7 +6,7 @@
 
     <groupId>dnd</groupId>
     <artifactId>dnd-campaign-notes</artifactId>
-    <version>1.1.1</version>
+    <version>1.2.0</version>
     <packaging>jar</packaging>
     <name>DnD Campaign Notes</name>
 
@@ -46,6 +46,16 @@
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
+                <includes>
+                    <include>version.properties</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <excludes>
+                    <exclude>version.properties</exclude>
+                </excludes>
             </resource>
         </resources>
         <plugins>

@@ -5,19 +5,27 @@ import dnd.ui.ProjectLauncher;
 import dnd.ui.UpdateBanner;
 import javafx.scene.layout.BorderPane;
 import dnd.ui.WorkspaceView;
+import dnd.update.UpdateChecker;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
 public class App extends Application {
+    private static final String TITLE = "D&D Campaign Notes (" + UpdateChecker.currentVersion() + ")";
+
     private Stage stage;
     private WorkspaceView workspace;
 
     @Override
     public void start(Stage stage) {
         this.stage = stage;
-        stage.setTitle("D&D Campaign Notes");
+        stage.setTitle(TITLE);
+        try (java.io.InputStream icon = App.class.getResourceAsStream("/icon.png")) {
+            if (icon != null) stage.getIcons().add(new javafx.scene.image.Image(icon));
+        } catch (java.io.IOException ignored) {
+            // the app works fine without an icon
+        }
         stage.setWidth(1400);
         stage.setHeight(850);
         stage.setOnCloseRequest(e -> {
@@ -34,13 +42,13 @@ public class App extends Application {
         root.setTop(new UpdateBanner(getHostServices()));
         root.setCenter(new StackPane(new ProjectLauncher(this::showWorkspace)));
         stage.setScene(new Scene(root, stage.getWidth(), stage.getHeight()));
-        stage.setTitle("D&D Campaign Notes");
+        stage.setTitle(TITLE);
     }
 
     private void showWorkspace(ProjectStore store) {
         workspace = new WorkspaceView(store, this::showLauncher, getHostServices());
         stage.setScene(new Scene(workspace, stage.getWidth(), stage.getHeight()));
-        stage.setTitle("D&D Campaign Notes - " + store.project.name);
+        stage.setTitle(TITLE + " - " + store.project.name);
     }
 
     public static void main(String[] args) {

@@ -44,7 +44,7 @@ final class PinDialog {
         List<TreeNode> nodes = new ArrayList<>();
         store.project.root.collectItems(nodes);
         for (TreeNode n : nodes) {
-            String kind = n.isBattleMap() ? "map" : n.isCard() ? "card" : n.isEncounter() ? "encounter" : n.isSpell() ? "spell" : "whiteboard";
+            String kind = n.isBattleMap() ? "map" : n.isCard() ? "card" : n.isEncounter() ? "encounter" : n.isSpell() ? "spell" : n.isMagicItem() ? "magic item" : "whiteboard";
             items.add(new Item(n.id, n.name + "  (" + kind + ")"));
         }
         ComboBox<Item> link = new ComboBox<>(FXCollections.observableArrayList(items));

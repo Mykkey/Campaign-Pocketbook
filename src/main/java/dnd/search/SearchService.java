@@ -89,6 +89,23 @@ public final class SearchService {
             }
         }
 
+        // magic items: by name, then by what is written on them
+        List<TreeNode> magicItems = new ArrayList<>();
+        store.project.root.collectKind(TreeNode.KIND_ITEM, magicItems);
+        for (TreeNode n : magicItems) {
+            if (n.name.toLowerCase(Locale.ROOT).contains(q)) {
+                out.add(new Result(n.id, n.name, null, "Magic item"));
+                if (out.size() >= limit) return out;
+                continue;
+            }
+            dnd.model.MagicItem mi = store.magicItem(n.id);
+            String hit = mi == null ? null : itemMatch(mi, q);
+            if (hit != null) {
+                out.add(new Result(n.id, n.name, null, "Magic item - " + hit));
+                if (out.size() >= limit) return out;
+            }
+        }
+
         // encounters: by name and notes
         List<TreeNode> encounters = new ArrayList<>();
         store.project.root.collectEncounters(encounters);
@@ -162,6 +179,17 @@ public final class SearchService {
                 {"senses", c.senses}, {"skills", c.skills}, {"resistances", c.resistances}, {"immunities", c.immunities},
                 {"vulnerabilities", c.vulnerabilities}, {"saves", c.saves}};
         for (String[] f : fields) if (has(f[1], q)) return f[0] + ": " + excerpt(f[1], q);
+        return null;
+    }
+
+    /** Where on a magic item card the text was found, or null. */
+    static String itemMatch(dnd.model.MagicItem m, String q) {
+        if (has(m.description, q)) return "text: " + excerpt(m.description, q);
+        if (has(m.curse, q)) return "curse: " + excerpt(m.curse, q);
+        if (has(m.type, q)) return "type: " + m.type;
+        if (has(m.rarity, q)) return "rarity: " + m.rarity;
+        if (has(m.attunementNote, q)) return "attunement: " + m.attunementNote;
+        if (has(m.notes, q)) return "notes: " + excerpt(m.notes, q);
         return null;
     }
 

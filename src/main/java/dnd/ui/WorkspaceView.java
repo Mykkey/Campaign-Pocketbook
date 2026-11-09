@@ -76,10 +76,13 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Button newSpell = new Button("+ Spell");
         newSpell.setTooltip(new Tooltip("Create a spell card (your own homebrew spell, or edit one imported from the library)"));
         newSpell.setOnAction(e -> newSpell(selectedFolder()));
+        Button newItem = new Button("+ Item");
+        newItem.setTooltip(new Tooltip("Create a magic item card (your own homebrew item, or one from your loot)"));
+        newItem.setOnAction(e -> newMagicItem(selectedFolder()));
         Button newEncounter = new Button("+ Encounter");
         newEncounter.setTooltip(new Tooltip("Plan a fight: pick creatures and see how hard it is for your party"));
         newEncounter.setOnAction(e -> newEncounter(selectedFolder()));
-        FlowPane treeButtons = new FlowPane(6, 6, newBoard, newMap, newCard, newSpell, newEncounter, newFolder);
+        FlowPane treeButtons = new FlowPane(6, 6, newBoard, newMap, newCard, newSpell, newItem, newEncounter, newFolder);
         tree.setCellFactory(v -> createTreeCell(true));
         tree.setOnMouseClicked(e -> {
             if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2) {
@@ -332,6 +335,13 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
                     return;
                 }
                 view = new SpellEditor(sp, store, newName -> renameFromEditor(id, newName));
+            } else if (store.isMagicItem(id)) {
+                dnd.model.MagicItem mi = store.magicItem(id);
+                if (mi == null) {
+                    new Alert(Alert.AlertType.WARNING, "That magic item could not be found.").show();
+                    return;
+                }
+                view = new MagicItemEditor(mi, store, newName -> renameFromEditor(id, newName));
             } else if (store.isEncounter(id)) {
                 dnd.model.Encounter en = store.encounter(id);
                 if (en == null) {
@@ -725,6 +735,8 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         nc.setOnAction(e -> newCard(selectedFolder()));
         MenuItem nsp = new MenuItem("New spell...");
         nsp.setOnAction(e -> newSpell(selectedFolder()));
+        MenuItem nmi = new MenuItem("New magic item...");
+        nmi.setOnAction(e -> newMagicItem(selectedFolder()));
         MenuItem ne = new MenuItem("New encounter...");
         ne.setOnAction(e -> newEncounter(selectedFolder()));
         MenuItem dup = new MenuItem("Duplicate");
@@ -746,11 +758,11 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         colour.getItems().addAll(new SeparatorMenuItem(), defaultColour);
         MenuItem del = new MenuItem("Delete");
         del.setOnAction(e -> deleteSelected());
-        ContextMenu m = new ContextMenu(nb, nm, nc, nsp, ne, nf, new SeparatorMenuItem(), dup, rn, colour, del);
+        ContextMenu m = new ContextMenu(nb, nm, nc, nsp, nmi, ne, nf, new SeparatorMenuItem(), dup, rn, colour, del);
         m.setOnShowing(e -> {
             TreeItem<TreeNode> it = tree.getSelectionModel().getSelectedItem();
             boolean isRoot = it == null || it.getValue() == store.project.root;
-            dup.setDisable(it == null || !(it.getValue().isCard() || it.getValue().isEncounter() || it.getValue().isSpell()));
+            dup.setDisable(it == null || !(it.getValue().isCard() || it.getValue().isEncounter() || it.getValue().isSpell() || it.getValue().isMagicItem()));
             rn.setDisable(it == null);
             colour.setDisable(it == null);
             del.setDisable(isRoot);
@@ -807,6 +819,16 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         });
     }
 
+    private void newMagicItem(TreeNode parent) {
+        ask("New magic item", "Item name:", "New Magic Item").ifPresent(name -> {
+            dnd.model.MagicItem mi = new dnd.model.MagicItem();
+            mi.name = name;
+            store.createMagicItem(parent, mi);
+            refreshTree();
+            openItem(mi.id);
+        });
+    }
+
     private void newEncounter(TreeNode parent) {
         ask("New encounter", "Encounter name:", "New Encounter").ifPresent(name -> {
             dnd.model.Encounter e = store.createEncounter(parent, name);
@@ -827,6 +849,9 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             newId = copy == null ? null : copy.id;
         } else if (it.getValue().isSpell()) {
             dnd.model.Spell copy = store.duplicateSpell(it.getValue());
+            newId = copy == null ? null : copy.id;
+        } else if (it.getValue().isMagicItem()) {
+            dnd.model.MagicItem copy = store.duplicateMagicItem(it.getValue());
             newId = copy == null ? null : copy.id;
         } else {
             return;
@@ -892,7 +917,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Alert a = new Alert(Alert.AlertType.CONFIRMATION,
                 "Delete \"" + n.name + "\"" + (n.folder ? " and everything inside it" : "") + "? This cannot be undone.",
                 ButtonType.OK, ButtonType.CANCEL);
-        a.setHeaderText("Delete " + (n.folder ? "folder" : n.isBattleMap() ? "battlemap" : n.isCard() ? "card" : n.isEncounter() ? "encounter" : n.isSpell() ? "spell" : "whiteboard"));
+        a.setHeaderText("Delete " + (n.folder ? "folder" : n.isBattleMap() ? "battlemap" : n.isCard() ? "card" : n.isEncounter() ? "encounter" : n.isSpell() ? "spell" : n.isMagicItem() ? "magic item" : "whiteboard"));
         Optional<ButtonType> r = a.showAndWait();
         if (r.isEmpty() || r.get() != ButtonType.OK) return;
 

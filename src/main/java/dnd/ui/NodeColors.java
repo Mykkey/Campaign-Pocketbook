@@ -22,6 +22,9 @@ public final class NodeColors {
     public static final String CARD = "#e0a030";
     public static final String ENCOUNTER = "#cf4b4b";
     public static final String SPELL = "#8b5fd6";
+    public static final String MAGIC_ITEM = "#d6568f";
+    public static final String QUEST = "#e2823a";
+    public static final String SESSION = "#6b7fd6";
 
     /** The colour a node has unless the DM picked one. */
     public static String defaultFor(TreeNode n) {
@@ -30,6 +33,9 @@ public final class NodeColors {
         if (n.isCard()) return CARD;
         if (n.isEncounter()) return ENCOUNTER;
         if (n.isSpell()) return SPELL;
+        if (n.isMagicItem()) return MAGIC_ITEM;
+        if (n.isQuest()) return QUEST;
+        if (n.isSession()) return SESSION;
         return BOARD;
     }
 

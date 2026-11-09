@@ -45,6 +45,17 @@ public final class NodeIcons {
             p.getChildren().addAll(fill("M3.5 1.5 H12.5 A1 1 0 0 1 13.5 2.5 V13 A1.5 1.5 0 0 1 12 14.5 H3.5 A2 2 0 0 1 1.5 12.5 V3.5 A2 2 0 0 1 3.5 1.5 Z", c),
                     line("M4.2 3 V14", Color.web("#ffffff", 0.45), 1),
                     fill("M8.6 4.2 L9.5 6.9 L12.2 7.8 L9.5 8.7 L8.6 11.4 L7.7 8.7 L5 7.8 L7.7 6.9 Z", Color.web("#ffffff", 0.95)));
+        } else if (n.isMagicItem()) { // a faceted gem
+            p.getChildren().addAll(fill("M8 1.5 L14 6 L8 14.5 L2 6 Z", c),
+                    line("M2 6 H14 M5.4 6 L8 14 L10.6 6 M8 2 L5.4 6 M8 2 L10.6 6", Color.web("#ffffff", 0.75), 0.9));
+        } else if (n.isQuest()) { // a banner on a pole
+            p.getChildren().addAll(line("M3.8 14.8 V1.8", c, 1.6),
+                    fill("M4.4 2.4 H13.4 L11 5.2 L13.4 8 H4.4 Z", c));
+        } else if (n.isSession()) { // a calendar page
+            p.getChildren().addAll(fill("M2.5 2.5 H13.5 A1 1 0 0 1 14.5 3.5 V13.5 A1 1 0 0 1 13.5 14.5 H2.5 A1 1 0 0 1 1.5 13.5 V3.5 A1 1 0 0 1 2.5 2.5 Z", c),
+                    fill("M1.5 3.5 A1 1 0 0 1 2.5 2.5 H13.5 A1 1 0 0 1 14.5 3.5 V5.6 H1.5 Z", c.darker()),
+                    fill("M3.6 7.4 H5.6 V9.2 H3.6 Z M7 7.4 H9 V9.2 H7 Z M10.4 7.4 H12.4 V9.2 H10.4 Z M3.6 10.6 H5.6 V12.4 H3.6 Z M7 10.6 H9 V12.4 H7 Z",
+                            Color.web("#ffffff", 0.85)));
         } else if (n.isEncounter()) {
             p.getChildren().addAll(line("M3.2 3.2 L12.8 12.8 M12.8 3.2 L3.2 12.8", c, 2),
                     line("M9.2 13 L13 9.2 M2.9 9.2 L6.8 13", c, 1.6));

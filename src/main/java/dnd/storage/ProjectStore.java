@@ -3,6 +3,8 @@ package dnd.storage;
 import dnd.model.BattleMap;
 import dnd.model.Board;
 import dnd.model.Card;
+import dnd.model.MagicItem;
+import dnd.model.ProjectEntry;
 import dnd.model.Encounter;
 import dnd.model.Spell;
 import dnd.model.Project;
@@ -26,6 +28,9 @@ import java.util.stream.Stream;
  *   cards/&lt;id&gt;.card      one file per character / creature card
  *   encounters/&lt;id&gt;.encounter  one file per planned fight
  *   spells/&lt;id&gt;.spell        one file per spell card
+ *   items/&lt;id&gt;.item          one file per magic item card
+ *   quests/&lt;id&gt;.quest        one file per quest
+ *   sessions/&lt;id&gt;.session    one file per session log
  *   assets/&lt;file&gt;        imported SVG/PNG pieces for battlemaps
  *   images/&lt;file&gt;        imported pictures
  * </pre>
@@ -50,6 +55,10 @@ public final class ProjectStore {
     private final Set<String> dirtySpells = new HashSet<>();
     private int namesVersion;
     private boolean projectDirty;
+
+    /** The kinds of item that are plain "one JSON file each" entries (see ProjectEntry). */
+    private final List<Kind<?>> kinds = new ArrayList<>();
+    private final Kind<dnd.model.MagicItem> magicItems = register(new Kind<>("items", "item", TreeNode.KIND_ITEM, dnd.model.MagicItem.class));
 
     private ProjectStore(Path dir, Project project) {
         this.dir = dir;
@@ -106,6 +115,9 @@ public final class ProjectStore {
         Files.createDirectories(dir.resolve("cards"));
         Files.createDirectories(dir.resolve("encounters"));
         Files.createDirectories(dir.resolve("spells"));
+        Files.createDirectories(dir.resolve("items"));
+        Files.createDirectories(dir.resolve("quests"));
+        Files.createDirectories(dir.resolve("sessions"));
         Files.createDirectories(dir.resolve("images"));
         Files.createDirectories(dir.resolve("assets"));
     }
@@ -419,6 +431,143 @@ public final class ProjectStore {
         return namesVersion;
     }
 
+    // ---------------------------------------------------------------- magic items, quests, sessions
+
+    /** Cache, files and tree plumbing for one kind of {@link ProjectEntry}. */
+    private final class Kind<T extends ProjectEntry> {
+        final String folder, ext, nodeKind;
+        final Class<T> type;
+        final Map<String, T> cache = new HashMap<>();
+        final Set<String> dirty = new HashSet<>();
+
+        Kind(String folder, String ext, String nodeKind, Class<T> type) {
+            this.folder = folder;
+            this.ext = ext;
+            this.nodeKind = nodeKind;
+            this.type = type;
+        }
+
+        Path path(String id) {
+            return dir.resolve(folder).resolve(id + "." + ext);
+        }
+
+        boolean is(String id) {
+            TreeNode n = id == null ? null : project.root.find(id);
+            return n != null && !n.folder && nodeKind.equals(n.kind);
+        }
+
+        /** Loads (and caches) one; null if it doesn't exist or can't be read. */
+        T get(String id) {
+            T t = cache.get(id);
+            if (t != null || id == null) return t;
+            Path p = path(id);
+            if (!Files.isRegularFile(p)) return null;
+            try {
+                t = Json.readFile(p, type);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                return null;
+            }
+            t.id = id;
+            cache.put(id, t);
+            return t;
+        }
+
+        /** Adds it to the project under {@code parent}; it gets a fresh id that becomes the tree node's id. */
+        T create(TreeNode parent, T entry) {
+            entry.id = UUID.randomUUID().toString();
+            TreeNode n = new TreeNode(entry.name, false);
+            n.id = entry.id;
+            n.kind = nodeKind;
+            parent.children.add(n);
+            cache.put(entry.id, entry);
+            markDirty(entry);
+            markProjectDirty();
+            return entry;
+        }
+
+        void markDirty(T entry) {
+            dirty.add(entry.id);
+            namesVersion++;
+            onDirty.run();
+        }
+
+        List<String> ids() {
+            List<TreeNode> nodes = new ArrayList<>();
+            project.root.collectKind(nodeKind, nodes);
+            List<String> ids = new ArrayList<>();
+            for (TreeNode n : nodes) ids.add(n.id);
+            return ids;
+        }
+
+        void rename(String id, String name) {
+            T t = get(id);
+            if (t != null) {
+                t.name = name;
+                markDirty(t);
+            }
+        }
+
+        void forget(String id) {
+            cache.remove(id);
+            dirty.remove(id);
+            try {
+                Files.deleteIfExists(path(id));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        void flush() throws IOException {
+            for (String id : new ArrayList<>(dirty)) {
+                T t = cache.get(id);
+                if (t != null) Json.writeFile(path(id), t);
+            }
+            dirty.clear();
+        }
+    }
+
+    private <T extends ProjectEntry> Kind<T> register(Kind<T> k) {
+        kinds.add(k);
+        return k;
+    }
+
+    private Kind<?> kindFor(String nodeKind) {
+        for (Kind<?> k : kinds) if (k.nodeKind.equals(nodeKind)) return k;
+        return null;
+    }
+
+    public boolean isMagicItem(String id) {
+        return magicItems.is(id);
+    }
+
+    /** Loads (and caches) a magic item card; null if it doesn't exist or can't be read. */
+    public MagicItem magicItem(String id) {
+        return magicItems.get(id);
+    }
+
+    public MagicItem createMagicItem(TreeNode parent, MagicItem item) {
+        return magicItems.create(parent, item);
+    }
+
+    /** Copies a magic item card next to the original (name + " (copy)"). */
+    public MagicItem duplicateMagicItem(TreeNode node) {
+        MagicItem original = magicItem(node.id);
+        if (original == null) return null;
+        MagicItem copy = original.copy();
+        copy.name = original.name + " (copy)";
+        TreeNode parent = project.root.parentOf(node.id);
+        return createMagicItem(parent == null ? project.root : parent, copy);
+    }
+
+    public List<String> allMagicItemIds() {
+        return magicItems.ids();
+    }
+
+    public void markMagicItemDirty(MagicItem item) {
+        magicItems.markDirty(item);
+    }
+
     // ---------------------------------------------------------------- battlemaps
 
     private Path mapPath(String id) {
@@ -489,6 +638,7 @@ public final class ProjectStore {
             else if (isCard(id)) card(id);
             else if (isEncounter(id)) encounter(id);
             else if (isSpell(id)) spell(id);
+            else if (isMagicItem(id)) magicItem(id);
             else if (boardExists(id)) board(id);
         }
         assets();
@@ -576,6 +726,8 @@ public final class ProjectStore {
                 e.name = name;
                 markEncounterDirty(e);
             }
+        } else if (!node.folder && node.kind != null && kindFor(node.kind) != null) {
+            kindFor(node.kind).rename(node.id, name);
         } else if (node == project.root) {
             project.name = name;
         }
@@ -607,6 +759,7 @@ public final class ProjectStore {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            for (Kind<?> k : kinds) if (k.nodeKind.equals(b.kind)) k.forget(b.id);
             project.openBoards.remove(b.id);
         }
         TreeNode parent = project.root.parentOf(node.id);
@@ -681,6 +834,7 @@ public final class ProjectStore {
                 if (s != null) Json.writeFile(spellPath(id), s);
             }
             dirtySpells.clear();
+            for (Kind<?> k : kinds) k.flush();
             if (projectDirty) {
                 Json.writeFile(dir.resolve(PROJECT_FILE), project);
                 projectDirty = false;

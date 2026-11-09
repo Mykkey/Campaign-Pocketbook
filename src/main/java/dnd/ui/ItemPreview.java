@@ -94,6 +94,9 @@ final class ItemPreview {
                 iv.setFitWidth(360);
                 return plainWithGraphic(m.name, "Battlemap  -  " + m.cols + " x " + m.rows + " cells", iv);
             }
+        } else if (node.isMagicItem()) {
+            dnd.model.MagicItem mi = store.magicItem(id);
+            if (mi != null) return new MagicItemCardView(mi);
         } else if (node.isEncounter()) {
             Encounter e = store.encounter(id);
             if (e != null) return encounter(store, e);

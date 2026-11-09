@@ -268,7 +268,7 @@ public class BoardView extends Pane implements ItemView {
     /**
      * Draws laid-out lines (each word in its own bold/italic) starting at (x, y), top-aligned. Words that carry a
      * link are blue and underlined, note-only words are green and underlined, words with both are blue with a
-     * small green dot after them, and names of cards and spells that could be linked get a faint dotted underline.
+     * small green dot after them, and names of cards, spells and items that could be linked get a faint dotted underline.
      */
     private void drawLines(GraphicsContext g, List<RichLayout.Line> lines, BoardObject o, double x, double y,
                            double maxY) {
@@ -353,6 +353,10 @@ public class BoardView extends Pane implements ItemView {
             for (String id : store.allSpellIds()) {
                 dnd.model.Spell s = store.spell(id);
                 if (s != null) items.add(new dnd.text.NameHints.ItemNames(id, s.name, List.of()));
+            }
+            for (String id : store.allMagicItemIds()) {
+                dnd.model.MagicItem m = store.magicItem(id);
+                if (m != null) items.add(new dnd.text.NameHints.ItemNames(id, m.name, List.of()));
             }
             nameIndex = dnd.text.NameHints.index(dnd.text.NameHints.entriesFor(items));
             nameIndexVersion = store.namesVersion();

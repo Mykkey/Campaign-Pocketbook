@@ -6,6 +6,7 @@ import dnd.model.Card;
 import dnd.model.MagicItem;
 import dnd.model.ProjectEntry;
 import dnd.model.Quest;
+import dnd.model.Session;
 import dnd.model.Encounter;
 import dnd.model.Spell;
 import dnd.model.Project;
@@ -61,6 +62,7 @@ public final class ProjectStore {
     private final List<Kind<?>> kinds = new ArrayList<>();
     private final Kind<dnd.model.MagicItem> magicItems = register(new Kind<>("items", "item", TreeNode.KIND_ITEM, dnd.model.MagicItem.class));
     private final Kind<Quest> quests = register(new Kind<>("quests", "quest", TreeNode.KIND_QUEST, Quest.class));
+    private final Kind<Session> sessions = register(new Kind<>("sessions", "session", TreeNode.KIND_SESSION, Session.class));
 
     private ProjectStore(Path dir, Project project) {
         this.dir = dir;
@@ -591,6 +593,37 @@ public final class ProjectStore {
         quests.markDirty(quest);
     }
 
+    public boolean isSession(String id) {
+        return sessions.is(id);
+    }
+
+    /** Loads (and caches) a session log; null if it doesn't exist or can't be read. */
+    public Session session(String id) {
+        return sessions.get(id);
+    }
+
+    public Session createSession(TreeNode parent, Session session) {
+        return sessions.create(parent, session);
+    }
+
+    public List<String> allSessionIds() {
+        return sessions.ids();
+    }
+
+    /** Every session, in the order they were played. */
+    public List<Session> allSessions() {
+        List<Session> out = new ArrayList<>();
+        for (String id : sessions.ids()) {
+            Session s = sessions.get(id);
+            if (s != null) out.add(s);
+        }
+        return Session.inOrder(out);
+    }
+
+    public void markSessionDirty(Session session) {
+        sessions.markDirty(session);
+    }
+
     // ---------------------------------------------------------------- battlemaps
 
     private Path mapPath(String id) {
@@ -663,6 +696,7 @@ public final class ProjectStore {
             else if (isSpell(id)) spell(id);
             else if (isMagicItem(id)) magicItem(id);
             else if (isQuest(id)) quest(id);
+            else if (isSession(id)) session(id);
             else if (boardExists(id)) board(id);
         }
         assets();

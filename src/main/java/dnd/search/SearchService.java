@@ -123,6 +123,23 @@ public final class SearchService {
             }
         }
 
+        // sessions: by name, then by recap, what happened and next steps
+        List<TreeNode> sessionNodes = new ArrayList<>();
+        store.project.root.collectKind(TreeNode.KIND_SESSION, sessionNodes);
+        for (TreeNode n : sessionNodes) {
+            if (n.name.toLowerCase(Locale.ROOT).contains(q)) {
+                out.add(new Result(n.id, n.name, null, "Session"));
+                if (out.size() >= limit) return out;
+                continue;
+            }
+            dnd.model.Session se = store.session(n.id);
+            String hit = se == null ? null : sessionMatch(se, q);
+            if (hit != null) {
+                out.add(new Result(n.id, n.name, null, "Session - " + hit));
+                if (out.size() >= limit) return out;
+            }
+        }
+
         // encounters: by name and notes
         List<TreeNode> encounters = new ArrayList<>();
         store.project.root.collectEncounters(encounters);
@@ -196,6 +213,15 @@ public final class SearchService {
                 {"senses", c.senses}, {"skills", c.skills}, {"resistances", c.resistances}, {"immunities", c.immunities},
                 {"vulnerabilities", c.vulnerabilities}, {"saves", c.saves}};
         for (String[] f : fields) if (has(f[1], q)) return f[0] + ": " + excerpt(f[1], q);
+        return null;
+    }
+
+    /** Where in a session log the text was found, or null. */
+    static String sessionMatch(dnd.model.Session se, String q) {
+        if (has(se.recap, q)) return "recap: " + excerpt(se.recap, q);
+        if (has(se.summary, q)) return "what happened: " + excerpt(se.summary, q);
+        if (has(se.nextSteps, q)) return "next: " + excerpt(se.nextSteps, q);
+        if (has(se.inWorldDate, q)) return "in-world date: " + se.inWorldDate;
         return null;
     }
 

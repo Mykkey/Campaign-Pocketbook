@@ -82,10 +82,13 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Button newQuest = new Button("+ Quest");
         newQuest.setTooltip(new Tooltip("Create a quest or plot thread with steps, clues and the people and places it involves"));
         newQuest.setOnAction(e -> newQuest(selectedFolder()));
+        Button newSession = new Button("+ Session");
+        newSession.setTooltip(new Tooltip("Write up a game session: what happened, a recap for next time, and what came up"));
+        newSession.setOnAction(e -> newSession(selectedFolder()));
         Button newEncounter = new Button("+ Encounter");
         newEncounter.setTooltip(new Tooltip("Plan a fight: pick creatures and see how hard it is for your party"));
         newEncounter.setOnAction(e -> newEncounter(selectedFolder()));
-        FlowPane treeButtons = new FlowPane(6, 6, newBoard, newMap, newCard, newSpell, newItem, newQuest, newEncounter, newFolder);
+        FlowPane treeButtons = new FlowPane(6, 6, newBoard, newMap, newCard, newSpell, newItem, newQuest, newSession, newEncounter, newFolder);
         tree.setCellFactory(v -> createTreeCell(true));
         tree.setOnMouseClicked(e -> {
             if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2) {
@@ -149,12 +152,15 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Button quests = new Button("Quests...");
         quests.setTooltip(new Tooltip("All your quests by status"));
         quests.setOnAction(e -> QuestBoardDialog.show(getScene().getWindow(), store, this::openItem));
+        Button timeline = new Button("Timeline...");
+        timeline.setTooltip(new Tooltip("Your sessions in order, with the recap of each"));
+        timeline.setOnAction(e -> TimelineDialog.show(getScene().getWindow(), store, this::openItem));
         Button library = new Button("Library...");
         library.setTooltip(new Tooltip("Browse imported SRD monsters and spells"));
         library.setOnAction(e -> openLibrary());
         recentMenu.setTooltip(new Tooltip("The last items you opened"));
         recentMenu.setOnShowing(e -> rebuildRecent());
-        HBox nav = new HBox(8, projects, backBtn, fwdBtn, trail, spacer, names, npc, loot, relations, quests, library, Theme.toggleButton(), recentMenu, backlinks, search);
+        HBox nav = new HBox(8, projects, backBtn, fwdBtn, trail, spacer, names, npc, loot, relations, quests, timeline, library, Theme.toggleButton(), recentMenu, backlinks, search);
         nav.setAlignment(Pos.CENTER_LEFT);
         nav.setPadding(new Insets(6, 8, 0, 8));
 
@@ -355,6 +361,13 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
                     return;
                 }
                 view = new QuestEditor(qu, store, newName -> renameFromEditor(id, newName), this::openItem, () -> pickBoard("Add to the quest..."));
+            } else if (store.isSession(id)) {
+                dnd.model.Session se = store.session(id);
+                if (se == null) {
+                    new Alert(Alert.AlertType.WARNING, "That session could not be found.").show();
+                    return;
+                }
+                view = new SessionEditor(se, store, newName -> renameFromEditor(id, newName), this::openItem, () -> pickBoard("Add to the session..."));
             } else if (store.isEncounter(id)) {
                 dnd.model.Encounter en = store.encounter(id);
                 if (en == null) {
@@ -752,6 +765,8 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         nmi.setOnAction(e -> newMagicItem(selectedFolder()));
         MenuItem nq = new MenuItem("New quest...");
         nq.setOnAction(e -> newQuest(selectedFolder()));
+        MenuItem nse = new MenuItem("New session...");
+        nse.setOnAction(e -> newSession(selectedFolder()));
         MenuItem ne = new MenuItem("New encounter...");
         ne.setOnAction(e -> newEncounter(selectedFolder()));
         MenuItem dup = new MenuItem("Duplicate");
@@ -773,7 +788,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         colour.getItems().addAll(new SeparatorMenuItem(), defaultColour);
         MenuItem del = new MenuItem("Delete");
         del.setOnAction(e -> deleteSelected());
-        ContextMenu m = new ContextMenu(nb, nm, nc, nsp, nmi, nq, ne, nf, new SeparatorMenuItem(), dup, rn, colour, del);
+        ContextMenu m = new ContextMenu(nb, nm, nc, nsp, nmi, nq, nse, ne, nf, new SeparatorMenuItem(), dup, rn, colour, del);
         m.setOnShowing(e -> {
             TreeItem<TreeNode> it = tree.getSelectionModel().getSelectedItem();
             boolean isRoot = it == null || it.getValue() == store.project.root;
@@ -851,6 +866,21 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             store.createQuest(parent, qu);
             refreshTree();
             openItem(qu.id);
+        });
+    }
+
+    private void newSession(TreeNode parent) {
+        int number = dnd.model.Session.nextNumber(store.allSessions());
+        ask("New session", "Session title:", "Session " + number).ifPresent(name -> {
+            dnd.model.Session se = new dnd.model.Session();
+            se.name = name;
+            se.number = number;
+            se.realDate = java.time.LocalDate.now().toString();
+            dnd.model.Session prev = dnd.model.Session.previous(store.allSessions(), se);
+            if (prev != null && prev.campaignDay > 0) se.campaignDay = prev.campaignDay;
+            store.createSession(parent, se);
+            refreshTree();
+            openItem(se.id);
         });
     }
 
@@ -942,7 +972,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Alert a = new Alert(Alert.AlertType.CONFIRMATION,
                 "Delete \"" + n.name + "\"" + (n.folder ? " and everything inside it" : "") + "? This cannot be undone.",
                 ButtonType.OK, ButtonType.CANCEL);
-        a.setHeaderText("Delete " + (n.folder ? "folder" : n.isBattleMap() ? "battlemap" : n.isCard() ? "card" : n.isEncounter() ? "encounter" : n.isSpell() ? "spell" : n.isMagicItem() ? "magic item" : n.isQuest() ? "quest" : "whiteboard"));
+        a.setHeaderText("Delete " + (n.folder ? "folder" : n.isBattleMap() ? "battlemap" : n.isCard() ? "card" : n.isEncounter() ? "encounter" : n.isSpell() ? "spell" : n.isMagicItem() ? "magic item" : n.isQuest() ? "quest" : n.isSession() ? "session" : "whiteboard"));
         Optional<ButtonType> r = a.showAndWait();
         if (r.isEmpty() || r.get() != ButtonType.OK) return;
 

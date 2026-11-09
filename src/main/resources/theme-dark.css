@@ -42,3 +42,6 @@
 .tooltip { -fx-background-color: #101215; -fx-text-fill: #e6e8eb; }
 .tree-cell:filled:selected, .list-cell:filled:selected { -fx-text-fill: white; }
 .tree-cell:filled:selected .label, .list-cell:filled:selected .label { -fx-text-fill: white; }
+
+.button:default { -fx-base: #3d7be0; -fx-text-fill: white; }
+.button:default:hover { -fx-base: #5b9bff; }

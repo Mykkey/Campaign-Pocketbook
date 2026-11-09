@@ -118,13 +118,16 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Button names = new Button("Names...");
         names.setTooltip(new Tooltip("Random character name generator (Ctrl+G)"));
         names.setOnAction(e -> openNameGenerator());
+        Button npc = new Button("NPC...");
+        npc.setTooltip(new Tooltip("Random NPC generator (Ctrl+Shift+N)"));
+        npc.setOnAction(e -> openNpcGenerator());
         Button loot = new Button("Loot...");
         loot.setTooltip(new Tooltip("Random treasure generator (Ctrl+L)"));
         loot.setOnAction(e -> openLootGenerator());
         Button library = new Button("Library...");
         library.setTooltip(new Tooltip("Browse imported SRD monsters and spells"));
         library.setOnAction(e -> openLibrary());
-        HBox nav = new HBox(8, projects, backBtn, fwdBtn, trail, spacer, names, loot, library, Theme.toggleButton(), backlinks, search);
+        HBox nav = new HBox(8, projects, backBtn, fwdBtn, trail, spacer, names, npc, loot, library, Theme.toggleButton(), backlinks, search);
         nav.setAlignment(Pos.CENTER_LEFT);
         nav.setPadding(new Insets(6, 8, 0, 8));
 
@@ -201,6 +204,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             scene.getAccelerators().put(new KeyCodeCombination(KeyCode.F, KeyCombination.SHORTCUT_DOWN), () -> search.requestFocus());
             scene.getAccelerators().put(new KeyCodeCombination(KeyCode.G, KeyCombination.SHORTCUT_DOWN), this::openNameGenerator);
             scene.getAccelerators().put(new KeyCodeCombination(KeyCode.L, KeyCombination.SHORTCUT_DOWN), this::openLootGenerator);
+            scene.getAccelerators().put(new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN, KeyCombination.SHIFT_DOWN), this::openNpcGenerator);
         });
 
         refreshTree();
@@ -496,6 +500,24 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             } else {
                 v.addTextAtCenter(text);
             }
+        });
+    }
+
+    private void openNpcGenerator() {
+        NpcDialog.show(getScene().getWindow(), text -> {
+            BoardView v = currentView();
+            if (v == null) {
+                new Alert(Alert.AlertType.INFORMATION, "Open a whiteboard first, then add the NPC to it.").show();
+            } else {
+                v.addTextAtCenter(text);
+            }
+        }, npc -> {
+            TreeNode folder = null;
+            for (TreeNode ch : store.project.root.children) if (ch.folder && "NPCs".equals(ch.name)) folder = ch;
+            if (folder == null) folder = store.createFolder(store.project.root, "NPCs");
+            dnd.model.Card card = store.createCard(folder, dnd.npc.NpcCards.toCard(npc));
+            refreshTree();
+            openItem(card.id);
         });
     }
 

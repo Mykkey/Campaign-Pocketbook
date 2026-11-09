@@ -130,6 +130,13 @@ Press **Loot...** in the top bar (or **Ctrl+L**) for random treasure. Pick a **t
 ## Dark mode
 Press **Dark mode** in the top bar (or on the project chooser) to switch the whole app to a dark theme, and **Light mode** to switch back. It is remembered the next time you start the app (in `settings.properties` next to your projects) and applies to every window and dialog. On whiteboards the board turns dark and dark text and lines are drawn lighter so they stay readable; the colours stored in your notes are never changed, and sticky notes, images and stat blocks keep their own colours. The player window is always dark.
 
+## NPC generator
+When the party talks to someone you had not planned, press **NPC...** in the top bar (or **Ctrl+Shift+N**). Pin whatever you care about, leave the rest on **Random**, and press **Roll**: race, gender, **category and profession** (over 60 built in, from farmers and innkeepers to guards, priests, nobles and thieves), age group and attitude to the party (friendly, neutral, wary or hostile). You get a name that fits the race, an age, two details of appearance, two personality traits (which lean warm or cold with the attitude), a mannerism, a voice, what they want, a secret, what they open with, and a couple of things a person in that job might know or offer, which is handy for improvising the conversation.
+
+- **Re-roll one detail:** the small button beside each line rolls only that line and keeps the rest (and keeps what you pinned).
+- **You choose what happens to them.** Rolling only shows the NPC. **Add to board** puts the description on the open whiteboard as a note, **Save as NPC card** makes a card in an "NPCs" folder (stats borrowed from a matching creature, e.g. a guard gets guard stats, with the description in its notes, ready for a battle), and **Copy** copies the text. Each does only its own thing, so you can add one to the board without creating a card.
+- **Your own professions:** **Edit professions...** lets you add professions (name, category, which creature's stats suit them, and what they might know). They appear next to the built-in ones in every project; the built-in ones cannot be changed. They are stored in `npc-professions.json` next to your projects.
+
 ## Credits
 The example creature cards, and any monsters and spells you import into the library, use content from the System Reference Document 5.1 by Wizards of the Coast, licensed under [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/). This app is not affiliated with or endorsed by Wizards of the Coast.
 

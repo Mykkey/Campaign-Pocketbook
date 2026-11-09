@@ -63,6 +63,8 @@ public class MapView extends Pane implements ItemView {
     private final Set<String> marqueeBase = new LinkedHashSet<>();
     /** Opens a card in a tab (set by the map editor; used by a token's "Open card" menu item). */
     public java.util.function.Consumer<String> openCard = id -> { };
+    /** Called with a token's id when it is clicked (used by the battle screen to show that creature's card). */
+    public java.util.function.Consumer<String> onTokenClicked = id -> { };
     private double[] rulerA, rulerB;
     private double fogX0, fogY0, fogX1, fogY1;
     private String pendingSnapshot;
@@ -529,6 +531,7 @@ public class MapView extends Pane implements ItemView {
         }
         // Ctrl+click or Shift+click toggles exactly the thing under the pointer, keeping the rest selected
         boolean multi = e.isShiftDown() || e.isShortcutDown();
+        if (tok != null && !multi) onTokenClicked.accept(tok.id);
         if (hitId != null) {
             if (multi) {
                 if (selected.remove(hitId)) {

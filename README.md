@@ -1,4 +1,4 @@
-# D&D Campaign Notes
+﻿# D&D Campaign Notes
 
 A whiteboard-style note-taking app for planning D&D campaigns. Drag the board around, double-click to drop text anywhere, draw, add sticky notes and images, and **link any object to another whiteboard** so a double-click jumps straight there. Organise boards into projects and folders, and keep several open at once in tabs.
 
@@ -81,19 +81,20 @@ Cards are their own item type (`+ Card` in the project tree, saved as `cards/<id
 - **Start from a template:** a blank player character, a blank creature, or one of ten example creatures (goblin, kobold, skeleton, zombie, wolf, giant rat, orc, bandit, guard, commoner).
 - **Duplicate** a card from the tree's right-click menu to make variants. Any whiteboard text or object can be **linked** to a card, so a double-click opens its stat block.
 
-## Battle mode (initiative tracker)
-On a battlemap, press **Battle** in the toolbar to dock the tracker on the right. Combat is tracked by hand: you roll the dice and type the results; the app keeps the state.
+## Battle mode
+On a battlemap, press **Battle** in the toolbar to open the battle screen. The map stays in the middle; creature cards go on the right and the turn order runs along the bottom. Combat is tracked by hand: you roll the dice and type the results; the app keeps the state. A slate banner at the top says **Battle setup**; once the fight starts it turns amber and reads **BATTLE - Round N** with whose turn it is.
 
-1. **+ Add...** picks cards from your project: tick each creature, set how many, which side (player / ally / enemy) and whether they **act as a group**. Each one becomes a token on the map, linked to its card (players clear fog around themselves by default).
-2. Type each creature's **initiative**. (Optional: *Roll enemy initiative* rolls d20 + bonus for enemies and allies, one roll per group.) Ties go to the higher initiative bonus; the ^ / v buttons order tied creatures by hand.
-3. **Start battle**, then press **Next >** to move through the turn order. Defeated creatures are skipped, and a new round starts after the last one. **< Back** steps backwards.
-4. The **Turn** card shows the attacks of whoever is up (to-hit, reach/range, damage with average), plus their other traits, with a link to open the card. For a group it shows each distinct card once with how many are left.
-5. **HP:** every creature has an HP bar and a box: type `-7` for damage, `+5` to heal, or a plain number to set HP. **Several hits at once** work too, e.g. `-5 -7 -3` when four goblins all hit the same fighter. Temporary HP soak damage first, reaching 0 marks a creature down (its token greys out with a cross), and healing brings it back. The `...` menu has rename, max HP, temp HP, AC, **conditions**, notes, find token, **place token** (puts a new token on the map if you deleted the old one) and remove.
-6. The token whose turn it is gets a gold ring on the map and in the player window.
+**1. Set up (once).** **+ Add creatures...** picks cards from your project: tick each creature, set how many, which side (player / ally / enemy) and whether they **act as a group**. Type each creature's initiative, or press its **d20** button; **Roll enemies and allies** rolls everyone who has none yet (one roll per group). Players roll their own, so type their results in. **Start battle** stays locked until everyone has an initiative, and initiative is never rolled again afterwards.
 
-**Groups:** creatures that share a group take one turn together with one initiative (a pack of goblins). The group collapses to a single row with a one-line HP summary and expands to per-creature HP. You can also tick two or more creatures and press *Group*, or *Ungroup* later.
+**2. Run it.** The **initiative strip** along the bottom lists everyone in order. The creature whose turn it is gets a large amber chip and the strip scrolls to it. Press **Next >** (or **N**) to advance, **< Back** (or **P**) to step back. Defeated creatures are skipped and a new round starts after the last one. The active creature's **large card** is on the right with its attacks (to-hit, reach/range, damage with average), traits and full stat block.
 
-The **player window** (Pop out) shows a slim turn-order strip along the top: names only, never HP, and it leaves out hidden creatures and enemies still in the fog. Press **I** there to show or hide it.
+**3. Plan ahead.** Click any chip in the strip, or any token on the map, to show that creature in a second card under the active one, without changing whose turn it is. **Back to current turn** closes it. Late arrivals can be added mid-battle with **+ Add creatures...** and are asked for their initiative.
+
+**HP:** every card has an HP bar and a box: type `-7` for damage, `+5` to heal, or a plain number to set HP. **Several hits at once** work too, e.g. `-5 -7 -3`. Temporary HP soak damage first, reaching 0 marks a creature down (its token greys out with a cross), and healing brings it back. The `...` menu has rename, max HP, temp HP, AC, **conditions**, notes, find token, **place token** (if you deleted the old one) and remove. **Map tools** in the banner brings the normal toolbar back for moving tokens and revealing fog; **Exit** returns to the normal editor and keeps the battle.
+
+**Groups:** creatures that share a group take one turn together with one initiative (a pack of goblins). Tick two or more rows in setup and press *Group*, or *Ungroup* later. The card lists each member with its own HP.
+
+The **player window** (Pop out) shows a slim turn-order strip along the top: names only, never HP, and it leaves out hidden creatures and enemies still in the fog. Press **I** there to show or hide it. The token whose turn it is gets a gold ring on the map and in the player window.
 
 ## Fog of war
 Tick **Fog** in a battlemap's toolbar to hide the map from the players until you reveal it. The player window shows unrevealed cells as solid black (so enemies and pieces under fog are not visible); in your editor the fog is shaded but see-through.

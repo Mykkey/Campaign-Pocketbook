@@ -26,6 +26,7 @@ class BattleEngineTest {
         c.name = name;
         c.side = side;
         c.initiative = initiative;
+        c.initiativeSet = true;
         c.hpMax = c.hpCurrent = 10;
         c.order = b.combatants.size();
         b.combatants.add(c);
@@ -279,21 +280,113 @@ class BattleEngineTest {
         assertTrue(c.conditions.isEmpty());
     }
 
+    // ---------------------------------------------------------------- setup: initiative is entered once, before starting
+
+    private static Combatant unset(Battle b, Card c, Side side) {
+        return BattleEngine.addFromCard(b, c, 1, false, side).get(0);
+    }
+
     @Test
-    void rollingInitiativeIsPerCreatureAndPerGroup() {
+    void newCreaturesStartWithoutAnInitiativeAndCannotStartTheBattle() {
         Battle b = new Battle();
-        Card goblin = card("goblin");
-        List<Combatant> gobs = BattleEngine.addFromCard(b, goblin, 3, true, Side.ENEMY);
+        Combatant hero = unset(b, card("guard"), Side.PLAYER);
+        List<Combatant> gobs = BattleEngine.addFromCard(b, card("goblin"), 3, true, Side.ENEMY);
+        assertFalse(hero.initiativeSet);
+        assertEquals(2, BattleEngine.missingInitiative(b).size(), "the hero and the goblin group");
+        assertFalse(BattleEngine.canStart(b));
+        assertFalse(BattleEngine.start(b), "starting refuses while anyone is missing an initiative");
+        assertFalse(b.active);
+
+        BattleEngine.setInitiative(b, hero, 15);
+        assertEquals(1, BattleEngine.missingInitiative(b).size());
+        assertFalse(BattleEngine.start(b));
+        BattleEngine.setInitiative(b, gobs.get(1), 9);
+        assertTrue(gobs.get(0).initiativeSet && gobs.get(2).initiativeSet, "a group shares one value, so setting one sets all");
+        assertTrue(BattleEngine.missingInitiative(b).isEmpty());
+        assertTrue(BattleEngine.canStart(b));
+        assertTrue(BattleEngine.start(b));
+        assertTrue(b.active);
+        assertEquals(hero.id, b.turnId);
+    }
+
+    @Test
+    void cannotStartWithNobodyOrWithEveryoneDown() {
+        Battle b = new Battle();
+        assertFalse(BattleEngine.canStart(b));
+        Combatant c = add(b, "A", 10, Side.ENEMY);
+        c.defeated = true;
+        assertFalse(BattleEngine.canStart(b));
+    }
+
+    @Test
+    void rollMissingRollsEachGroupOnceAndNeverRerolls() {
+        Battle b = new Battle();
+        List<Combatant> gobs = BattleEngine.addFromCard(b, card("goblin"), 3, true, Side.ENEMY);
         List<Combatant> orcs = BattleEngine.addFromCard(b, card("orc"), 2, false, Side.ENEMY);
-        Combatant pc = add(b, "Hero", 0, Side.PLAYER);
-        int rolls = BattleEngine.rollInitiative(b, Side.ENEMY, new Random(4));
-        assertEquals(3, rolls, "one for the goblin group and one per orc");
+        Combatant pc = unset(b, card("guard"), Side.PLAYER);
+        Combatant typed = unset(b, card("wolf"), Side.ENEMY);
+        BattleEngine.setInitiative(b, typed, 13); // the DM already typed this one
+
+        int rolls = BattleEngine.rollMissing(b, false, new Random(4));
+        assertEquals(3, rolls, "one for the goblin group and one per orc; the wolf is already set");
         assertEquals(gobs.get(0).initiative, gobs.get(1).initiative);
         assertEquals(gobs.get(0).initiative, gobs.get(2).initiative);
-        assertEquals(0, pc.initiative, "players are not rolled for");
-        for (Combatant o : orcs) {
-            assertTrue(o.initiative >= 1 + o.initiativeBonus && o.initiative <= 20 + o.initiativeBonus);
-        }
+        assertEquals(13, typed.initiative, "an entered value is never rolled over");
+        assertFalse(pc.initiativeSet, "players are typed in, not rolled for");
+        for (Combatant o : orcs) assertTrue(o.initiative >= 1 + o.initiativeBonus && o.initiative <= 20 + o.initiativeBonus);
+
+        int before = gobs.get(0).initiative;
+        assertEquals(0, BattleEngine.rollMissing(b, false, new Random(99)), "pressing it again changes nothing");
+        assertEquals(before, gobs.get(0).initiative);
+
+        assertEquals(1, BattleEngine.rollMissing(b, true, new Random(1)), "including players rolls the one left");
+        assertTrue(pc.initiativeSet);
+        assertTrue(BattleEngine.canStart(b));
+    }
+
+    @Test
+    void aRowsOwnDiceButtonRollsThatCreatureOrGroupOnly() {
+        Battle b = new Battle();
+        List<Combatant> gobs = BattleEngine.addFromCard(b, card("goblin"), 2, true, Side.ENEMY);
+        Combatant orc = unset(b, card("orc"), Side.ENEMY);
+        int v = BattleEngine.rollOne(b, gobs.get(0), new Random(3));
+        assertEquals(v, gobs.get(1).initiative);
+        assertTrue(gobs.get(1).initiativeSet);
+        assertFalse(orc.initiativeSet);
+    }
+
+    @Test
+    void aBattleSavedWhileRunningStillCountsAsHavingInitiatives() {
+        // battles saved before 'initiativeSet' existed have it false on everyone but are already running
+        Battle b = new Battle();
+        Combatant a = add(b, "A", 12, Side.PLAYER);
+        a.initiativeSet = false;
+        b.active = true;
+        assertTrue(BattleEngine.hasInitiative(b, a));
+        assertTrue(BattleEngine.missingInitiative(b).isEmpty());
+    }
+
+    @Test
+    void lateArrivalsJoinMidBattleWithoutDisturbingTheCurrentTurn() {
+        Battle b = new Battle();
+        Combatant a = add(b, "Hero", 18, Side.PLAYER);
+        Combatant g = add(b, "Guard", 10, Side.ENEMY);
+        BattleEngine.start(b);
+        BattleEngine.next(b);
+        assertEquals(g.id, b.turnId);
+
+        List<Combatant> late = BattleEngine.addMidBattle(b, card("wolf"), 2, true, Side.ENEMY, 14);
+        assertEquals(2, late.size());
+        assertEquals(g.id, b.turnId, "it is still the guard's turn");
+        assertTrue(late.get(0).initiativeSet && late.get(1).initiativeSet);
+        assertEquals(14, late.get(1).initiative);
+        assertEquals(3, BattleEngine.slots(b).size(), "the two wolves are one group slot");
+        assertEquals("Wolf x2", BattleEngine.slots(b).get(1).name(), "slotted between the hero and the guard");
+        BattleEngine.next(b);
+        assertEquals(a.id, b.turnId, "the new creatures take part from the next round");
+        assertEquals(2, b.round);
+        BattleEngine.next(b);
+        assertTrue(BattleEngine.isCurrent(b, late.get(0)));
     }
 
     @Test

@@ -23,7 +23,12 @@ public class MapEditor extends BorderPane implements ItemView {
 
     private final MapView view;
     private final MapToolState ts = new MapToolState();
-    private BattlePanel battlePanel;
+    private BattleScreen battleScreen;
+    private AssetPanel assetPanel;
+    private FlowPane toolbar;
+    private ToggleButton battleBtn;
+    private final javafx.scene.layout.VBox battleTop = new javafx.scene.layout.VBox();
+    private boolean battleOpen;
     private final BattleMap map;
     private final ProjectStore store;
     private final java.util.function.Consumer<String> openItem;
@@ -44,8 +49,20 @@ public class MapEditor extends BorderPane implements ItemView {
         for (dnd.model.MapObject o : map.objects) used.add(o.assetId);
         store.assets().warmUp(used, 256);
         setCenter(view);
-        setLeft(new AssetPanel(store, ts));
-        setTop(buildToolbar(map, store));
+        assetPanel = new AssetPanel(store, ts);
+        setLeft(assetPanel);
+        toolbar = buildToolbar(map, store);
+        setTop(toolbar);
+        // clicking a token during a battle shows that creature's card
+        view.onTokenClicked = id -> {
+            if (battleOpen && battleScreen != null) battleScreen.inspectToken(id);
+        };
+        // N = next turn, P = previous turn while the battle screen is up (not while typing in a box)
+        addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, ev -> {
+            if (!battleOpen || battleScreen == null) return;
+            if (getScene() != null && getScene().getFocusOwner() instanceof TextInputControl) return;
+            if (battleScreen.handleKey(ev)) ev.consume();
+        });
         if (map.battle != null && map.battle.active) setBattleVisible(true); // a fight was in progress when it was saved
         // first open: show the whole map
         javafx.application.Platform.runLater(() -> {
@@ -143,10 +160,10 @@ public class MapEditor extends BorderPane implements ItemView {
                 + "playtable monitor and press F11 for fullscreen. It updates live as you edit",
                 () -> PlayerWindow.open(getScene() == null ? null : getScene().getWindow(), map, store));
         popOut.setStyle("-fx-font-weight: bold;");
-        ToggleButton battleBtn = new ToggleButton("Battle");
+        battleBtn = new ToggleButton("Battle");
         battleBtn.setFocusTraversable(false);
         battleBtn.setStyle("-fx-font-weight: bold;");
-        battleBtn.setTooltip(new Tooltip("Battle mode: initiative tracker, HP and the attacks of whoever's turn it is"));
+        battleBtn.setTooltip(new Tooltip("Battle mode: set up a fight, then run it with the initiative strip and creature cards"));
         battleBtn.setSelected(map.battle != null && map.battle.active);
         battleBtn.setOnAction(e -> setBattleVisible(battleBtn.isSelected()));
         bar.getChildren().addAll(
@@ -159,29 +176,48 @@ public class MapEditor extends BorderPane implements ItemView {
         return bar;
     }
 
+    /** Opens or closes the battle screen: a banner on top, the creature cards on the right, the turn order below. */
     private void setBattleVisible(boolean on) {
+        battleOpen = on;
+        if (battleBtn != null) battleBtn.setSelected(on);
         if (on) {
-            if (battlePanel == null) {
-                battlePanel = new BattlePanel(map, store, new BattlePanel.Host() {
-                    @Override public void changed() { view.battleChanged(); }
+            if (battleScreen == null) {
+                battleScreen = new BattleScreen(map, store, view, new BattleScreen.Host() {
+                    @Override public void exit() { setBattleVisible(false); }
 
-                    @Override public void addTokens(java.util.List<dnd.model.Combatant> added) { view.addCombatantTokens(added); }
+                    @Override public void showMapTools(boolean show) {
+                        toolbar.setVisible(show);
+                        toolbar.setManaged(show);
+                    }
 
-                    @Override public void removeToken(String tokenId) { view.removeTokenById(tokenId); }
+                    @Override public void popOutPlayers() {
+                        PlayerWindow.open(getScene() == null ? null : getScene().getWindow(), map, store);
+                    }
 
-                    @Override public void centerOn(String tokenId) { view.centerOnToken(tokenId); }
-
-                    @Override public void openCard(String cardId) { openItem.accept(cardId); }
+                    @Override public void openItem(String itemId) { openItem.accept(itemId); }
                 });
             } else {
-                battlePanel.refresh();
+                battleScreen.refresh();
             }
-            setRight(battlePanel);
+            setLeft(null);
+            setTop(null);
+            battleTop.getChildren().setAll(battleScreen.banner(), toolbar);
+            toolbar.setVisible(false); // hidden until "Map tools" is pressed
+            toolbar.setManaged(false);
+            setTop(battleTop);
+            setRight(battleScreen.rightPane());
+            setBottom(battleScreen.strip());
         } else {
+            setTop(null);
+            battleTop.getChildren().clear();
+            toolbar.setVisible(true);
+            toolbar.setManaged(true);
+            setTop(toolbar);
+            setLeft(assetPanel);
             setRight(null);
+            setBottom(null);
         }
     }
-
     private static ListCell<Object> terrainCell() {
         return new ListCell<>() {
             @Override

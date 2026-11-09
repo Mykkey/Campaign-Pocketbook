@@ -14,6 +14,11 @@ public class Combatant {
     public String name = "Creature";
     public Side side = Side.ENEMY;
     public int initiative;
+    /**
+     * True once an initiative has been entered or rolled. A battle can't start until everyone has one. (Battles
+     * saved before this existed are treated as set while they are running.)
+     */
+    public boolean initiativeSet;
     /** Tie-breaker bonus copied from the card (used when two creatures roll the same initiative). */
     public int initiativeBonus;
     /** Manual order for ties: lower acts first. */

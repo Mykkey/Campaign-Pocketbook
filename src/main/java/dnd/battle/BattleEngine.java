@@ -88,8 +88,73 @@ public final class BattleEngine {
 
     // ================================================================ running the fight
 
-    /** Starts the fight at round 1 with the first creature that isn't defeated. */
-    public static void start(Battle b) {
+    // ================================================================ setup: initiative is entered once, before starting
+
+    /** Whether this creature has an initiative (entered, rolled, or from a battle that was already running). */
+    public static boolean hasInitiative(Battle b, Combatant c) {
+        return c.initiativeSet || b.active;
+    }
+
+    /** The turn slots that don't have an initiative yet, in the order they were added. */
+    public static List<Slot> missingInitiative(Battle b) {
+        List<Slot> out = new ArrayList<>();
+        for (Slot s : slots(b)) if (!hasInitiative(b, s.members.get(0))) out.add(s);
+        out.sort(Comparator.comparingInt(s -> s.members.stream().mapToInt(c -> c.order).min().orElse(0)));
+        return out;
+    }
+
+    public static boolean canStart(Battle b) {
+        if (b.combatants.isEmpty()) return false;
+        if (!missingInitiative(b).isEmpty()) return false;
+        for (Slot s : slots(b)) if (!s.defeated()) return true;
+        return false;
+    }
+
+    /**
+     * Rolls d20 + bonus for every creature (one roll per group) that has no initiative yet. Creatures that
+     * already have one are left alone, so this can never re-roll anyone. Players are skipped unless
+     * {@code includePlayers}, because they roll their own. Returns how many rolls were made.
+     */
+    public static int rollMissing(Battle b, boolean includePlayers, Random random) {
+        Dice d20 = Dice.parse("1d20").orElseThrow();
+        int rolls = 0;
+        for (Slot s : missingInitiative(b)) {
+            Combatant first = s.members.get(0);
+            if (!includePlayers && s.members.stream().allMatch(c -> c.side == Side.PLAYER)) continue;
+            int bonus = s.members.stream().mapToInt(c -> c.initiativeBonus).max().orElse(0);
+            setInitiative(b, first, d20.roll(random) + bonus);
+            rolls++;
+        }
+        return rolls;
+    }
+
+    /** Rolls one creature or group (even if it already has a value; used by a row's own dice button). */
+    public static int rollOne(Battle b, Combatant c, Random random) {
+        int v = Dice.parse("1d20").orElseThrow().roll(random) + c.initiativeBonus;
+        setInitiative(b, c, v);
+        return v;
+    }
+
+    /**
+     * Adds creatures to a fight that is already running. They need an initiative right away (one value, shared
+     * by a group). The current turn is left exactly where it is.
+     */
+    public static List<Combatant> addMidBattle(Battle b, Card card, int count, boolean group, Side side, int initiative) {
+        List<Combatant> added = addFromCard(b, card, count, group, side);
+        if (!added.isEmpty()) setInitiative(b, added.get(0), initiative);
+        for (Combatant c : added) {
+            c.initiative = initiative;
+            c.initiativeSet = true;
+        }
+        return added;
+    }
+
+    /**
+     * Starts the fight at round 1 with the first creature that isn't defeated. Does nothing (and returns false)
+     * unless everyone has an initiative.
+     */
+    public static boolean start(Battle b) {
+        if (!canStart(b)) return false;
         b.active = true;
         b.round = 1;
         b.turnId = null;
@@ -100,6 +165,7 @@ public final class BattleEngine {
             }
         }
         log(b, "Battle begins. Round 1" + (b.turnId == null ? "" : ": " + currentSlot(b).name() + " goes first."));
+        return true;
     }
 
     public static void end(Battle b) {
@@ -193,27 +259,15 @@ public final class BattleEngine {
     public static void setInitiative(Battle b, Combatant c, int value) {
         if (c.group == null) {
             c.initiative = value;
+            c.initiativeSet = true;
             return;
         }
-        for (Combatant m : b.combatants) if (c.group.equals(m.group)) m.initiative = value;
-    }
-
-    /** Rolls d20 + bonus for every creature on {@code side} (one roll per group). Returns how many rolls were made. */
-    public static int rollInitiative(Battle b, Side side, Random random) {
-        Dice d20 = Dice.parse("1d20").orElseThrow();
-        Map<String, Boolean> rolledGroups = new LinkedHashMap<>();
-        int rolls = 0;
-        for (Combatant c : b.combatants) {
-            if (c.side != side) continue;
-            if (c.group != null) {
-                if (rolledGroups.put(c.group, true) != null) continue;
-                setInitiative(b, c, d20.roll(random) + c.initiativeBonus);
-            } else {
-                c.initiative = d20.roll(random) + c.initiativeBonus;
+        for (Combatant m : b.combatants) {
+            if (c.group.equals(m.group)) {
+                m.initiative = value;
+                m.initiativeSet = true;
             }
-            rolls++;
         }
-        return rolls;
     }
 
     // ================================================================ groups and order
@@ -223,9 +277,11 @@ public final class BattleEngine {
         if (members.size() < 2) return;
         String id = UUID.randomUUID().toString();
         int init = members.get(0).initiative;
+        boolean set = members.get(0).initiativeSet;
         for (Combatant c : members) {
             c.group = id;
             c.initiative = init;
+            c.initiativeSet = set;
         }
     }
 

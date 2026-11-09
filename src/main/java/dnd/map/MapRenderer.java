@@ -10,11 +10,17 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.ImagePattern;
+import javafx.scene.shape.StrokeLineCap;
+import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.TextAlignment;
 
+import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -44,16 +50,49 @@ public final class MapRenderer {
      * @param scale pixels per map unit (picks the sharpness of asset images and the grid line width)
      */
     public static void draw(GraphicsContext g, BattleMap m, Grid grid, AssetLibrary lib, double scale) {
-        drawGround(g, m, grid, scale);
+        draw(g, m, grid, lib, scale, m.showGrid);
+    }
+
+    /** Same as {@link #draw(GraphicsContext, BattleMap, Grid, AssetLibrary, double)} with the grid forced on or off. */
+    public static void draw(GraphicsContext g, BattleMap m, Grid grid, AssetLibrary lib, double scale, boolean showGrid) {
+        drawGround(g, m, grid, scale, showGrid);
         drawObjects(g, m, lib, scale);
         drawTokens(g, m, grid);
     }
 
-    public static void drawGround(GraphicsContext g, BattleMap m, Grid grid, double scale) {
+    public static void drawGround(GraphicsContext g, BattleMap m, Grid grid, double scale, boolean showGrid) {
         g.setFill(PAPER);
         g.fillRect(0, 0, grid.width(), grid.height());
 
-        // terrain
+        drawTerrain(g, m, grid);
+
+        // grid lines
+        if (showGrid) {
+            g.setStroke(Color.web("#00000040"));
+            g.setLineWidth(Math.max(0.6 / scale, 0.8 / Math.max(scale, 0.01)));
+            g.setLineDashes((double[]) null);
+            for (int r = 0; r < grid.rows(); r++) {
+                for (int c = 0; c < grid.cols(); c++) {
+                    strokeCell(g, grid, c, r);
+                }
+            }
+        }
+        g.setStroke(Color.web("#3a2e28"));
+        g.setLineWidth(2 / Math.max(scale, 0.01));
+        g.strokeRect(0, 0, grid.width(), grid.height());
+    }
+
+    /**
+     * Fills painted cells with textured ground. The texture is anchored to the map, not to each cell, so
+     * it flows continuously across neighbouring cells. Where two terrains (or a terrain and bare paper)
+     * meet, a slightly irregular darker edge is drawn so shorelines and paths don't look like grid lines.
+     */
+    private static void drawTerrain(GraphicsContext g, BattleMap m, Grid grid) {
+        if (m.terrain.isEmpty()) return;
+        double tile = m.cellSize * 5;
+        Map<Terrain, ImagePattern> patterns = new EnumMap<>(Terrain.class);
+        List<int[]> cells = new ArrayList<>(m.terrain.size());
+        List<Terrain> kinds = new ArrayList<>(m.terrain.size());
         for (Map.Entry<String, String> e : m.terrain.entrySet()) {
             Terrain t = Terrain.byId(e.getValue());
             if (t == null) continue;
@@ -68,23 +107,78 @@ public final class MapRenderer {
                 continue;
             }
             if (!grid.inside(col, row)) continue;
-            fillCell(g, grid, col, row, color(t.color));
+            cells.add(new int[]{col, row});
+            kinds.add(t);
         }
 
-        // grid lines
-        if (m.showGrid) {
-            g.setStroke(Color.web("#00000040"));
-            g.setLineWidth(Math.max(0.6 / scale, 0.8 / Math.max(scale, 0.01)));
-            g.setLineDashes((double[]) null);
-            for (int r = 0; r < grid.rows(); r++) {
-                for (int c = 0; c < grid.cols(); c++) {
-                    strokeCell(g, grid, c, r);
-                }
+        // 1. textured fill
+        for (int i = 0; i < cells.size(); i++) {
+            Terrain t = kinds.get(i);
+            ImagePattern p = patterns.computeIfAbsent(t, k -> new ImagePattern(TerrainTextures.get(k), 0, 0, tile, tile, false));
+            double[] poly = grid.polygon(cells.get(i)[0], cells.get(i)[1]);
+            int n = poly.length / 2;
+            double[] xs = new double[n], ys = new double[n];
+            for (int j = 0; j < n; j++) {
+                xs[j] = poly[2 * j];
+                ys[j] = poly[2 * j + 1];
+            }
+            g.setFill(p);
+            g.fillPolygon(xs, ys, n);
+        }
+
+        // 2. edges between different terrains
+        g.setLineCap(StrokeLineCap.ROUND);
+        g.setLineJoin(StrokeLineJoin.ROUND);
+        g.setLineDashes((double[]) null);
+        double cs = m.cellSize;
+        for (int i = 0; i < cells.size(); i++) {
+            int col = cells.get(i)[0], row = cells.get(i)[1];
+            Terrain t = kinds.get(i);
+            double[] poly = grid.polygon(col, row);
+            double[] ctr = grid.center(col, row);
+            int n = poly.length / 2;
+            for (int j = 0; j < n; j++) {
+                int k = (j + 1) % n;
+                double ax = poly[2 * j], ay = poly[2 * j + 1], bx = poly[2 * k], by = poly[2 * k + 1];
+                double mx = (ax + bx) / 2, my = (ay + by) / 2;
+                double dx = mx - ctr[0], dy = my - ctr[1], len = Math.hypot(dx, dy);
+                if (len == 0) continue;
+                int[] nb = grid.cellAt(mx + dx / len * cs * 0.2, my + dy / len * cs * 0.2);
+                Terrain nt = nb == null ? null : Terrain.byId(m.terrain.get(BattleMap.key(nb[0], nb[1])));
+                if (nt == t) continue;
+                if (nt != null && nt.ordinal() >= t.ordinal()) continue; // the other cell draws this edge
+                strokeNaturalEdge(g, ax, ay, bx, by, cs, color(t.color).darker().darker());
             }
         }
-        g.setStroke(Color.web("#3a2e28"));
-        g.setLineWidth(2 / Math.max(scale, 0.01));
-        g.strokeRect(0, 0, grid.width(), grid.height());
+    }
+
+    /** A short wobbly line (soft shadow underneath, crisp line on top). */
+    private static void strokeNaturalEdge(GraphicsContext g, double ax, double ay, double bx, double by,
+                                          double cellSize, Color base) {
+        int pts = 6;
+        double[] xs = new double[pts], ys = new double[pts];
+        double dx = bx - ax, dy = by - ay, len = Math.hypot(dx, dy);
+        double px = -dy / len, py = dx / len; // perpendicular
+        for (int i = 0; i < pts; i++) {
+            double t = (double) i / (pts - 1);
+            double jitter = 0;
+            if (i > 0 && i < pts - 1) {
+                int h = (int) Math.round(ax * 7) * 73856093 ^ (int) Math.round(ay * 7) * 19349663 ^ i * 83492791
+                        ^ (int) Math.round(bx * 7) * 2654435;
+                h ^= h >>> 15;
+                h *= 0x2c1b3c6d;
+                h ^= h >>> 12;
+                jitter = (((h & 0xffff) / 65535.0) - 0.5) * cellSize * 0.07;
+            }
+            xs[i] = ax + dx * t + px * jitter;
+            ys[i] = ay + dy * t + py * jitter;
+        }
+        g.setStroke(Color.color(base.getRed(), base.getGreen(), base.getBlue(), 0.14));
+        g.setLineWidth(cellSize * 0.13);
+        g.strokePolyline(xs, ys, pts);
+        g.setStroke(Color.color(base.getRed(), base.getGreen(), base.getBlue(), 0.5));
+        g.setLineWidth(cellSize * 0.04);
+        g.strokePolyline(xs, ys, pts);
     }
 
     public static void fillCell(GraphicsContext g, Grid grid, int col, int row, Color c) {

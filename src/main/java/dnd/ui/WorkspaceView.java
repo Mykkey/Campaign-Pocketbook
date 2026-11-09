@@ -187,6 +187,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
     /** Saves everything immediately (called when the window closes or the project is left). */
     public void shutdown() {
         saver.stop();
+        PlayerWindow.closeAll();
         BoardView v = currentView();
         if (v != null) v.requestFocus(); // forces any in-place text edit to commit
         store.onDirty = () -> { };
@@ -590,6 +591,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         n.collectItems(boards);
         for (TreeNode b : boards) {
             closeTab(b.id);
+            PlayerWindow.close(b.id); // a deleted map must not stay up on the table screen
             history.forget(b.id);
         }
         store.deleteNode(n);

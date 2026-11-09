@@ -62,12 +62,13 @@ Battlemaps are a separate item type next to whiteboards, saved as `maps/<id>.bat
 - **Create one:** **+ Battlemap** in the project tree (or right-click > New battlemap). Choose **Squares** or **Hexagons**, the map size in cells, and the cell size.
 - **Side panel of pieces:** ~40 built-in vector pieces (buildings, walls, paths, camp items, trees and rocks). Click a piece, then click the map to place it as often as you like (Esc to stop), or drag it onto the map. **Import SVG / PNG...** adds your own pieces; they are copied into the project's `assets` folder.
 - **Tools** (number keys 1-6): Select, Hand, Terrain, Piece, Token, Ruler.
-  - **Terrain:** paint grass, dirt, sand, stone, wood, water, snow or lava onto cells. Drag to paint, choose *Erase* to clear, change the brush size.
+  - **Terrain:** paint grass, dirt, sand, stone, wood, water, snow or lava onto cells. Each is a textured ground type (grass blades, pebbly dirt, flagstones, wooden planks, rippling water, cracked lava...) that flows continuously across cells, with soft irregular edges where two types meet. Drag to paint, choose *Erase* to clear, change the brush size.
   - **Select:** move pieces (with **Snap** they line up with the grid), drag the round handle to rotate in 15 degree steps (hold Alt for free rotation), drag the square corner to resize (hold Shift to stretch). `[` / `]` rotate, `F` flips, right-click for front/back, copy, duplicate and delete.
   - **Selecting:** click a piece or token (clicking a transparent corner of a piece picks whatever is underneath). **Ctrl+click** (or Shift+click) adds or removes exactly that item from the selection; Ctrl+drag a box to add everything inside it; Ctrl+A selects all.
   - **Copy / paste:** Ctrl+C, Ctrl+X, Ctrl+V and Ctrl+D (duplicate) work on pieces and tokens, including between maps, and keep working when you have just used the toolbar.
   - **Token:** click a cell for a coloured token; double-click it to rename; right-click to set its size (medium to gargantuan).
   - **Ruler:** drag to measure distance in cells and feet (5 ft per cell).
+- **Pop out for the players:** the **Pop out** button on a map opens it in its own window showing just the map (no handles or tool clutter). Drag that window to your playtable monitor and press **F11** for fullscreen. It updates live as you edit and has its own camera, so zooming it never moves your view. In that window: scroll to zoom, drag to pan, **F** or double-click to fit, **G** toggles the grid, **+/-** zoom. It remembers which monitor it was on, and closes when you leave the project or delete the map.
 - **Preview on a whiteboard:** on a whiteboard click **Battlemap...** (or right-click > Insert battlemap preview). It shows a live thumbnail that updates when you edit the map; double-click it to open the map. Previews also show up in Backlinks.
 - Map names and token labels are included in project search. Undo/redo, copy/paste and autosave work like on whiteboards.
 

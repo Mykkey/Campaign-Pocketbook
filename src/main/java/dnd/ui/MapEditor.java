@@ -9,6 +9,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Rectangle;
 
 import java.util.ArrayList;
@@ -99,7 +100,12 @@ public class MapEditor extends BorderPane implements ItemView {
         snap.selectedProperty().bindBidirectional(ts.snap);
         bar.getChildren().addAll(new Label("Token"), tokenColor, grid, snap, new Separator(Orientation.VERTICAL));
 
+        Button popOut = action("Pop out", "Open this map in its own window for the players. Drag it to your "
+                + "playtable monitor and press F11 for fullscreen. It updates live as you edit",
+                () -> PlayerWindow.open(getScene() == null ? null : getScene().getWindow(), map, store));
+        popOut.setStyle("-fx-font-weight: bold;");
         bar.getChildren().addAll(
+                popOut,
                 action("Fit", "Zoom to show the whole map (Ctrl+0)", view::fitToWindow),
                 action("Undo", "Ctrl+Z", view::undo),
                 action("Redo", "Ctrl+Y", view::redo),
@@ -117,7 +123,10 @@ public class MapEditor extends BorderPane implements ItemView {
                     setGraphic(null);
                 } else if (item instanceof Terrain t) {
                     setText(t.label);
-                    setGraphic(new Rectangle(14, 14, Color.web(t.color)));
+                    Rectangle swatch = new Rectangle(20, 20);
+                    swatch.setFill(new ImagePattern(dnd.map.TerrainTextures.get(t), 0, 0, 80, 80, false));
+                    swatch.setStroke(Color.web("#00000055"));
+                    setGraphic(swatch);
                 } else {
                     setText("Erase");
                     Rectangle r = new Rectangle(14, 14, Color.WHITE);

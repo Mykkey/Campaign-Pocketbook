@@ -16,14 +16,28 @@ final class IconButtons {
         if (!b.getStyleClass().contains("icon-button")) b.getStyleClass().add("icon-button");
         b.setStyle(""); // drop the old bold / size styling meant for text buttons
         b.setFocusTraversable(false);
-        if (b.getTooltip() != null) speedUp(b.getTooltip()); // tooltips set before the icon was added
+        if (b.getTooltip() != null) { // tooltips set before the icon was added
+            speedUp(b.getTooltip());
+            b.setAccessibleText(accessibleName(b.getTooltip().getText()));
+        }
         return b;
     }
 
     static <T extends ButtonBase> T decorate(T b, String icon, String tooltip) {
         decorate(b, icon);
         b.setTooltip(tip(tooltip));
+        b.setAccessibleText(accessibleName(tooltip));
         return b;
+    }
+
+    /** The name a screen reader should say for an icon button: the part of its tooltip before the colon ("Link: ..." becomes "Link"). */
+    static String accessibleName(String tooltip) {
+        if (tooltip == null) return "";
+        int colon = tooltip.indexOf(':');
+        String name = colon > 0 && colon <= 40 ? tooltip.substring(0, colon) : tooltip;
+        int paren = name.indexOf(" (");
+        if (paren > 0) name = name.substring(0, paren); // "Undo (Ctrl+Z)" becomes "Undo"
+        return name.length() > 60 ? name.substring(0, 60) : name;
     }
 
     /** A tooltip that shows quickly (about a sixth of a second), stays up while it is being read, and wraps long text. */

@@ -144,10 +144,22 @@ public class BoardObject {
         return out;
     }
 
-    public double left() { return Math.min(x, x + w); }
-    public double top() { return Math.min(y, y + h); }
-    public double right() { return Math.max(x, x + w); }
-    public double bottom() { return Math.max(y, y + h); }
+    /** Bounds of a curved line or arrow, including how far the curve bulges: {minX, minY, maxX, maxY}. */
+    private double[] curveBounds() {
+        double[] b = {Double.MAX_VALUE, Double.MAX_VALUE, -Double.MAX_VALUE, -Double.MAX_VALUE};
+        for (double[] p : curvePoints(24)) {
+            b[0] = Math.min(b[0], p[0]);
+            b[1] = Math.min(b[1], p[1]);
+            b[2] = Math.max(b[2], p[0]);
+            b[3] = Math.max(b[3], p[1]);
+        }
+        return b;
+    }
+
+    public double left() { return curved() ? curveBounds()[0] : Math.min(x, x + w); }
+    public double top() { return curved() ? curveBounds()[1] : Math.min(y, y + h); }
+    public double right() { return curved() ? curveBounds()[2] : Math.max(x, x + w); }
+    public double bottom() { return curved() ? curveBounds()[3] : Math.max(y, y + h); }
 
     public boolean lineLike() { return type == Type.LINE || type == Type.ARROW; }
 

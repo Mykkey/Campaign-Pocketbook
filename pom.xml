@@ -6,7 +6,7 @@
 
     <groupId>dnd</groupId>
     <artifactId>dnd-campaign-notes</artifactId>
-    <version>1.24.1</version>
+    <version>1.24.2</version>
     <packaging>jar</packaging>
     <name>DnD Campaign Notes</name>
 

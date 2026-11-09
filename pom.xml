@@ -6,7 +6,7 @@
 
     <groupId>dnd</groupId>
     <artifactId>dnd-campaign-notes</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <packaging>jar</packaging>
     <name>DnD Campaign Notes</name>
 
@@ -42,6 +42,12 @@
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

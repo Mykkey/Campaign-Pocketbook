@@ -33,7 +33,7 @@ public class App extends Application {
     }
 
     private void showWorkspace(ProjectStore store) {
-        workspace = new WorkspaceView(store, this::showLauncher);
+        workspace = new WorkspaceView(store, this::showLauncher, getHostServices());
         stage.setScene(new Scene(workspace, stage.getWidth(), stage.getHeight()));
         stage.setTitle("D&D Campaign Notes - " + store.project.name);
     }

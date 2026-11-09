@@ -47,9 +47,14 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
     private boolean suppressHistory;
     private boolean restoring;
 
-    public WorkspaceView(ProjectStore store, Runnable onExit) {
+    private final javafx.application.HostServices hostServices;
+    private final HBox updateBanner = new HBox(10);
+    private static boolean updateChecked; // once per app launch, not per project opened
+
+    public WorkspaceView(ProjectStore store, Runnable onExit, javafx.application.HostServices hostServices) {
         this.store = store;
         this.onExit = onExit;
+        this.hostServices = hostServices;
 
         store.onDirty = saver::playFromStart;
         saver.setOnFinished(e -> save());
@@ -99,8 +104,11 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         nav.setPadding(new Insets(6, 8, 0, 8));
 
         ToolbarPanel toolbar = new ToolbarPanel(ts, this::currentView);
-        VBox top = new VBox(nav, toolbar);
+        updateBanner.setVisible(false);
+        updateBanner.setManaged(false);
+        VBox top = new VBox(updateBanner, nav, toolbar);
         setTop(top);
+        checkForUpdate();
 
         // ---- centre: tabs (with a hint behind them while no board is open)
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
@@ -373,6 +381,93 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             BoardView v = viewFor(r.boardId);
             if (v != null) Platform.runLater(() -> v.focusObject(r.objectId));
         }
+    }
+
+    // ---------------------------------------------------------------- update notice
+
+    private static final java.util.prefs.Preferences PREFS =
+            java.util.prefs.Preferences.userNodeForPackage(WorkspaceView.class);
+
+    /** Asks GitHub (in the background) whether a newer version exists and shows a banner if so. */
+    private void checkForUpdate() {
+        if (updateChecked) return;
+        updateChecked = true;
+        Thread t = new Thread(() -> {
+            java.util.Optional<String> newer = dnd.update.UpdateChecker.findNewerVersion();
+            newer.ifPresent(v -> {
+                if (v.equals(PREFS.get("dismissedUpdate", ""))) return;
+                Platform.runLater(() -> showUpdateBanner(v));
+            });
+        }, "update-check");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    private void showUpdateBanner(String version) {
+        Label msg = new Label("A new version (" + version + ") is available - you have "
+                + dnd.update.UpdateChecker.currentVersion() + ".");
+        msg.setStyle("-fx-text-fill: #1e3a8a;");
+        Button update = new Button(isGitCopy() ? "Update now" : "Open download page");
+        Button later = new Button("Dismiss");
+        Region sp = new Region();
+        HBox.setHgrow(sp, Priority.ALWAYS);
+        updateBanner.getChildren().setAll(msg, sp, update, later);
+        updateBanner.setAlignment(Pos.CENTER_LEFT);
+        updateBanner.setPadding(new Insets(6, 10, 6, 10));
+        updateBanner.setStyle("-fx-background-color: #dbeafe; -fx-border-color: #93c5fd; -fx-border-width: 0 0 1 0;");
+        updateBanner.setManaged(true);
+        updateBanner.setVisible(true);
+
+        later.setOnAction(e -> {
+            PREFS.put("dismissedUpdate", version);
+            hideBanner();
+        });
+        update.setOnAction(e -> {
+            if (isGitCopy()) {
+                update.setDisable(true);
+                msg.setText("Updating...");
+                runGitPull(msg, update);
+            } else {
+                hostServices.showDocument(dnd.update.UpdateChecker.REPO_URL);
+            }
+        });
+    }
+
+    private void hideBanner() {
+        updateBanner.setVisible(false);
+        updateBanner.setManaged(false);
+    }
+
+    private static java.nio.file.Path appDir() {
+        return java.nio.file.Paths.get("").toAbsolutePath();
+    }
+
+    private static boolean isGitCopy() {
+        return java.nio.file.Files.isDirectory(appDir().resolve(".git"));
+    }
+
+    private void runGitPull(Label msg, Button update) {
+        Thread t = new Thread(() -> {
+            String result;
+            try {
+                Process p = new ProcessBuilder("git", "pull").directory(appDir().toFile())
+                        .redirectErrorStream(true).start();
+                p.getInputStream().readAllBytes();
+                result = p.waitFor() == 0
+                        ? "Updated! Close and reopen the app to use the new version."
+                        : "Update failed. Try running update.bat, or see the README.";
+            } catch (Exception ex) {
+                result = "Could not run git. Install Git, or download the new version from GitHub.";
+            }
+            String text = result;
+            Platform.runLater(() -> {
+                msg.setText(text);
+                update.setVisible(false);
+                update.setManaged(false);
+            });
+        }, "git-pull");
+        t.setDaemon(true);
+        t.start();
     }
 
     private void openNameGenerator() {

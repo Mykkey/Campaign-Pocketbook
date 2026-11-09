@@ -7,12 +7,12 @@ Built with Java and JavaFX. Runs on Windows, macOS and Linux.
 ## Download and run
 
 ### 1. Get the app
-Either download the zip: **[Download ZIP](https://github.com/Mykkey/DnD-Campaign-Notes/archive/refs/heads/main.zip)** and unzip it anywhere,
-
-or clone it:
+**Recommended: clone it with [Git](https://git-scm.com/)**, so you can update with one click later:
 ```
 git clone https://github.com/Mykkey/DnD-Campaign-Notes.git
 ```
+
+Don't want Git? You can [download the ZIP](https://github.com/Mykkey/DnD-Campaign-Notes/archive/refs/heads/main.zip) and unzip it anywhere instead, but to update you'll have to download and unzip it again.
 
 ### 2. Install the two prerequisites (one time only)
 | What | Version | Get it |
@@ -30,6 +30,11 @@ Make sure `java -version` and `mvn -v` both work in a new terminal. (JavaFX is d
   ```
 
 The first launch takes a minute while Maven downloads dependencies. After that it starts quickly, and it rebuilds automatically whenever the source code has changed.
+
+## Updating
+If you cloned with Git, double-click **`update.bat`** (or run `git pull`) to get the latest version, then start the app as normal - it rebuilds itself automatically. Your campaigns are not affected by updates.
+
+The app also checks GitHub when it starts (only needs an internet connection; it stays silent if offline). If a newer version number is published, a blue banner appears at the top with an **Update now** button (git copies) or a link to the download page (ZIP copies).
 
 ## Where your data lives
 Projects are saved as plain files in `~/DnDCampaignNotes/<project name>/` (`project.json`, `boards/*.json`, `images/`). Everything autosaves. To back up or move a campaign, just copy its folder.

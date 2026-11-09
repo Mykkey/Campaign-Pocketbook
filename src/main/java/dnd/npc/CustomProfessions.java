@@ -51,7 +51,7 @@ public final class CustomProfessions {
                     if (e.name != null && !e.name.isBlank()) custom.add(toProfession(e));
                 }
             } catch (IOException ex) {
-                ex.printStackTrace(); // a damaged file just means no custom professions
+                dnd.util.Log.error("Problem in CustomProfessions", ex); // a damaged file just means no custom professions
             }
         }
         return custom;

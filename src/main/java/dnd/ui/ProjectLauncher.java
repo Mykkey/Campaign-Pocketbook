@@ -142,7 +142,7 @@ public class ProjectLauncher extends VBox {
                 try {
                     onOpen.accept(task.getValue());
                 } catch (RuntimeException ex) {
-                    ex.printStackTrace();
+                    dnd.util.Log.error("Problem in ProjectLauncher", ex);
                     hideLoading();
                     new Alert(Alert.AlertType.ERROR, failure + ex.getMessage()).show();
                 }

@@ -7,7 +7,6 @@ import dnd.storage.Json;
 import dnd.storage.ProjectStore;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
-import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
@@ -33,7 +32,6 @@ import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
-import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.FileChooser;
 
@@ -107,9 +105,9 @@ public class BoardView extends Pane implements ItemView {
     private static boolean preferInternal;
     private static int pasteCount;
 
-    private final Board board;
-    private final ProjectStore store;
-    private final ToolState ts;
+    final Board board;
+    final ProjectStore store;
+    final ToolState ts;
     private final Host host;
 
     private final Canvas canvas = new Canvas();
@@ -119,14 +117,8 @@ public class BoardView extends Pane implements ItemView {
     private final Map<String, Object[]> wrapCache = new HashMap<>();
     private final ContextMenu menu = new ContextMenu();
 
-    // hover previews (tooltips) and "link this name?" hints
-    private final javafx.stage.Popup tipPopup = new javafx.stage.Popup();
-    private final javafx.stage.Popup hintPopup = new javafx.stage.Popup();
-    private final javafx.animation.PauseTransition hoverDelay = new javafx.animation.PauseTransition(javafx.util.Duration.millis(350));
-    private final javafx.animation.PauseTransition hintHide = new javafx.animation.PauseTransition(javafx.util.Duration.millis(700));
-    private String hoverKey;
-    /** True while the pointer is on the hint box (its own window, so the canvas sees the pointer "leave"). */
-    private boolean hintHovered;
+    // hover previews and "link this name?" hints
+    private final BoardHover hover = new BoardHover(this);
     private boolean pickingTarget;
     private java.util.List<dnd.text.NameHints.Entry> nameIndex = java.util.List.of();
     private int nameIndexVersion = -1;
@@ -171,21 +163,8 @@ public class BoardView extends Pane implements ItemView {
             }
         });
         setOnContextMenuRequested(this::onContextMenu);
-        setOnMouseMoved(this::onHover);
-        setOnMouseExited(e -> {
-            hoverDelay.stop();
-            hideTip();
-            hintHide.playFromStart();
-        });
-        tipPopup.setAutoFix(true);
-        tipPopup.setAutoHide(false);
-        hintPopup.setAutoFix(true);
-        hintPopup.setAutoHide(true);
-        hintHide.setOnFinished(e -> {
-            if (hintHovered) return; // the pointer is on the box: leave it open
-            hintPopup.hide();
-            hoverKey = null;
-        });
+        setOnMouseMoved(hover::onMoved);
+        setOnMouseExited(e -> hover.onExited());
         ts.nameHints.addListener((o, was, now) -> redraw());
         setOnDragOver(e -> {
             if (e.getDragboard().hasFiles()) e.acceptTransferModes(TransferMode.COPY);
@@ -207,11 +186,11 @@ public class BoardView extends Pane implements ItemView {
         redraw();
     }
 
-    private double zoom() { return board.zoom; }
+    double zoom() { return board.zoom; }
 
-    private double wx(double sx) { return (sx - board.offsetX) / board.zoom; }
+    double wx(double sx) { return (sx - board.offsetX) / board.zoom; }
 
-    private double wy(double sy) { return (sy - board.offsetY) / board.zoom; }
+    double wy(double sy) { return (sy - board.offsetY) / board.zoom; }
 
     private double viewCenterX() { return wx(getWidth() / 2); }
 
@@ -243,11 +222,6 @@ public class BoardView extends Pane implements ItemView {
         return String.format("#%02X%02X%02X%02X",
                 (int) Math.round(c.getRed() * 255), (int) Math.round(c.getGreen() * 255),
                 (int) Math.round(c.getBlue() * 255), (int) Math.round(c.getOpacity() * 255));
-    }
-
-    static Font fontFor(BoardObject o) {
-        return Font.font("System", o.bold ? FontWeight.BOLD : FontWeight.NORMAL,
-                o.italic ? FontPosture.ITALIC : FontPosture.REGULAR, o.fontSize);
     }
 
     /**
@@ -371,7 +345,7 @@ public class BoardView extends Pane implements ItemView {
     }
 
     /** The card and spell names in a text object that could be linked (none while editing or with hints off). */
-    private List<dnd.text.NameHints.Hint> hintsFor(BoardObject o) {
+    List<dnd.text.NameHints.Hint> hintsFor(BoardObject o) {
         if (!ts.nameHints.get() || o == editing || (o.type != Type.TEXT && o.type != Type.STICKY)) return List.of();
         List<dnd.text.NameHints.Entry> index = nameIndex();
         if (index.isEmpty()) return List.of();
@@ -616,7 +590,7 @@ public class BoardView extends Pane implements ItemView {
 
     // ================================================================ hit testing
 
-    private BoardObject hit(double px, double py) {
+    BoardObject hit(double px, double py) {
         double tol = 6 / zoom();
         List<BoardObject> l = board.objects;
         for (int i = l.size() - 1; i >= 0; i--) {
@@ -704,7 +678,7 @@ public class BoardView extends Pane implements ItemView {
 
     // ================================================================ undo / redo
 
-    private void checkpoint() {
+    void checkpoint() {
         undoStack.addLast(Json.write(board.objects));
         if (undoStack.size() > 200) undoStack.removeFirst();
         redoStack.clear();
@@ -739,7 +713,7 @@ public class BoardView extends Pane implements ItemView {
         changed();
     }
 
-    private void changed() {
+    void changed() {
         store.markDirty(board);
         redraw();
     }
@@ -758,7 +732,7 @@ public class BoardView extends Pane implements ItemView {
     }
 
     private void onPressed(MouseEvent e) {
-        clearHover();
+        hover.clear();
         if (insideEditor(e)) return;
         menu.hide();
         requestFocus();
@@ -1014,7 +988,7 @@ public class BoardView extends Pane implements ItemView {
     }
 
     private void onScroll(ScrollEvent e) {
-        clearHover();
+        hover.clear();
         if (e.getDeltaY() == 0) return;
         double factor = Math.exp(e.getDeltaY() * 0.0015);
         double nz = Math.max(0.1, Math.min(5, board.zoom * factor));
@@ -1286,7 +1260,7 @@ public class BoardView extends Pane implements ItemView {
                 ev.consume();
             }
         });
-        clearHover();
+        hover.clear();
         getChildren().add(ta);
         addEditGrip(o, ta);
         ta.textProperty().addListener((obs, was, now) -> fitEditor(o, ta));
@@ -1880,9 +1854,9 @@ public class BoardView extends Pane implements ItemView {
     // ================================================================ hover: tooltips and name hints
 
     /** The word piece under a point in a text object, with where it sits (map units). */
-    private record SpanHit(BoardObject o, RichLayout.Seg seg, double left, double bottom) { }
+    record SpanHit(BoardObject o, RichLayout.Seg seg, double left, double bottom) { }
 
-    private SpanHit spanAt(double px, double py) {
+    SpanHit spanAt(double px, double py) {
         BoardObject o = hit(px, py);
         if (o == null || (o.type != Type.TEXT && o.type != Type.STICKY) || o == editing) return null;
         List<RichLayout.Line> lines = o.type == Type.TEXT ? textLines(o) : wrappedLines(o);
@@ -1894,128 +1868,6 @@ public class BoardView extends Pane implements ItemView {
             if (px >= ox + s.x() && px <= ox + s.x() + s.w()) return new SpanHit(o, s, ox + s.x(), oy + (li + 1) * lh);
         }
         return null;
-    }
-
-    private void clearHover() {
-        hoverDelay.stop();
-        hintHide.stop();
-        hideTip();
-        hintPopup.hide();
-        hintHovered = false;
-        hoverKey = null;
-    }
-
-    private void hideTip() {
-        tipPopup.hide();
-    }
-
-    private void onHover(MouseEvent e) {
-        if (editor != null || mode != Mode.NONE) {
-            clearHover();
-            return;
-        }
-        double px = wx(e.getX()), py = wy(e.getY());
-        SpanHit sh = spanAt(px, py);
-        String key = null, noteText = null, previewId = null;
-        dnd.text.NameHints.Hint hint = null;
-        boolean linkCursor = false;
-        boolean previews = ts.linkPreviews.get();
-        if (sh != null) {
-            dnd.model.SpanRef sr = sh.o().ref(sh.seg().ref());
-            if (sr != null) {
-                boolean preview = sr.link != null && previews;
-                if (sr.hasNote() || preview) {
-                    noteText = sr.hasNote() ? sr.note : null;
-                    previewId = preview ? sr.link : null;
-                    key = "span|" + sh.o().id + "|" + sh.seg().ref();
-                }
-                if (sr.link != null) linkCursor = true;
-            } else if (sh.seg().hint() != null) {
-                for (dnd.text.NameHints.Hint h : hintsFor(sh.o())) {
-                    if (sh.seg().plainStart() >= h.start() && sh.seg().plainStart() < h.end()) hint = h;
-                }
-                if (hint != null) key = "hint|" + sh.o().id + "|" + hint.start();
-            }
-        }
-        if (key == null) {
-            BoardObject o = hit(px, py);
-            // a map preview already shows its map, so it needs no second preview
-            boolean preview = o != null && o.link != null && previews && o.type != Type.MAP_PREVIEW;
-            if (o != null && (o.hasNote() || preview)) {
-                noteText = o.hasNote() ? o.note : null;
-                previewId = preview ? o.link : null;
-                key = "obj|" + o.id;
-            }
-        }
-        if (linkCursor) setCursor(Cursor.HAND);
-        else refreshCursor();
-
-        if (java.util.Objects.equals(key, hoverKey)) {
-            if (key != null && key.startsWith("hint|")) hintHide.stop();
-            return;
-        }
-        boolean wasHint = hoverKey != null && hoverKey.startsWith("hint|");
-        hoverKey = key;
-        hoverDelay.stop();
-        hideTip();
-        if (key == null) {
-            if (wasHint) hintHide.playFromStart(); // leave time to move onto the hint's buttons
-            return;
-        }
-        hintHide.stop();
-        if (!hintHovered) hintPopup.hide();
-        final double sx = e.getScreenX(), sy = e.getScreenY();
-        final String showNote = noteText, showLink = previewId;
-        final dnd.text.NameHints.Hint showHint = hint;
-        final SpanHit at = sh;
-        hoverDelay.setOnFinished(ev -> {
-            if (showNote != null || showLink != null) {
-                Node preview = ItemPreview.hover(store, showNote, showLink);
-                preview.setMouseTransparent(true);
-                tipPopup.getContent().setAll(preview);
-                tipPopup.show(this, sx + 18, sy + 18);
-            } else if (showHint != null && at != null) {
-                showHintPopup(at, showHint);
-            }
-        });
-        hoverDelay.playFromStart();
-    }
-
-    /** The small "Link / Dismiss" box offered under a card or spell name found in the text. */
-    private void showHintPopup(SpanHit at, dnd.text.NameHints.Hint hint) {
-        BoardObject o = at.o();
-        String itemName = store.itemName(hint.itemId());
-        boolean alias = itemName != null && !itemName.equalsIgnoreCase(hint.name());
-        Label name = new Label(alias ? hint.name() + "  \u2192  " + itemName : hint.name()); // "Jasper -> Jasper Egan"
-        name.setStyle("-fx-font-weight: bold; -fx-text-fill: -t-text;");
-        Button link = new Button("Link");
-        link.setTooltip(new Tooltip("Make these words a link that opens " + (itemName == null ? hint.name() : itemName)));
-        link.setOnAction(ev -> applyHint(o, hint));
-        Button dismiss = new Button("Dismiss");
-        dismiss.setTooltip(new Tooltip("Stop underlining this name in this text"));
-        dismiss.setOnAction(ev -> {
-            hintPopup.hide();
-            hoverKey = null;
-            checkpoint();
-            o.dismissedNames.add(hint.name().toLowerCase(java.util.Locale.ROOT));
-            changed();
-        });
-        HBox row = new HBox(6, name, link, dismiss);
-        row.setAlignment(Pos.CENTER_LEFT);
-        row.setPadding(new Insets(6, 8, 6, 8));
-        row.setStyle("-fx-background-color: -t-surface; -fx-border-color: -t-border; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 8, 0.2, 0, 2);");
-        row.setOnMouseEntered(ev -> {
-            hintHovered = true;
-            hintHide.stop();
-        });
-        row.setOnMouseExited(ev -> {
-            hintHovered = false;
-            hintHide.playFromStart();
-        });
-        hintHovered = false;
-        hintPopup.getContent().setAll(row);
-        javafx.geometry.Point2D p = localToScreen(board.offsetX + at.left() * zoom(), board.offsetY + at.bottom() * zoom() + 2);
-        if (p != null) hintPopup.show(this, p.getX(), p.getY());
     }
 
     /**
@@ -2043,34 +1895,31 @@ public class BoardView extends Pane implements ItemView {
             }
             hints.sort((a, b) -> Integer.compare(b.start(), a.start())); // last first, so earlier positions stay valid
             for (dnd.text.NameHints.Hint h : hints) {
-                int ref = o.nextRef();
-                dnd.model.SpanRef sr = new dnd.model.SpanRef();
-                sr.link = h.itemId();
-                o.refs.put(String.valueOf(ref), sr);
-                o.text = dnd.text.RichText.setSpanRef(o.text, h.start(), h.end(), ref).markup();
+                linkHint(o, h);
                 total++;
             }
-            measure(o);
         }
         if (total == 0) {
             info(selected.isEmpty() ? "There are no suggested names to link on this whiteboard." : "There are no suggested names to link in the selection.");
             return;
         }
-        clearHover();
+        hover.clear();
         changed();
     }
 
-    private void applyHint(BoardObject o, dnd.text.NameHints.Hint hint) {
-        hintPopup.hide();
-        hoverKey = null;
-        checkpoint();
+    /** Turns a suggested name into a link: wraps the words in a span that links to the item. Does not save or checkpoint. */
+    void linkHint(BoardObject o, dnd.text.NameHints.Hint hint) {
         int ref = o.nextRef();
         dnd.model.SpanRef sr = new dnd.model.SpanRef();
         sr.link = hint.itemId();
         o.refs.put(String.valueOf(ref), sr);
         o.text = dnd.text.RichText.setSpanRef(o.text, hint.start(), hint.end(), ref).markup();
         measure(o);
-        changed();
+    }
+
+    /** True while something else is going on (typing, dragging...) so hover popups must not show. */
+    boolean hoverBlocked() {
+        return editor != null || mode != Mode.NONE;
     }
 
     /** Applies one toolbar setting ("color", "fill", "width", "font") to the selected objects. */

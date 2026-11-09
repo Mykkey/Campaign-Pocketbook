@@ -2,7 +2,6 @@ package dnd.ui;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.scene.control.ButtonBase;
-import javafx.scene.control.Labeled;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Tooltip;
 
@@ -51,11 +50,5 @@ final class IconButtons {
     /** An icon toggle with no property behind it yet. */
     static ToggleButton toggle(String icon, String tooltip) {
         return decorate(new ToggleButton(), icon, tooltip);
-    }
-
-    /** For labels that sit beside a control: they carry a tooltip but no text. */
-    static void quiet(Labeled l) {
-        l.setVisible(false);
-        l.setManaged(false);
     }
 }

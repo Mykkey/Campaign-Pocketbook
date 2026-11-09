@@ -4,7 +4,6 @@ import dnd.model.Quest;
 import dnd.storage.ProjectStore;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.collections.transformation.FilteredList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -42,7 +41,6 @@ public final class QuestBoardDialog {
 
         Map<Quest.Status, ListView<Quest>> lists = new EnumMap<>(Quest.Status.class);
         Map<Quest.Status, Label> heads = new EnumMap<>(Quest.Status.class);
-        Map<Quest.Status, FilteredList<Quest>> filtered = new EnumMap<>(Quest.Status.class);
         HBox columns = new HBox(10);
         columns.setPadding(new Insets(6, 12, 12, 12));
         for (Quest.Status st : Quest.Status.values()) {
@@ -76,7 +74,7 @@ public final class QuestBoardDialog {
                     if (q == null || q.status == target) return;
                     q.status = target;
                     store.markQuestDirty(q);
-                    load(store, filtered, lists, heads, filter.getText());
+                    load(store, lists, heads, filter.getText());
                 });
                 menu.getItems().add(mi);
             }
@@ -88,8 +86,8 @@ public final class QuestBoardDialog {
             columns.getChildren().add(col);
             lists.put(st, list);
         }
-        load(store, filtered, lists, heads, "");
-        filter.textProperty().addListener((o, a, n) -> load(store, filtered, lists, heads, n));
+        load(store, lists, heads, "");
+        filter.textProperty().addListener((o, a, n) -> load(store, lists, heads, n));
 
         BorderPane root = new BorderPane(columns);
         root.setTop(top);
@@ -107,7 +105,7 @@ public final class QuestBoardDialog {
     }
 
     /** Fills every column from the project, keeping only quests that match the filter text. */
-    private static void load(ProjectStore store, Map<Quest.Status, FilteredList<Quest>> filtered,
+    private static void load(ProjectStore store,
                              Map<Quest.Status, ListView<Quest>> lists, Map<Quest.Status, Label> heads, String text) {
         String q = text == null ? "" : text.trim().toLowerCase(Locale.ROOT);
         Map<Quest.Status, ObservableList<Quest>> by = new EnumMap<>(Quest.Status.class);

@@ -54,7 +54,7 @@ public final class ProjectBackups {
             prune(dir);
             return zip;
         } catch (IOException | RuntimeException e) {
-            e.printStackTrace();
+            dnd.util.Log.error("Problem in ProjectBackups", e);
             return null;
         }
     }
@@ -77,7 +77,7 @@ public final class ProjectBackups {
         try (Stream<Path> s = Files.list(dir)) {
             s.filter(p -> p.getFileName().toString().endsWith(".zip")).forEach(out::add);
         } catch (IOException e) {
-            e.printStackTrace();
+            dnd.util.Log.error("Problem in ProjectBackups", e);
         }
         out.sort((a, b) -> b.getFileName().toString().compareTo(a.getFileName().toString()));
         return out;

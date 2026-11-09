@@ -80,7 +80,7 @@ public final class CommonEnemies {
                         c.id = fileId;
                         map.put(fileId, c);
                     } catch (IOException e) {
-                        e.printStackTrace(); // skip a damaged file rather than losing the whole library
+                        dnd.util.Log.error("Problem in CommonEnemies", e); // skip a damaged file rather than losing the whole library
                     }
                 }
             }

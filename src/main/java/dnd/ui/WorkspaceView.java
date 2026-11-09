@@ -267,7 +267,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             store.flush();
             saveFailureShown = false;
         } catch (RuntimeException ex) {
-            ex.printStackTrace();
+            dnd.util.Log.error("Problem in WorkspaceView", ex);
             if (!saveFailureShown) { // say it once, not on every autosave attempt
                 saveFailureShown = true;
                 Platform.runLater(() -> new Alert(Alert.AlertType.ERROR, "Could not save: " + ex.getMessage()

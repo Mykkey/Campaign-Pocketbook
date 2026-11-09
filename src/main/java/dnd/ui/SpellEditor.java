@@ -9,6 +9,8 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 
+import static dnd.ui.FormKit.labelled;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -138,50 +140,16 @@ public class SpellEditor extends BorderPane implements ItemView {
     static final List<String> DURATIONS = List.of("Instantaneous", "1 round", "1 minute", "10 minutes", "1 hour", "8 hours", "24 hours",
             "7 days", "10 days", "Until dispelled", "Until dispelled or triggered", "Special");
 
-    /** A dropdown of common choices that also accepts anything typed in (a custom value). */
-    private ComboBox<String> options(String value, Consumer<String> set, List<String> common, String prompt) {
-        ComboBox<String> box = new ComboBox<>(FXCollections.observableArrayList(common));
-        box.setEditable(true);
-        box.setPromptText(prompt);
-        box.setMaxWidth(Double.MAX_VALUE);
-        box.setVisibleRowCount(12);
-        box.getEditor().setText(value == null ? "" : value);
-        // the editor text is the value, whether it was picked from the list or typed
-        box.getEditor().textProperty().addListener((o, a, n) -> {
-            set.accept(n == null ? "" : n);
-            changed();
-        });
-        return box;
+    private TextField field(String value, java.util.function.Consumer<String> set, String prompt) {
+        return FormKit.field(value, set, prompt, this::changed);
     }
 
-    private TextField field(String value, Consumer<String> set, String prompt) {
-        TextField t = new TextField(value == null ? "" : value);
-        t.setPromptText(prompt);
-        t.textProperty().addListener((o, a, n) -> {
-            set.accept(n);
-            changed();
-        });
-        return t;
+    private TextArea area(String value, java.util.function.Consumer<String> set, String prompt, int rows) {
+        return FormKit.area(value, set, prompt, rows, this::changed);
     }
 
-    private TextArea area(String value, Consumer<String> set, String prompt, int rows) {
-        TextArea t = new TextArea(value == null ? "" : value);
-        t.setPromptText(prompt);
-        t.setWrapText(true);
-        t.setPrefRowCount(rows);
-        t.textProperty().addListener((o, a, n) -> {
-            set.accept(n);
-            changed();
-        });
-        return t;
-    }
-
-    private static VBox labelled(String label, Node n) {
-        Label l = new Label(label);
-        l.setStyle("-fx-font-size: 11px; -fx-text-fill: -t-text3;");
-        VBox box = new VBox(3, l, n);
-        HBox.setHgrow(box, Priority.ALWAYS);
-        return box;
+    private ComboBox<String> options(String value, java.util.function.Consumer<String> set, java.util.List<String> common, String prompt) {
+        return FormKit.options(value, set, common, prompt, this::changed);
     }
 
     // ================================================================ ItemView

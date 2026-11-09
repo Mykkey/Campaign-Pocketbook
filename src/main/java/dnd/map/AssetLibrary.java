@@ -91,7 +91,7 @@ public class AssetLibrary {
                             Math.max(0.25, size[0] * scale), Math.max(0.25, size[1] * scale), true));
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                dnd.util.Log.error("Problem in AssetLibrary", e);
             }
         }
     }
@@ -118,7 +118,7 @@ public class AssetLibrary {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            dnd.util.Log.error("Problem in AssetLibrary", e);
         }
         builtIn = Collections.unmodifiableList(out);
         return builtIn;
@@ -160,7 +160,7 @@ public class AssetLibrary {
                 if (u != null) doc = LOADER.load(u, BUILT_IN_CONTEXT);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            dnd.util.Log.error("Problem in AssetLibrary", e);
         }
         svgCache.put(id, doc);
         return doc;
@@ -173,7 +173,7 @@ public class AssetLibrary {
             Path f = importDir.resolve(id.substring(IMPORT_PREFIX.length()));
             if (Files.isRegularFile(f)) img = ImageIO.read(f.toFile());
         } catch (Exception e) {
-            e.printStackTrace();
+            dnd.util.Log.error("Problem in AssetLibrary", e);
         }
         rasterSource.put(id, img);
         return img;

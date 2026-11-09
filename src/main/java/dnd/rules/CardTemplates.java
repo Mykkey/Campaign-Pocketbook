@@ -48,7 +48,7 @@ public final class CardTemplates {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            dnd.util.Log.error("Problem in CardTemplates", e);
         }
         cache = Collections.unmodifiableList(out);
         return cache;
@@ -81,7 +81,7 @@ public final class CardTemplates {
             if (in == null) return null;
             return Json.readStream(in, Card.class);
         } catch (IOException e) {
-            e.printStackTrace();
+            dnd.util.Log.error("Problem in CardTemplates", e);
             return null;
         }
     }

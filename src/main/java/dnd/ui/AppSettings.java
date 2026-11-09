@@ -44,7 +44,7 @@ public final class AppSettings {
                 p.store(out, "DnD Campaign Notes settings");
             }
         } catch (IOException e) {
-            e.printStackTrace(); // the choice just won't be remembered
+            dnd.util.Log.error("Problem in AppSettings", e); // the choice just won't be remembered
         }
     }
 }

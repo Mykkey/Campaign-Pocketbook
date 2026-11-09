@@ -9,6 +9,8 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 
+import static dnd.ui.FormKit.labelled;
+
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -22,7 +24,6 @@ public class QuestEditor extends BorderPane implements ItemView {
     private final Supplier<Optional<String>> cardPicker;
     private final QuestCardView preview;
     private final VBox stepRows = new VBox(6);
-    private final ListView<String> related = new ListView<>();
 
     /**
      * @param openItem opens a project item in a tab
@@ -73,51 +74,15 @@ public class QuestEditor extends BorderPane implements ItemView {
         stepHint.setStyle("-fx-font-size: 11px; -fx-text-fill: -t-text3;");
         rebuildSteps();
 
-        related.setPrefHeight(120);
-        related.setCellFactory(v -> new ListCell<>() {
-            @Override
-            protected void updateItem(String id, boolean empty) {
-                super.updateItem(id, empty);
-                if (empty || id == null) {
-                    setText(null);
-                    return;
-                }
-                String n = store.itemName(id);
-                setText(n == null ? "(deleted item)" : n);
-            }
-        });
-        related.setOnMouseClicked(e -> {
-            if (e.getClickCount() == 2) openSelected();
-        });
-        rebuildRelated();
-        Button addRel = new Button("Add...");
-        addRel.setTooltip(new Tooltip("Add a character, map, whiteboard or item this quest involves"));
-        addRel.setOnAction(e -> picker.get().ifPresent(id -> {
-            if (!quest.related.contains(id)) {
-                quest.related.add(id);
-                rebuildRelated();
-                changed();
-            }
-        }));
-        Button openRel = new Button("Open");
-        openRel.setOnAction(e -> openSelected());
-        Button removeRel = new Button("Remove");
-        removeRel.setOnAction(e -> {
-            String sel = related.getSelectionModel().getSelectedItem();
-            if (sel != null) {
-                quest.related.remove(sel);
-                rebuildRelated();
-                changed();
-            }
-        });
-        HBox relButtons = new HBox(6, addRel, openRel, removeRel);
+        RelatedItemsList related = new RelatedItemsList(store, quest.related, picker, openItem, this::changed,
+                "Add a character, map, whiteboard or item this quest involves", 120);
 
         VBox form = new VBox(12,
                 labelled("Name", name),
                 new HBox(12, labelled("Status", status), labelled("Given by", giver), labelled("Reward", reward)),
                 labelled("Summary", summary),
                 labelled("Steps and clues", new VBox(6, stepHint, stepRows, addStep)),
-                labelled("Involves", new VBox(6, related, relButtons)),
+                labelled("Involves", related),
                 labelled("Notes", notes));
         form.setPadding(new Insets(14));
         ScrollPane formScroll = new ScrollPane(form);
@@ -203,15 +168,6 @@ public class QuestEditor extends BorderPane implements ItemView {
         return row;
     }
 
-    private void openSelected() {
-        String sel = related.getSelectionModel().getSelectedItem();
-        if (sel != null && store.itemExists(sel)) openItem.accept(sel);
-    }
-
-    private void rebuildRelated() {
-        related.setItems(FXCollections.observableArrayList(quest.related));
-    }
-
     private void rebuildSteps() {
         stepRows.getChildren().clear();
         for (Quest.Step step : quest.steps) {
@@ -246,34 +202,12 @@ public class QuestEditor extends BorderPane implements ItemView {
         preview.refresh(quest);
     }
 
-    private TextField field(String value, Consumer<String> set, String prompt) {
-        TextField t = new TextField(value == null ? "" : value);
-        t.setPromptText(prompt);
-        t.textProperty().addListener((o, a, n) -> {
-            set.accept(n);
-            changed();
-        });
-        return t;
+    private TextField field(String value, java.util.function.Consumer<String> set, String prompt) {
+        return FormKit.field(value, set, prompt, this::changed);
     }
 
-    private TextArea area(String value, Consumer<String> set, String prompt, int rows) {
-        TextArea t = new TextArea(value == null ? "" : value);
-        t.setPromptText(prompt);
-        t.setWrapText(true);
-        t.setPrefRowCount(rows);
-        t.textProperty().addListener((o, a, n) -> {
-            set.accept(n);
-            changed();
-        });
-        return t;
-    }
-
-    private static VBox labelled(String label, Node n) {
-        Label l = new Label(label);
-        l.setStyle("-fx-font-size: 11px; -fx-text-fill: -t-text3;");
-        VBox box = new VBox(3, l, n);
-        HBox.setHgrow(box, Priority.ALWAYS);
-        return box;
+    private TextArea area(String value, java.util.function.Consumer<String> set, String prompt, int rows) {
+        return FormKit.area(value, set, prompt, rows, this::changed);
     }
 
     // ================================================================ ItemView

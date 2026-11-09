@@ -10,6 +10,8 @@ import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.*;
 
+import static dnd.ui.FormKit.labelled;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.Optional;
@@ -25,7 +27,6 @@ public class SessionEditor extends BorderPane implements ItemView {
     private final ProjectStore store;
     private final Consumer<String> openItem;
     private final SessionCardView preview;
-    private final ListView<String> related = new ListView<>();
     private final Label lastTimeTitle = new Label();
     private final Label lastTimeText = new Label();
 
@@ -97,43 +98,8 @@ public class SessionEditor extends BorderPane implements ItemView {
         TextArea summary = area(session.summary, x -> session.summary = x, "What happened: who they met, what they decided, how the fight went...", 10);
         TextArea next = area(session.nextSteps, x -> session.nextSteps = x, "Loose ends and what you plan for next time", 4);
 
-        related.setPrefHeight(110);
-        related.setCellFactory(v -> new ListCell<>() {
-            @Override
-            protected void updateItem(String id, boolean empty) {
-                super.updateItem(id, empty);
-                if (empty || id == null) {
-                    setText(null);
-                    return;
-                }
-                String n = store.itemName(id);
-                setText(n == null ? "(deleted item)" : n);
-            }
-        });
-        related.setOnMouseClicked(e -> {
-            if (e.getClickCount() == 2) openSelected();
-        });
-        rebuildRelated();
-        Button addRel = new Button("Add...");
-        addRel.setTooltip(new Tooltip("Add a character, map, quest or whiteboard that came up in this session"));
-        addRel.setOnAction(e -> picker.get().ifPresent(id -> {
-            if (!session.related.contains(id)) {
-                session.related.add(id);
-                rebuildRelated();
-                changed();
-            }
-        }));
-        Button openRel = new Button("Open");
-        openRel.setOnAction(e -> openSelected());
-        Button removeRel = new Button("Remove");
-        removeRel.setOnAction(e -> {
-            String sel = related.getSelectionModel().getSelectedItem();
-            if (sel != null) {
-                session.related.remove(sel);
-                rebuildRelated();
-                changed();
-            }
-        });
+        RelatedItemsList related = new RelatedItemsList(store, session.related, picker, openItem, this::changed,
+                "Add a character, map, quest or whiteboard that came up in this session", 110);
 
         VBox form = new VBox(12,
                 lastTime,
@@ -143,7 +109,7 @@ public class SessionEditor extends BorderPane implements ItemView {
                 labelled("Recap for next time (\"last time on...\")", recap),
                 labelled("What happened", summary),
                 labelled("Next steps", next),
-                labelled("Came up", new VBox(6, related, new HBox(6, addRel, openRel, removeRel))));
+                labelled("Came up", related));
         form.setPadding(new Insets(14));
         ScrollPane formScroll = new ScrollPane(form);
         formScroll.setFitToWidth(true);
@@ -180,48 +146,17 @@ public class SessionEditor extends BorderPane implements ItemView {
         lastTimeText.setText(prev.recap == null || prev.recap.isBlank() ? "(no recap was written for that session)" : prev.recap.trim());
     }
 
-    private void openSelected() {
-        String sel = related.getSelectionModel().getSelectedItem();
-        if (sel != null && store.itemExists(sel)) openItem.accept(sel);
-    }
-
-    private void rebuildRelated() {
-        related.setItems(FXCollections.observableArrayList(session.related));
-    }
-
     private void changed() {
         store.markSessionDirty(session);
         preview.refresh(session);
     }
 
-    private TextField field(String value, Consumer<String> set, String prompt) {
-        TextField t = new TextField(value == null ? "" : value);
-        t.setPromptText(prompt);
-        t.textProperty().addListener((o, a, n) -> {
-            set.accept(n);
-            changed();
-        });
-        return t;
+    private TextField field(String value, java.util.function.Consumer<String> set, String prompt) {
+        return FormKit.field(value, set, prompt, this::changed);
     }
 
-    private TextArea area(String value, Consumer<String> set, String prompt, int rows) {
-        TextArea t = new TextArea(value == null ? "" : value);
-        t.setPromptText(prompt);
-        t.setWrapText(true);
-        t.setPrefRowCount(rows);
-        t.textProperty().addListener((o, a, n) -> {
-            set.accept(n);
-            changed();
-        });
-        return t;
-    }
-
-    private static VBox labelled(String label, Node n) {
-        Label l = new Label(label);
-        l.setStyle("-fx-font-size: 11px; -fx-text-fill: -t-text3;");
-        VBox box = new VBox(3, l, n);
-        HBox.setHgrow(box, Priority.ALWAYS);
-        return box;
+    private TextArea area(String value, java.util.function.Consumer<String> set, String prompt, int rows) {
+        return FormKit.area(value, set, prompt, rows, this::changed);
     }
 
     // ================================================================ ItemView

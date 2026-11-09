@@ -37,7 +37,7 @@ If you cloned with Git, double-click **`update.bat`** (or run `git pull`) to get
 The app also checks GitHub when it starts (only needs an internet connection; it stays silent if offline). If a newer version number is published, a blue banner appears at the top with an **Update now** button (git copies) or a link to the download page (ZIP copies).
 
 ## Where your data lives
-Projects are saved as plain files in `~/DnDCampaignNotes/<project name>/` (`project.json`, then a folder per kind of item: `boards/`, `maps/`, `cards/`, `spells/`, `items/`, `quests/`, `sessions/`, `encounters/`, plus `images/` and `assets/`). Everything autosaves. To back up or move a campaign, copy its folder, or use **Export backup...** on the project list (see "Backing up and sharing a campaign" below).
+Projects are saved as plain files in `~/DnDCampaignNotes/<project name>/` (`project.json`, then a folder per kind of item: `boards/`, `maps/`, `cards/`, `spells/`, `items/`, `quests/`, `sessions/`, `encounters/`, plus `images/` and `assets/`). Everything autosaves. If something goes wrong the app writes the details to `~/DnDCampaignNotes/app.log` (about 1 MB, plus the previous file); send that file along when reporting a problem. To back up or move a campaign, copy its folder, or use **Export backup...** on the project list (see "Backing up and sharing a campaign" below).
 
 ## Using it
 The toolbars (whiteboard, battlemap and the top bar) use small icons to stay uncluttered. **Hover any icon** to see its name, what it does and its shortcut key; the tool icons keep their number keys (1 to 0), and switches such as Name hints, Link previews, Grid, Snap and Fog show as pressed (highlighted) when they are on.

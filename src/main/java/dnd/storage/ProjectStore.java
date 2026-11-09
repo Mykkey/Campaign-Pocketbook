@@ -527,7 +527,7 @@ public final class ProjectStore {
             try {
                 Files.deleteIfExists(path(id));
             } catch (IOException e) {
-                e.printStackTrace();
+                dnd.util.Log.error("Problem in ProjectStore", e);
             }
         }
 
@@ -824,7 +824,7 @@ public final class ProjectStore {
                 Files.deleteIfExists(encounterPath(b.id));
                 Files.deleteIfExists(spellPath(b.id));
             } catch (IOException e) {
-                e.printStackTrace();
+                dnd.util.Log.error("Problem in ProjectStore", e);
             }
             for (Kind<?> k : kinds) if (k.nodeKind.equals(b.kind)) k.forget(b.id);
             project.openBoards.remove(b.id);
@@ -874,7 +874,7 @@ public final class ProjectStore {
     }
 
     private void loadFailed(String id, Path file, IOException ex) {
-        ex.printStackTrace();
+        dnd.util.Log.error("Problem in ProjectStore", ex);
         loadErrors.put(id, file + " (" + ex.getMessage() + ")");
     }
 

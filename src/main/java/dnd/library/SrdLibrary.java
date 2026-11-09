@@ -53,7 +53,7 @@ public final class SrdLibrary {
                 try {
                     monsters.addAll(Json.readFile(p, MonsterFile.class).monsters);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    dnd.util.Log.error("Problem in SrdLibrary", e);
                 }
             }
             monsters.sort(Comparator.comparing((Card c) -> c.name.toLowerCase()));
@@ -69,7 +69,7 @@ public final class SrdLibrary {
                 try {
                     spells.addAll(Json.readFile(p, SpellFile.class).spells);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    dnd.util.Log.error("Problem in SrdLibrary", e);
                 }
             }
             spells.sort(Comparator.comparing((Spell s) -> s.name.toLowerCase()));

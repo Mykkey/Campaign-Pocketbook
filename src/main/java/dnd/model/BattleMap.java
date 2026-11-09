@@ -34,6 +34,37 @@ public class BattleMap {
     /** Revealed cells, as "col,row" keys (same format as {@link #terrain}). */
     public Set<String> revealed = new LinkedHashSet<>();
 
+    /** DM-only numbered notes (traps, secrets, reminders). */
+    public List<MapPin> pins = new ArrayList<>();
+    /** Light sources. They only matter when {@link #darkMap} is on. */
+    public List<MapLight> lights = new ArrayList<>();
+    /** When on, the map is dark: only lit cells and what creatures can see in the dark are clear. */
+    public boolean darkMap;
+
+    /** The area (cone, circle...) currently laid over the map, or null. A temporary overlay: not saved. */
+    public transient AreaTemplate template;
+
+    /** The measuring line currently on the map, or null. A temporary overlay: not saved. */
+    public transient Ruler ruler;
+
+    /** A measuring line between two points (map units). When {@link #shared} the players see it too. */
+    public static final class Ruler {
+        public double ax, ay, bx, by;
+        public boolean shared;
+
+        public Ruler(double ax, double ay, boolean shared) {
+            this.ax = this.bx = ax;
+            this.ay = this.by = ay;
+            this.shared = shared;
+        }
+
+        /** Distance in cells between the cells at each end, or -1 if an end is off the grid. */
+        public int cells(dnd.map.Grid g) {
+            int[] a = g.cellAt(ax, ay), b = g.cellAt(bx, by);
+            return a == null || b == null ? -1 : g.distance(a[0], a[1], b[0], b[1]);
+        }
+    }
+
     /** Combat state for Battle mode; null until a battle is first started. */
     public Battle battle;
 
@@ -60,5 +91,7 @@ public class BattleMap {
         public List<MapObject> objects = new ArrayList<>();
         public List<MapToken> tokens = new ArrayList<>();
         public Set<String> revealed = new LinkedHashSet<>();
+        public List<MapPin> pins = new ArrayList<>();
+        public List<MapLight> lights = new ArrayList<>();
     }
 }

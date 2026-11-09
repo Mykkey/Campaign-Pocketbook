@@ -20,8 +20,22 @@ public class Spell {
     public String description = "";
     public String higherLevel = "";
     public List<String> classes = new ArrayList<>();
+    /** The DM's own notes (not part of the printed spell). */
+    public String notes = "";
+    /** Id of the SRD library spell this card was made from, or null for a homebrew spell. */
+    public String libraryId;
 
     public Spell() { }
+
+    /** A deep copy with the same id (callers give it a new one if it is a new item). */
+    public Spell copy() {
+        Spell s = new Spell();
+        s.id = id; s.name = name; s.level = level; s.school = school; s.castingTime = castingTime; s.range = range;
+        s.components = components; s.material = material; s.duration = duration; s.concentration = concentration;
+        s.ritual = ritual; s.description = description; s.higherLevel = higherLevel;
+        s.classes = new ArrayList<>(classes); s.notes = notes; s.libraryId = libraryId;
+        return s;
+    }
 
     /** "Cantrip", "1st-level", "2nd-level"... */
     public String levelLabel() {

@@ -6,7 +6,9 @@ import dnd.map.Fog;
 import dnd.map.MapRenderer;
 import dnd.model.BattleMap;
 import dnd.model.Combatant;
+import dnd.model.MapLight;
 import dnd.model.MapObject;
+import dnd.model.MapPin;
 import dnd.model.MapToken;
 import dnd.model.Terrain;
 import dnd.storage.Json;
@@ -32,7 +34,7 @@ import java.util.*;
 
 /** The battlemap canvas: pan/zoom, terrain painting, placing and editing pieces, tokens and the ruler. */
 public class MapView extends Pane implements ItemView {
-    private enum Mode { NONE, PAN, MOVE, MARQUEE, RESIZE, ROTATE, PAINT, RULER, FOG_BRUSH, FOG_RECT }
+    private enum Mode { NONE, PAN, MOVE, MARQUEE, RESIZE, ROTATE, PAINT, RULER, FOG_BRUSH, FOG_RECT, TEMPLATE_AIM, PIN_MOVE, LIGHT_MOVE }
 
     private static final Color SELECT_COLOR = Color.web("#2563eb");
     private static String clipboardJson;
@@ -65,9 +67,12 @@ public class MapView extends Pane implements ItemView {
     public java.util.function.Consumer<String> openCard = id -> { };
     /** Called with a token's id when it is clicked (used by the battle screen to show that creature's card). */
     public java.util.function.Consumer<String> onTokenClicked = id -> { };
-    private double[] rulerA, rulerB;
     private double fogX0, fogY0, fogX1, fogY1;
     private String pendingSnapshot;
+    /** The pin or light being dragged, and the pin under the pointer (for its hover label). */
+    private String movingId, hoverPinId;
+    /** Opens a project item in a tab (set by the map editor; used by a pin's link). */
+    public java.util.function.Consumer<String> openItem = id -> { };
 
     public MapView(BattleMap map, ProjectStore store, MapToolState ts) {
         this.map = map;
@@ -86,7 +91,12 @@ public class MapView extends Pane implements ItemView {
         setOnMouseMoved(e -> {
             hoverWX = wx(e.getX());
             hoverWY = wy(e.getY());
-            if (ts.tool.get() == MapTool.ASSET || ts.tool.get() == MapTool.TERRAIN || ts.tool.get() == MapTool.TOKEN) redraw();
+            MapPin overPin = hitPin(hoverWX, hoverWY);
+            String pinId = overPin == null ? null : overPin.id;
+            boolean pinChanged = !Objects.equals(pinId, hoverPinId);
+            hoverPinId = pinId;
+            MapTool tool = ts.tool.get();
+            if (tool == MapTool.ASSET || tool == MapTool.TERRAIN || tool == MapTool.TOKEN || pinChanged) redraw();
         });
         setOnMouseExited(e -> {
             hoverWX = Double.NaN;
@@ -117,11 +127,35 @@ public class MapView extends Pane implements ItemView {
             e.consume();
         });
         ts.tool.addListener((o, a, n) -> {
-            rulerA = rulerB = null;
             refreshCursor();
             redraw();
         });
         ts.armedAsset.addListener((o, a, n) -> redraw());
+        // dark map on/off lives in the map file
+        ts.darkMap.set(map.darkMap);
+        ts.darkMap.addListener((o, a, n) -> {
+            map.darkMap = n;
+            if (n) for (MapToken t : map.tokens) autoReveal(t); // what the creatures can see clears the fog
+            store.markMapDirty(map);
+            redraw();
+        });
+        // changing the shape or size in the toolbar reshapes the area that is already on the map
+        ts.templateShape.addListener((o, a, n) -> reshapeTemplate());
+        ts.templateFeet.addListener((o, a, n) -> reshapeTemplate());
+        ts.rulerShared.addListener((o, a, n) -> {
+            if (map.ruler != null) {
+                map.ruler.shared = n;
+                store.markMapDirty(map);
+                redraw();
+            }
+        });
+        ts.templateShared.addListener((o, a, n) -> {
+            if (map.template != null) {
+                map.template.shared = n;
+                store.markMapDirty(map);
+                redraw();
+            }
+        });
         // fog on/off lives in the map file; turning it on clears fog around tokens that can see
         ts.fogEnabled.set(map.fogEnabled);
         ts.fogEnabled.addListener((o, a, n) -> {
@@ -205,8 +239,8 @@ public class MapView extends Pane implements ItemView {
 
         drawHover(g);
         drawSelection(g);
-        drawRuler(g);
         drawFogRect(g);
+        drawPinHover(g);
         if (mode == Mode.MARQUEE) {
             g.setFill(Color.web("#2563eb33"));
             g.setStroke(SELECT_COLOR);
@@ -280,32 +314,6 @@ public class MapView extends Pane implements ItemView {
             g.strokeOval(rh[0] - s / 2, rh[1] - s / 2, s, s);
             g.fillRect(sh[0] - s / 2, sh[1] - s / 2, s, s);
             g.strokeRect(sh[0] - s / 2, sh[1] - s / 2, s, s);
-        }
-    }
-
-    private void drawRuler(GraphicsContext g) {
-        if (rulerA == null || rulerB == null) return;
-        double z = zoom();
-        g.setStroke(Color.web("#c0392b"));
-        g.setLineWidth(3 / z);
-        g.strokeLine(rulerA[0], rulerA[1], rulerB[0], rulerB[1]);
-        g.setFill(Color.web("#c0392b"));
-        double r = 5 / z;
-        g.fillOval(rulerA[0] - r, rulerA[1] - r, 2 * r, 2 * r);
-        g.fillOval(rulerB[0] - r, rulerB[1] - r, 2 * r, 2 * r);
-        int[] a = grid.cellAt(rulerA[0], rulerA[1]), b = grid.cellAt(rulerB[0], rulerB[1]);
-        if (a != null && b != null) {
-            int d = grid.distance(a[0], a[1], b[0], b[1]);
-            String text = d + (d == 1 ? " cell" : " cells") + "  (" + (d * 5) + " ft)";
-            double mx = (rulerA[0] + rulerB[0]) / 2, my = (rulerA[1] + rulerB[1]) / 2 - 14 / z;
-            g.setFont(Font.font("System", FontWeight.BOLD, 14 / z));
-            g.setTextAlign(TextAlignment.CENTER);
-            g.setTextBaseline(VPos.CENTER);
-            g.setStroke(Color.WHITE);
-            g.setLineWidth(4 / z);
-            g.strokeText(text, mx, my);
-            g.setFill(Color.web("#7b1e12"));
-            g.fillText(text, mx, my);
         }
     }
 
@@ -406,6 +414,8 @@ public class MapView extends Pane implements ItemView {
         s.objects = map.objects;
         s.tokens = map.tokens;
         s.revealed = new java.util.LinkedHashSet<>(map.revealed);
+        s.pins = map.pins;
+        s.lights = map.lights;
         return Json.write(s);
     }
 
@@ -446,6 +456,10 @@ public class MapView extends Pane implements ItemView {
         map.tokens.addAll(s.tokens);
         map.revealed.clear();
         map.revealed.addAll(s.revealed);
+        map.pins.clear();
+        map.pins.addAll(s.pins);
+        map.lights.clear();
+        map.lights.addAll(s.lights);
         selected.removeIf(id -> map.findObject(id) == null && map.findToken(id) == null);
         dnd.battle.BattleEngine.relinkTokens(map.battle, map);
         changed();
@@ -494,13 +508,17 @@ public class MapView extends Pane implements ItemView {
                 stampAsset(ts.armedAsset.get(), pressWX, pressWY);
             }
             case TOKEN -> placeToken(pressWX, pressWY);
+            case TEMPLATE -> pressTemplate();
+            case PIN -> pressPin(e);
+            case LIGHT -> pressLight(e);
             case FOG -> pressFog();
             case RULER -> {
                 int[] c = grid.cellAt(pressWX, pressWY);
                 if (c != null) {
-                    rulerA = grid.center(c[0], c[1]);
-                    rulerB = rulerA;
+                    double[] at = grid.center(c[0], c[1]);
+                    map.ruler = new BattleMap.Ruler(at[0], at[1], ts.rulerShared.get());
                     mode = Mode.RULER;
+                    store.markMapDirty(map);
                 }
             }
         }
@@ -613,7 +631,32 @@ public class MapView extends Pane implements ItemView {
             }
             case RULER -> {
                 int[] c = grid.cellAt(px, py);
-                if (c != null) rulerB = grid.center(c[0], c[1]);
+                if (c != null && map.ruler != null) {
+                    double[] at = grid.center(c[0], c[1]);
+                    map.ruler.bx = at[0];
+                    map.ruler.by = at[1];
+                    store.markMapDirty(map); // the players' window follows it when shared
+                }
+            }
+            case TEMPLATE_AIM -> aimTemplate(px, py, e.isAltDown());
+            case PIN_MOVE -> {
+                MapPin pin = findPin(movingId);
+                if (pin != null) {
+                    gestureCheckpoint();
+                    pin.x = px;
+                    pin.y = py;
+                    store.markMapDirty(map);
+                }
+            }
+            case LIGHT_MOVE -> {
+                MapLight l = findLight(movingId);
+                if (l != null && l.tokenId == null) {
+                    gestureCheckpoint();
+                    double[] at = lightSpot(px, py);
+                    l.x = at[0];
+                    l.y = at[1];
+                    store.markMapDirty(map);
+                }
             }
             default -> { }
         }
@@ -699,7 +742,9 @@ public class MapView extends Pane implements ItemView {
             refreshCursor();
         }
         if (mode == Mode.FOG_RECT) finishFogRect();
+        if (mode == Mode.TEMPLATE_AIM) store.markMapDirty(map); // the players' window follows it when shared
         mode = Mode.NONE;
+        movingId = null;
         gestureCheckpointed = false;
         pendingSnapshot = null;
         redraw();
@@ -866,6 +911,7 @@ public class MapView extends Pane implements ItemView {
         if (tokenId == null) return;
         checkpoint();
         map.tokens.removeIf(t -> t.id.equals(tokenId));
+        map.lights.removeIf(l -> tokenId.equals(l.tokenId));
         selected.remove(tokenId);
         changed();
     }
@@ -955,8 +1001,9 @@ public class MapView extends Pane implements ItemView {
 
     /** Clears fog around a token that reveals fog (called whenever it is placed or moved). */
     private void autoReveal(MapToken t) {
-        if (map.fogEnabled && t.revealRadius > 0 && grid.inside(t.col, t.row)) {
-            Fog.revealRadius(map, grid, t.col, t.row, t.revealRadius);
+        int cells = dnd.map.LightingModel.sightCells(map, t); // reveal radius, darkvision and a carried light
+        if (map.fogEnabled && cells > 0 && grid.inside(t.col, t.row)) {
+            Fog.revealRadius(map, grid, t.col, t.row, cells);
         }
     }
 
@@ -1050,6 +1097,7 @@ public class MapView extends Pane implements ItemView {
         checkpoint();
         map.objects.removeIf(o -> selected.contains(o.id));
         map.tokens.removeIf(t -> selected.contains(t.id));
+        map.lights.removeIf(l -> l.tokenId != null && selected.contains(l.tokenId));
         selected.clear();
         changed();
     }
@@ -1173,7 +1221,11 @@ public class MapView extends Pane implements ItemView {
     @Override
     public boolean escape() {
         selected.clear();
-        rulerA = rulerB = null;
+        if (map.template != null || map.ruler != null) {
+            map.template = null;
+            map.ruler = null;
+            store.markMapDirty(map);
+        }
         ts.armedAsset.set(null);
         ts.tool.set(MapTool.SELECT);
         redraw();
@@ -1206,6 +1258,7 @@ public class MapView extends Pane implements ItemView {
 
     private void onContextMenu(ContextMenuEvent e) {
         double px = wx(e.getX()), py = wy(e.getY());
+        if (pinOrLightMenu(e, px, py)) return;
         MapToken tok = hitToken(px, py);
         MapObject obj = tok == null ? hitObject(px, py) : null;
         String id = tok != null ? tok.id : obj != null ? obj.id : null;
@@ -1269,6 +1322,15 @@ public class MapView extends Pane implements ItemView {
                 fogMenu.getItems().add(item(rad == 0 ? "Off" : rad + " cells (" + rad * 5 + " ft)", false, () -> setRevealRadiusForSelection(rad)));
             }
             menu.getItems().add(fogMenu);
+            Menu visionMenu = new Menu("Sees in the dark (darkvision)");
+            for (int ft : new int[]{0, 30, 60, 90, 120}) {
+                visionMenu.getItems().add(item(ft == 0 ? "No darkvision" : ft + " ft", false, () -> setVisionForSelection(ft)));
+            }
+            menu.getItems().add(visionMenu);
+            Menu lightMenu = new Menu("Carries a light");
+            lightMenu.getItems().add(item("No light", false, () -> setCarriedLight(null)));
+            for (dnd.map.LightPresets.Preset p : dnd.map.LightPresets.ALL) lightMenu.getItems().add(item(p.toString(), false, () -> setCarriedLight(p)));
+            menu.getItems().add(lightMenu);
         }
         if (has) menu.getItems().add(new SeparatorMenuItem());
         menu.getItems().add(item("Copy  (Ctrl+C)", !has, this::copy));
@@ -1278,6 +1340,261 @@ public class MapView extends Pane implements ItemView {
         menu.getItems().add(item("Delete  (Del)", !has, this::deleteSelected));
         menu.show(this, e.getScreenX(), e.getScreenY());
         e.consume();
+    }
+
+    // ================================================================ area templates, pins and lights
+
+    /** A point on the map, snapped to the middle of its cell when snapping is on. */
+    private double[] snapPoint(double px, double py) {
+        if (ts.snap.get()) {
+            int[] c = grid.cellAt(px, py);
+            if (c != null) return grid.center(c[0], c[1]);
+        }
+        return new double[]{px, py};
+    }
+
+    private void pressTemplate() {
+        double[] o = snapPoint(pressWX, pressWY);
+        dnd.model.AreaTemplate t = new dnd.model.AreaTemplate(ts.templateShape.get(), o[0], o[1], ts.templateFeet.get());
+        t.shared = ts.templateShared.get();
+        map.template = t;
+        mode = Mode.TEMPLATE_AIM;
+        store.markMapDirty(map);
+    }
+
+    private void aimTemplate(double px, double py, boolean free) {
+        dnd.model.AreaTemplate t = map.template;
+        if (t == null) return;
+        if (t.shape == dnd.model.AreaTemplate.Shape.CIRCLE) { // a burst has no direction: it follows the pointer
+            double[] o = snapPoint(px, py);
+            t.ox = o[0];
+            t.oy = o[1];
+        } else {
+            double dx = px - t.ox, dy = py - t.oy;
+            if (Math.hypot(dx, dy) < map.cellSize * 0.2) return;
+            double a = Math.atan2(dy, dx);
+            if (!free) a = Math.round(a / (Math.PI / 12)) * (Math.PI / 12); // 15 degree steps; Alt for free aim
+            t.angle = a;
+        }
+        store.markMapDirty(map);
+    }
+
+    private void reshapeTemplate() {
+        dnd.model.AreaTemplate t = map.template;
+        if (t == null) return;
+        t.shape = ts.templateShape.get();
+        t.feet = ts.templateFeet.get();
+        store.markMapDirty(map);
+        redraw();
+    }
+
+    /** Takes the area off the map (toolbar button and Esc). */
+    public void clearTemplate() {
+        if (map.template == null) return;
+        map.template = null;
+        store.markMapDirty(map);
+        redraw();
+    }
+
+    /** Takes the ruler and the area off the map. */
+    public void clearMeasures() {
+        if (map.template == null && map.ruler == null) return;
+        map.template = null;
+        map.ruler = null;
+        store.markMapDirty(map);
+        redraw();
+    }
+
+    private double pinRadius() {
+        return Math.max(map.cellSize * 0.26, 11 / zoom());
+    }
+
+    private MapPin hitPin(double px, double py) {
+        for (int i = map.pins.size() - 1; i >= 0; i--) {
+            MapPin p = map.pins.get(i);
+            if (Math.hypot(px - p.x, py - p.y) <= pinRadius()) return p;
+        }
+        return null;
+    }
+
+    private MapPin findPin(String id) {
+        for (MapPin p : map.pins) if (p.id.equals(id)) return p;
+        return null;
+    }
+
+    private MapLight findLight(String id) {
+        for (MapLight l : map.lights) if (l.id.equals(id)) return l;
+        return null;
+    }
+
+    private MapLight hitLight(double px, double py) {
+        double r = Math.max(map.cellSize * 0.3, 12 / zoom());
+        for (int i = map.lights.size() - 1; i >= 0; i--) {
+            MapLight l = map.lights.get(i);
+            double[] at = dnd.map.LightingModel.position(map, grid, l);
+            if (at != null && Math.hypot(px - at[0], py - at[1]) <= r) return l;
+        }
+        return null;
+    }
+
+    private double[] lightSpot(double px, double py) {
+        return snapPoint(px, py);
+    }
+
+    private void pressPin(MouseEvent e) {
+        MapPin hit = hitPin(pressWX, pressWY);
+        if (hit != null) {
+            if (e.getClickCount() == 2) {
+                editPin(hit, false);
+                return;
+            }
+            mode = Mode.PIN_MOVE;
+            movingId = hit.id;
+            return;
+        }
+        editPin(new MapPin(pressWX, pressWY, ""), true); // not on the map until saved
+    }
+
+    private void editPin(MapPin pin, boolean isNew) {
+        int number = isNew ? map.pins.size() + 1 : map.pins.indexOf(pin) + 1;
+        PinDialog.Result r = PinDialog.show(getScene() == null ? null : getScene().getWindow(), store, pin, number, isNew, openItem);
+        switch (r.action()) {
+            case SAVE -> {
+                checkpoint();
+                pin.text = r.text();
+                pin.link = r.link();
+                if (isNew) map.pins.add(pin);
+            }
+            case DELETE -> {
+                if (!isNew) {
+                    checkpoint();
+                    map.pins.remove(pin);
+                }
+            }
+            case CANCEL -> { }
+        }
+        changed();
+    }
+
+    private void pressLight(MouseEvent e) {
+        MapLight hit = hitLight(pressWX, pressWY);
+        if (hit != null) {
+            if (hit.tokenId == null) {
+                mode = Mode.LIGHT_MOVE;
+                movingId = hit.id;
+            }
+            return;
+        }
+        dnd.map.LightPresets.Preset p = ts.lightPreset.get();
+        if (p == null) return;
+        checkpoint();
+        double[] at = lightSpot(pressWX, pressWY);
+        MapLight l = new MapLight(p.name(), p.brightFeet(), p.dimFeet());
+        l.x = at[0];
+        l.y = at[1];
+        map.lights.add(l);
+        changed();
+    }
+
+    /** Right-click on a pin or a light: its own menu. Returns true if it handled the event. */
+    private boolean pinOrLightMenu(ContextMenuEvent e, double px, double py) {
+        MapPin pin = hitPin(px, py);
+        MapLight light = pin == null ? hitLight(px, py) : null;
+        if (pin == null && light == null) return false;
+        menu.getItems().clear();
+        if (pin != null) {
+            final MapPin p = pin;
+            menu.getItems().add(item("Edit pin...", false, () -> editPin(p, false)));
+            if (p.link != null && store.itemExists(p.link)) menu.getItems().add(item("Open linked item", false, () -> openItem.accept(p.link)));
+            menu.getItems().add(item("Delete pin", false, () -> {
+                checkpoint();
+                map.pins.remove(p);
+                changed();
+            }));
+        } else {
+            final MapLight l = light;
+            menu.getItems().add(item("Light: " + l.name + " (" + l.brightFeet + "/" + l.dimFeet + " ft)", true, () -> { }));
+            menu.getItems().add(item("Remove light", false, () -> {
+                checkpoint();
+                map.lights.remove(l);
+                changed();
+            }));
+        }
+        menu.show(this, e.getScreenX(), e.getScreenY());
+        e.consume();
+        return true;
+    }
+
+    private void setVisionForSelection(int feet) {
+        boolean any = false;
+        for (String id : selected) if (map.findToken(id) != null) any = true;
+        if (!any) return;
+        checkpoint();
+        for (String id : selected) {
+            MapToken t = map.findToken(id);
+            if (t != null) {
+                t.visionFeet = feet;
+                autoReveal(t);
+            }
+        }
+        changed();
+    }
+
+    /** Gives the selected tokens a light to carry (null = none). It moves with them. */
+    private void setCarriedLight(dnd.map.LightPresets.Preset preset) {
+        boolean any = false;
+        for (String id : selected) if (map.findToken(id) != null) any = true;
+        if (!any) return;
+        checkpoint();
+        for (String id : selected) {
+            MapToken t = map.findToken(id);
+            if (t == null) continue;
+            map.lights.removeIf(l -> t.id.equals(l.tokenId));
+            if (preset != null) {
+                MapLight l = new MapLight(preset.name(), preset.brightFeet(), preset.dimFeet());
+                l.tokenId = t.id;
+                map.lights.add(l);
+            }
+            autoReveal(t);
+        }
+        changed();
+    }
+
+    /** The note of the pin under the pointer, shown beside it while the mouse rests on it (DM only). */
+    private void drawPinHover(GraphicsContext g) {
+        if (hoverPinId == null) return;
+        MapPin p = findPin(hoverPinId);
+        if (p == null || p.text == null || p.text.isBlank()) return;
+        double z = zoom();
+        String text = p.text.length() > 140 ? p.text.substring(0, 137) + "..." : p.text;
+        javafx.scene.text.Text probe = new javafx.scene.text.Text(text);
+        probe.setFont(Font.font("System", 13));
+        probe.setWrappingWidth(240);
+        double w = probe.getLayoutBounds().getWidth() + 16, h = probe.getLayoutBounds().getHeight() + 12;
+        double x = p.x + pinRadius() + 6 / z, y = p.y - h / z / 2;
+        g.save();
+        g.setFill(Color.web("#1f2937", 0.94));
+        g.fillRoundRect(x, y, w / z, h / z, 8 / z, 8 / z);
+        g.setFill(Color.WHITE);
+        g.setFont(Font.font("System", 13 / z));
+        g.setTextAlign(TextAlignment.LEFT);
+        g.setTextBaseline(VPos.TOP);
+        // simple wrapping at word boundaries
+        double lineH = 17 / z, ty = y + 6 / z;
+        StringBuilder line = new StringBuilder();
+        for (String word : text.split("\\s+")) {
+            javafx.scene.text.Text t2 = new javafx.scene.text.Text(line + (line.length() > 0 ? " " : "") + word);
+            t2.setFont(Font.font("System", 13));
+            if (t2.getLayoutBounds().getWidth() > 240 && line.length() > 0) {
+                g.fillText(line.toString(), x + 8 / z, ty);
+                ty += lineH;
+                line.setLength(0);
+            }
+            if (line.length() > 0) line.append(" ");
+            line.append(word);
+        }
+        if (line.length() > 0) g.fillText(line.toString(), x + 8 / z, ty);
+        g.restore();
     }
 
     private static MenuItem item(String text, boolean disabled, Runnable r) {

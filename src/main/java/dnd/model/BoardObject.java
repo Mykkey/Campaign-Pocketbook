@@ -30,10 +30,47 @@ public class BoardObject {
     public List<Double> points = new ArrayList<>();
     /** Id of the whiteboard this object links to, or null. */
     public String link;
+    /** The DM's own note shown when hovering this whole object ({@code **bold**} and {@code *italic*} allowed), or null. */
+    public String note;
+    /**
+     * Links and notes on individual words of this text: the text markup has {@code [words]{n}} spans, and entry
+     * {@code "n"} here says what they link to and what note they carry.
+     */
+    public java.util.Map<String, SpanRef> refs = new java.util.LinkedHashMap<>();
+    /** Lower-case card or spell names whose "link this name?" hint was dismissed in this text. */
+    public java.util.Set<String> dismissedNames = new java.util.LinkedHashSet<>();
 
     public BoardObject() { }
 
     public BoardObject(Type type) { this.type = type; }
+
+    /** Older files had a "tooltip" that previewed an item: that is exactly what a link does now. */
+    @com.fasterxml.jackson.annotation.JsonSetter("tip")
+    private void legacyTip(String itemId) {
+        if (itemId != null && link == null) link = itemId;
+    }
+
+    public boolean hasNote() {
+        return note != null && !note.isBlank();
+    }
+
+    /** The next free span reference number. */
+    public int nextRef() {
+        int max = 0;
+        for (String k : refs.keySet()) {
+            try {
+                max = Math.max(max, Integer.parseInt(k));
+            } catch (NumberFormatException ignored) {
+                // not one of ours
+            }
+        }
+        return max + 1;
+    }
+
+    /** The span entry for a reference number, or null. */
+    public SpanRef ref(int n) {
+        return n <= 0 ? null : refs.get(String.valueOf(n));
+    }
 
     public double left() { return Math.min(x, x + w); }
     public double top() { return Math.min(y, y + h); }
@@ -73,7 +110,9 @@ public class BoardObject {
         o.x = x; o.y = y; o.w = w; o.h = h;
         o.color = color; o.fill = fill; o.strokeWidth = strokeWidth;
         o.text = text; o.fontSize = fontSize; o.bold = bold; o.italic = italic;
-        o.image = image; o.link = link;
+        o.image = image; o.link = link; o.note = note;
+        for (java.util.Map.Entry<String, SpanRef> e : refs.entrySet()) o.refs.put(e.getKey(), e.getValue().copy());
+        o.dismissedNames.addAll(dismissedNames);
         o.points = new ArrayList<>(points);
         return o;
     }

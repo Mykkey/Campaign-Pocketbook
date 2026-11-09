@@ -73,10 +73,13 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Button newCard = new Button("+ Card");
         newCard.setTooltip(new Tooltip("Create a character or creature card (stat block)"));
         newCard.setOnAction(e -> newCard(selectedFolder()));
+        Button newSpell = new Button("+ Spell");
+        newSpell.setTooltip(new Tooltip("Create a spell card (your own homebrew spell, or edit one imported from the library)"));
+        newSpell.setOnAction(e -> newSpell(selectedFolder()));
         Button newEncounter = new Button("+ Encounter");
         newEncounter.setTooltip(new Tooltip("Plan a fight: pick creatures and see how hard it is for your party"));
         newEncounter.setOnAction(e -> newEncounter(selectedFolder()));
-        FlowPane treeButtons = new FlowPane(6, 6, newBoard, newMap, newCard, newEncounter, newFolder);
+        FlowPane treeButtons = new FlowPane(6, 6, newBoard, newMap, newCard, newSpell, newEncounter, newFolder);
         tree.setCellFactory(v -> createTreeCell(true));
         tree.setOnMouseClicked(e -> {
             if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2) {
@@ -134,12 +137,15 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Button loot = new Button("Loot...");
         loot.setTooltip(new Tooltip("Random treasure generator (Ctrl+L)"));
         loot.setOnAction(e -> openLootGenerator());
+        Button relations = new Button("Relations...");
+        relations.setTooltip(new Tooltip("Family tree and relationship web of your cards"));
+        relations.setOnAction(e -> RelationshipsDialog.show(getScene().getWindow(), store, this::openItem));
         Button library = new Button("Library...");
         library.setTooltip(new Tooltip("Browse imported SRD monsters and spells"));
         library.setOnAction(e -> openLibrary());
         recentMenu.setTooltip(new Tooltip("The last items you opened"));
         recentMenu.setOnShowing(e -> rebuildRecent());
-        HBox nav = new HBox(8, projects, backBtn, fwdBtn, trail, spacer, names, npc, loot, library, Theme.toggleButton(), recentMenu, backlinks, search);
+        HBox nav = new HBox(8, projects, backBtn, fwdBtn, trail, spacer, names, npc, loot, relations, library, Theme.toggleButton(), recentMenu, backlinks, search);
         nav.setAlignment(Pos.CENTER_LEFT);
         nav.setPadding(new Insets(6, 8, 0, 8));
 
@@ -319,6 +325,13 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
                     return;
                 }
                 view = new CardEditor(c, store, newName -> renameFromEditor(id, newName));
+            } else if (store.isSpell(id)) {
+                dnd.model.Spell sp = store.spell(id);
+                if (sp == null) {
+                    new Alert(Alert.AlertType.WARNING, "That spell could not be found.").show();
+                    return;
+                }
+                view = new SpellEditor(sp, store, newName -> renameFromEditor(id, newName));
             } else if (store.isEncounter(id)) {
                 dnd.model.Encounter en = store.encounter(id);
                 if (en == null) {
@@ -710,6 +723,8 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         nm.setOnAction(e -> newBattleMap(selectedFolder()));
         MenuItem nc = new MenuItem("New card...");
         nc.setOnAction(e -> newCard(selectedFolder()));
+        MenuItem nsp = new MenuItem("New spell...");
+        nsp.setOnAction(e -> newSpell(selectedFolder()));
         MenuItem ne = new MenuItem("New encounter...");
         ne.setOnAction(e -> newEncounter(selectedFolder()));
         MenuItem dup = new MenuItem("Duplicate");
@@ -731,11 +746,11 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         colour.getItems().addAll(new SeparatorMenuItem(), defaultColour);
         MenuItem del = new MenuItem("Delete");
         del.setOnAction(e -> deleteSelected());
-        ContextMenu m = new ContextMenu(nb, nm, nc, ne, nf, new SeparatorMenuItem(), dup, rn, colour, del);
+        ContextMenu m = new ContextMenu(nb, nm, nc, nsp, ne, nf, new SeparatorMenuItem(), dup, rn, colour, del);
         m.setOnShowing(e -> {
             TreeItem<TreeNode> it = tree.getSelectionModel().getSelectedItem();
             boolean isRoot = it == null || it.getValue() == store.project.root;
-            dup.setDisable(it == null || !(it.getValue().isCard() || it.getValue().isEncounter()));
+            dup.setDisable(it == null || !(it.getValue().isCard() || it.getValue().isEncounter() || it.getValue().isSpell()));
             rn.setDisable(it == null);
             colour.setDisable(it == null);
             del.setDisable(isRoot);
@@ -777,6 +792,21 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         });
     }
 
+    private void newSpell(TreeNode parent) {
+        ask("New spell", "Spell name:", "New Spell").ifPresent(name -> {
+            dnd.model.Spell sp = new dnd.model.Spell();
+            sp.name = name;
+            sp.school = "Evocation";
+            sp.castingTime = "1 action";
+            sp.range = "Self";
+            sp.duration = "Instantaneous";
+            sp.components = "V, S";
+            store.createSpell(parent, sp);
+            refreshTree();
+            openItem(sp.id);
+        });
+    }
+
     private void newEncounter(TreeNode parent) {
         ask("New encounter", "Encounter name:", "New Encounter").ifPresent(name -> {
             dnd.model.Encounter e = store.createEncounter(parent, name);
@@ -794,6 +824,9 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             newId = copy == null ? null : copy.id;
         } else if (it.getValue().isEncounter()) {
             dnd.model.Encounter copy = store.duplicateEncounter(it.getValue());
+            newId = copy == null ? null : copy.id;
+        } else if (it.getValue().isSpell()) {
+            dnd.model.Spell copy = store.duplicateSpell(it.getValue());
             newId = copy == null ? null : copy.id;
         } else {
             return;
@@ -859,7 +892,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Alert a = new Alert(Alert.AlertType.CONFIRMATION,
                 "Delete \"" + n.name + "\"" + (n.folder ? " and everything inside it" : "") + "? This cannot be undone.",
                 ButtonType.OK, ButtonType.CANCEL);
-        a.setHeaderText("Delete " + (n.folder ? "folder" : n.isBattleMap() ? "battlemap" : n.isCard() ? "card" : n.isEncounter() ? "encounter" : "whiteboard"));
+        a.setHeaderText("Delete " + (n.folder ? "folder" : n.isBattleMap() ? "battlemap" : n.isCard() ? "card" : n.isEncounter() ? "encounter" : n.isSpell() ? "spell" : "whiteboard"));
         Optional<ButtonType> r = a.showAndWait();
         if (r.isEmpty() || r.get() != ButtonType.OK) return;
 

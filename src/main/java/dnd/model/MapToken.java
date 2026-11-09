@@ -17,13 +17,15 @@ public class MapToken {
     public int revealRadius;
     /** When true the players don't see this token (e.g. an ambusher), even in revealed areas. */
     public boolean hidden;
+    /** How far it sees in the dark, in feet (darkvision); 0 = it needs light. Only matters on a dark map. */
+    public int visionFeet;
 
     public MapToken() { }
 
     public MapToken copy() {
         MapToken t = new MapToken();
         t.label = label; t.color = color; t.col = col; t.row = row; t.size = size;
-        t.cardId = cardId; t.revealRadius = revealRadius; t.hidden = hidden;
+        t.cardId = cardId; t.revealRadius = revealRadius; t.hidden = hidden; t.visionFeet = visionFeet;
         return t;
     }
 }

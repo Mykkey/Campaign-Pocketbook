@@ -19,5 +19,15 @@ public class MapToolState {
     public final BooleanProperty fogReveal = new SimpleBooleanProperty(true);
     /** Fog tool: true = drag a rectangle, false = paint with the brush. */
     public final BooleanProperty fogRect = new SimpleBooleanProperty(false);
+    /** Area tool: shape and size (feet) of the template, and whether the players see it. */
+    public final ObjectProperty<dnd.model.AreaTemplate.Shape> templateShape = new SimpleObjectProperty<>(dnd.model.AreaTemplate.Shape.CONE);
+    public final IntegerProperty templateFeet = new SimpleIntegerProperty(30);
+    public final BooleanProperty templateShared = new SimpleBooleanProperty(false);
+    /** Light tool: which kind of light to place. */
+    public final ObjectProperty<dnd.map.LightPresets.Preset> lightPreset = new SimpleObjectProperty<>(dnd.map.LightPresets.find("Torch"));
+    /** Ruler tool: whether the players see the measuring line. */
+    public final BooleanProperty rulerShared = new SimpleBooleanProperty(false);
+    /** Dark map on for this map (mirrors {@code BattleMap.darkMap}). */
+    public final BooleanProperty darkMap = new SimpleBooleanProperty(false);
     public final ObjectProperty<Color> tokenColor = new SimpleObjectProperty<>(Color.web("#d33f49"));
 }

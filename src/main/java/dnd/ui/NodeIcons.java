@@ -41,6 +41,10 @@ public final class NodeIcons {
                     fill("M3.5 3.5 H12.5 V5.2 H3.5 Z", Color.web("#ffffff", 0.9)),
                     fill("M3.5 7 H7 V11.5 H3.5 Z", Color.web("#ffffff", 0.55)),
                     line("M8.6 7.6 H12.5 M8.6 9.5 H12.5 M8.6 11.4 H12.5", Color.web("#ffffff", 0.8), 1));
+        } else if (n.isSpell()) { // a spell book with a sparkle
+            p.getChildren().addAll(fill("M3.5 1.5 H12.5 A1 1 0 0 1 13.5 2.5 V13 A1.5 1.5 0 0 1 12 14.5 H3.5 A2 2 0 0 1 1.5 12.5 V3.5 A2 2 0 0 1 3.5 1.5 Z", c),
+                    line("M4.2 3 V14", Color.web("#ffffff", 0.45), 1),
+                    fill("M8.6 4.2 L9.5 6.9 L12.2 7.8 L9.5 8.7 L8.6 11.4 L7.7 8.7 L5 7.8 L7.7 6.9 Z", Color.web("#ffffff", 0.95)));
         } else if (n.isEncounter()) {
             p.getChildren().addAll(line("M3.2 3.2 L12.8 12.8 M12.8 3.2 L3.2 12.8", c, 2),
                     line("M9.2 13 L13 9.2 M2.9 9.2 L6.8 13", c, 1.6));

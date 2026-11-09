@@ -103,11 +103,32 @@ public class ToolbarPanel extends FlowPane {
 
         // --- actions
         getChildren().addAll(
-                action("Link...", "Link the selected object(s) to another whiteboard (Ctrl+L)", v -> v.linkSelected(), current),
-                action("Unlink", "Remove the link from the selected object(s)", v -> v.unlinkSelected(), current),
+                action("Link...", "Link the selected words (while typing) or object(s) to another item (Ctrl+L). Blue = link: hover it to preview the item, double-click to open it", v -> v.linkSelected(), current),
+                action("Unlink", "Remove the link from the selected words (while typing) or object(s)", v -> v.unlinkSelected(), current),
+                action("Note...", "Write your own note that shows when you hover over the selected words (while typing) or object(s). Green = note. Double-click a note to edit it",
+                        v -> v.noteSelected(), current),
+                action("No note", "Remove the note from the selected words (while typing) or object(s)", v -> v.removeNoteSelected(), current),
+                nameHintsBox(ts),
+                linkPreviewsBox(ts),
                 action("Undo", "Ctrl+Z", v -> v.undo(), current),
                 action("Redo", "Ctrl+Y", v -> v.redo(), current),
                 action("Delete", "Delete the selection", v -> v.deleteSelected(), current));
+    }
+
+    private static CheckBox nameHintsBox(ToolState ts) {
+        CheckBox cb = new CheckBox("Name hints");
+        cb.setFocusTraversable(false);
+        cb.setTooltip(new Tooltip("Underline the names of your cards and spells in text; hover one to link it"));
+        cb.selectedProperty().bindBidirectional(ts.nameHints);
+        return cb;
+    }
+
+    private static CheckBox linkPreviewsBox(ToolState ts) {
+        CheckBox cb = new CheckBox("Link previews");
+        cb.setFocusTraversable(false);
+        cb.setTooltip(new Tooltip("Show a preview of the linked card, spell, map or whiteboard when you hover over a link"));
+        cb.selectedProperty().bindBidirectional(ts.linkPreviews);
+        return cb;
     }
 
     private static Button action(String text, String tip, Consumer<BoardView> run, Supplier<BoardView> current) {
@@ -118,7 +139,7 @@ public class ToolbarPanel extends FlowPane {
             BoardView v = current.get();
             if (v != null) {
                 run.accept(v);
-                v.requestFocus();
+                if (!v.isEditingText()) v.requestFocus(); // keep typing in the text box if that is where we were
             }
         });
         return b;

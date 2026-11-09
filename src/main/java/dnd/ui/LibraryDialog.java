@@ -62,7 +62,7 @@ public final class LibraryDialog {
         Runnable[] rebuild = new Runnable[1];
         rebuild[0] = () -> {
             monstersTab.setContent(monstersPane(lib, store, openItem, treeChanged, owner));
-            spellsTab.setContent(spellsPane(lib, addToBoard));
+            spellsTab.setContent(spellsPane(lib, store, openItem, treeChanged, addToBoard));
             status.setText(lib.monsters().size() + " monsters, " + lib.spells().size() + " spells imported");
         };
         rebuild[0].run();
@@ -271,7 +271,7 @@ public final class LibraryDialog {
 
     // ================================================================ spells
 
-    private static Node spellsPane(SrdLibrary lib, Consumer<String> addToBoard) {
+    private static Node spellsPane(SrdLibrary lib, ProjectStore store, Consumer<String> openItem, Runnable treeChanged, Consumer<String> addToBoard) {
         List<Spell> all = lib.spells();
         if (all.isEmpty()) return emptyNote("No spells imported yet. Use the download links above, then press Import SRD file... and choose 5e-SRD-Spells.json.");
 
@@ -325,12 +325,16 @@ public final class LibraryDialog {
         text.setPromptText("Pick a spell on the left.");
         Button copy = new Button("Copy");
         Button add = new Button("Add to board");
-        add.setStyle("-fx-font-weight: bold;");
+        Button asCard = new Button("Add as spell card");
+        asCard.setStyle("-fx-font-weight: bold;");
+        asCard.setTooltip(new Tooltip("Makes an editable spell card in this project (in a \"Spells\" folder). If you already made one from this spell, it is opened instead."));
+        asCard.setDisable(true);
         copy.setDisable(true);
         add.setDisable(true);
         list.getSelectionModel().selectedItemProperty().addListener((o, a, s) -> {
             text.setText(s == null ? "" : s.toText());
             copy.setDisable(s == null);
+            asCard.setDisable(s == null);
             add.setDisable(s == null || addToBoard == null);
         });
         copy.setOnAction(e -> {
@@ -341,7 +345,24 @@ public final class LibraryDialog {
         add.setOnAction(e -> {
             if (addToBoard != null && !text.getText().isBlank()) addToBoard.accept(text.getText());
         });
-        HBox buttons = new HBox(8, add, copy);
+        asCard.setOnAction(e -> {
+            dnd.model.Spell s = list.getSelectionModel().getSelectedItem();
+            if (s == null) return;
+            dnd.model.Spell existing = store.spellFromLibrary(s.id);
+            if (existing != null) {
+                openItem.accept(existing.id);
+                return;
+            }
+            TreeNode folder = null;
+            for (TreeNode ch : store.project.root.children) if (ch.folder && "Spells".equals(ch.name)) folder = ch;
+            if (folder == null) folder = store.createFolder(store.project.root, "Spells");
+            dnd.model.Spell card = s.copy();
+            card.libraryId = s.id;
+            store.createSpell(folder, card);
+            treeChanged.run();
+            openItem.accept(card.id);
+        });
+        HBox buttons = new HBox(8, asCard, add, copy);
         buttons.setAlignment(Pos.CENTER_LEFT);
         buttons.setPadding(new Insets(8));
         BorderPane right = new BorderPane(text);

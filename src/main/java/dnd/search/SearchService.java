@@ -45,16 +45,62 @@ public final class SearchService {
                 if (o.text != null && dnd.text.RichText.plain(o.text).toLowerCase(Locale.ROOT).contains(q)) {
                     out.add(new Result(n.id, n.name, o.id, snippet(o)));
                     if (out.size() >= limit) return out;
+                    continue;
+                }
+                String note = noteMatch(o, q);
+                if (note != null) {
+                    out.add(new Result(n.id, n.name, o.id, "note: " + excerpt(note, q)));
+                    if (out.size() >= limit) return out;
                 }
             }
         }
 
-        // cards: by name
+        // cards: by name, then by what is written on them (traits, actions, attacks, notes...)
         List<TreeNode> cards = new ArrayList<>();
         store.project.root.collectCards(cards);
         for (TreeNode n : cards) {
             if (n.name.toLowerCase(Locale.ROOT).contains(q)) {
                 out.add(new Result(n.id, n.name, null, "Card"));
+                if (out.size() >= limit) return out;
+                continue;
+            }
+            dnd.model.Card c = store.card(n.id);
+            String hit = c == null ? null : cardMatch(c, q);
+            if (hit != null) {
+                out.add(new Result(n.id, n.name, null, "Card - " + hit));
+                if (out.size() >= limit) return out;
+            }
+        }
+
+        // spell cards: by name, then by what is written on them
+        List<TreeNode> spells = new ArrayList<>();
+        store.project.root.collectSpells(spells);
+        for (TreeNode n : spells) {
+            if (n.name.toLowerCase(Locale.ROOT).contains(q)) {
+                out.add(new Result(n.id, n.name, null, "Spell"));
+                if (out.size() >= limit) return out;
+                continue;
+            }
+            dnd.model.Spell sp = store.spell(n.id);
+            String hit = sp == null ? null : spellMatch(sp, q);
+            if (hit != null) {
+                out.add(new Result(n.id, n.name, null, "Spell - " + hit));
+                if (out.size() >= limit) return out;
+            }
+        }
+
+        // encounters: by name and notes
+        List<TreeNode> encounters = new ArrayList<>();
+        store.project.root.collectEncounters(encounters);
+        for (TreeNode n : encounters) {
+            if (n.name.toLowerCase(Locale.ROOT).contains(q)) {
+                out.add(new Result(n.id, n.name, null, "Encounter"));
+                if (out.size() >= limit) return out;
+                continue;
+            }
+            dnd.model.Encounter e = store.encounter(n.id);
+            if (e != null && e.notes != null && e.notes.toLowerCase(Locale.ROOT).contains(q)) {
+                out.add(new Result(n.id, n.name, null, "Encounter - notes: " + excerpt(e.notes, q)));
                 if (out.size() >= limit) return out;
             }
         }
@@ -68,6 +114,14 @@ public final class SearchService {
             }
             dnd.model.BattleMap m = store.battleMap(n.id);
             if (m == null) continue;
+            int pinNo = 0;
+            for (dnd.model.MapPin pin : m.pins) {
+                pinNo++;
+                if (has(pin.text, q)) {
+                    out.add(new Result(n.id, n.name, null, "Pin " + pinNo + ": " + excerpt(pin.text, q)));
+                    if (out.size() >= limit) return out;
+                }
+            }
             for (dnd.model.MapToken t : m.tokens) {
                 if (t.label != null && t.label.toLowerCase(Locale.ROOT).contains(q)) {
                     out.add(new Result(n.id, n.name, null, "Token \"" + t.label + "\""));
@@ -78,6 +132,71 @@ public final class SearchService {
         return out;
     }
 
+    /** The plain text of the first note on this object (whole-object or on some words) that contains {@code q}, or null. */
+    static String noteMatch(BoardObject o, String q) {
+        if (o.hasNote()) {
+            String plain = dnd.text.RichText.plain(o.note);
+            if (has(plain, q)) return plain;
+        }
+        for (dnd.model.SpanRef r : o.refs.values()) {
+            if (!r.hasNote()) continue;
+            String plain = dnd.text.RichText.plain(r.note);
+            if (has(plain, q)) return plain;
+        }
+        return null;
+    }
+
+    /** Where on a card the text was found, e.g. "trait Pack Tactics: ...", or null if it is not on the card. */
+    static String cardMatch(dnd.model.Card c, String q) {
+        String hit;
+        if ((hit = featureMatch("trait", c.traits, q)) != null) return hit;
+        if ((hit = featureMatch("action", c.actions, q)) != null) return hit;
+        if ((hit = featureMatch("reaction", c.reactions, q)) != null) return hit;
+        if ((hit = featureMatch("legendary action", c.legendary, q)) != null) return hit;
+        for (dnd.model.Attack a : c.attacks) {
+            if (has(a.name, q) || has(a.text, q)) return "attack " + a.name;
+        }
+        for (String alias : c.aliases) if (has(alias, q)) return "also known as: " + alias;
+        for (dnd.model.Relation r : c.relations) if (has(r.note, q)) return "relationship: " + excerpt(r.note, q);
+        String[][] fields = {{"notes", c.notes}, {"type", c.creatureType}, {"alignment", c.alignment}, {"languages", c.languages},
+                {"senses", c.senses}, {"skills", c.skills}, {"resistances", c.resistances}, {"immunities", c.immunities},
+                {"vulnerabilities", c.vulnerabilities}, {"saves", c.saves}};
+        for (String[] f : fields) if (has(f[1], q)) return f[0] + ": " + excerpt(f[1], q);
+        return null;
+    }
+
+    /** Where on a spell card the text was found, or null. */
+    static String spellMatch(dnd.model.Spell s, String q) {
+        if (has(s.description, q)) return "text: " + excerpt(s.description, q);
+        if (has(s.higherLevel, q)) return "higher levels: " + excerpt(s.higherLevel, q);
+        if (has(s.school, q)) return "school: " + s.school;
+        for (String c : s.classes) if (has(c, q)) return "class: " + c;
+        if (has(s.material, q)) return "material: " + excerpt(s.material, q);
+        if (has(s.notes, q)) return "notes: " + excerpt(s.notes, q);
+        return null;
+    }
+
+    private static String featureMatch(String label, java.util.List<dnd.model.Feature> list, String q) {
+        for (dnd.model.Feature f : list) {
+            if (has(f.name, q)) return label + " " + f.name;
+            if (has(f.text, q)) return label + " " + f.name + ": " + excerpt(f.text, q);
+        }
+        return null;
+    }
+
+    private static boolean has(String s, String q) {
+        return s != null && s.toLowerCase(Locale.ROOT).contains(q);
+    }
+
+    /** A short piece of {@code s} around the first match of {@code q}. */
+    public static String excerpt(String s, String q) {
+        String flat = s.replaceAll("\\s+", " ").trim();
+        int i = flat.toLowerCase(Locale.ROOT).indexOf(q);
+        if (i < 0) return flat.length() > 60 ? flat.substring(0, 57) + "..." : flat;
+        int from = Math.max(0, i - 20), to = Math.min(flat.length(), i + q.length() + 30);
+        return (from > 0 ? "..." : "") + flat.substring(from, to) + (to < flat.length() ? "..." : "");
+    }
+
     /** Every object on any other board that links to {@code targetId}. */
     public static List<Result> backlinks(ProjectStore store, String targetId) {
         List<Result> out = new ArrayList<>();
@@ -86,9 +205,9 @@ public final class SearchService {
             Board b = store.board(id);
             if (b == null) continue;
             for (BoardObject o : b.objects) {
-                if (targetId.equals(o.link)) {
-                    out.add(new Result(id, store.boardName(id), o.id, snippet(o)));
-                }
+                boolean refers = targetId.equals(o.link);
+                for (dnd.model.SpanRef r : o.refs.values()) if (targetId.equals(r.link)) refers = true;
+                if (refers) out.add(new Result(id, store.boardName(id), o.id, snippet(o)));
             }
         }
         return out;

@@ -23,8 +23,8 @@ import java.util.List;
 
 /** A read-only, parchment-style rendering of a card, like a printed 5e stat block. */
 public class StatBlockView extends VBox {
-    private static final String RED = "#7a200d";
-    private static final String FONT = "Georgia";
+    static final String RED = "#7a200d";
+    static final String FONT = "Georgia";
 
     private final ProjectStore store;
 
@@ -126,20 +126,20 @@ public class StatBlockView extends VBox {
         if (value != null && !value.isBlank()) getChildren().add(prop(label, value.trim()));
     }
 
-    private static Text styled(String s, double size, FontWeight w, FontPosture p, String color) {
+    static Text styled(String s, double size, FontWeight w, FontPosture p, String color) {
         Text t = new Text(s);
         t.setFont(Font.font(FONT, w, p, size));
         t.setFill(Color.web(color));
         return t;
     }
 
-    private static TextFlow flow(Text... parts) {
+    static TextFlow flow(Text... parts) {
         TextFlow tf = new TextFlow(parts);
         tf.setMaxWidth(390);
         return tf;
     }
 
-    private static Node prop(String label, String value) {
+    static Node prop(String label, String value) {
         return flow(styled(label + " ", 12, FontWeight.BOLD, FontPosture.REGULAR, RED),
                 styled(value, 12, FontWeight.NORMAL, FontPosture.REGULAR, "#222"));
     }
@@ -149,13 +149,13 @@ public class StatBlockView extends VBox {
                 styled(f.text, 12, FontWeight.NORMAL, FontPosture.REGULAR, "#222"));
     }
 
-    private static Node sectionTitle(String s) {
+    static Node sectionTitle(String s) {
         VBox box = new VBox(2, new TextFlow(styled(s, 16, FontWeight.NORMAL, FontPosture.REGULAR, RED)), rule());
         box.setPadding(new Insets(6, 0, 2, 0));
         return box;
     }
 
-    private static Region rule() {
+    static Region rule() {
         Region r = new Region();
         r.setPrefHeight(2);
         r.setMinHeight(2);

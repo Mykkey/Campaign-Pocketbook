@@ -56,6 +56,8 @@ final class BattleScreen implements BattleContext {
     private final MapView view;
     private final Host host;
     private final Random random = new Random();
+    private final MapToolState ts;
+    private final HBox quickTools = new HBox(8);
 
     private final HBox banner = new HBox(10);
     private final BorderPane right = new BorderPane();
@@ -68,7 +70,8 @@ final class BattleScreen implements BattleContext {
     private String inspectedKey;
     private boolean toolsShown;
 
-    BattleScreen(BattleMap map, ProjectStore store, MapView view, Host host) {
+    BattleScreen(BattleMap map, ProjectStore store, MapView view, MapToolState ts, Host host) {
+        this.ts = ts;
         this.map = map;
         this.store = store;
         this.view = view;
@@ -78,6 +81,7 @@ final class BattleScreen implements BattleContext {
 
         banner.setAlignment(Pos.CENTER_LEFT);
         banner.setPadding(new Insets(8, 14, 8, 14));
+        buildQuickTools();
 
         setupScroll.setContent(setup);
         setupScroll.setFitToWidth(true);
@@ -91,6 +95,90 @@ final class BattleScreen implements BattleContext {
     }
 
     Node banner() { return banner; }
+
+    /** The strip of map tools you need mid-fight: move, ruler, area, pin, and whether the players see the ruler and area. */
+    Node quickTools() { return quickTools; }
+
+    private void buildQuickTools() {
+        quickTools.setAlignment(Pos.CENTER_LEFT);
+        quickTools.setPadding(new Insets(4, 14, 4, 14));
+        quickTools.setStyle("-fx-background-color: -t-slate; -fx-border-color: -t-border; -fx-border-width: 0 0 1 0;");
+        Label label = new Label("Map:");
+        label.setStyle("-fx-font-weight: bold; -fx-text-fill: -t-text2;");
+        quickTools.getChildren().add(label);
+
+        ToggleGroup tools = new ToggleGroup();
+        Object[][] defs = {
+                {MapTool.SELECT, "Move", "Select and move tokens and pieces (key 1)"},
+                {MapTool.RULER, "Ruler", "Measure a distance: drag on the map (key 6)"},
+                {MapTool.TEMPLATE, "Area", "Lay a cone, circle, line or cube over the map (key 8)"},
+                {MapTool.PIN, "Pin", "Drop a numbered note only you can see (key 9)"}};
+        java.util.Map<MapTool, ToggleButton> buttons = new java.util.EnumMap<>(MapTool.class);
+        for (Object[] d : defs) {
+            MapTool tool = (MapTool) d[0];
+            ToggleButton b = new ToggleButton((String) d[1]);
+            b.setToggleGroup(tools);
+            b.setFocusTraversable(false);
+            b.setTooltip(new Tooltip((String) d[2]));
+            b.setOnAction(e -> {
+                ts.tool.set(b.isSelected() ? tool : MapTool.SELECT);
+                view.requestFocus();
+            });
+            buttons.put(tool, b);
+            quickTools.getChildren().add(b);
+        }
+        // follow the tool chosen anywhere else (number keys, the map toolbar)
+        ts.tool.addListener((o, a, n) -> {
+            ToggleButton b = buttons.get(n);
+            if (b != null) b.setSelected(true);
+            else tools.selectToggle(null);
+        });
+        ToggleButton current = buttons.get(ts.tool.get());
+        if (current != null) current.setSelected(true);
+
+        // the area's shape and size, only while the Area tool is in use
+        ComboBox<dnd.model.AreaTemplate.Shape> shape = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(dnd.model.AreaTemplate.Shape.values()));
+        shape.setValue(ts.templateShape.get());
+        shape.setFocusTraversable(false);
+        shape.valueProperty().addListener((o, a, n) -> {
+            if (n != null) ts.templateShape.set(n);
+        });
+        ts.templateShape.addListener((o, a, n) -> shape.setValue(n));
+        Spinner<Integer> feet = new Spinner<>(5, 300, ts.templateFeet.get(), 5);
+        feet.setPrefWidth(78);
+        feet.setTooltip(new Tooltip("Size in feet: radius of a circle, length of a cone or line, side of a cube"));
+        feet.valueProperty().addListener((o, a, n) -> {
+            if (n != null) ts.templateFeet.set(n);
+        });
+        ts.templateFeet.addListener((o, a, n) -> {
+            if (feet.getValue() == null || feet.getValue().intValue() != n.intValue()) feet.getValueFactory().setValue(n.intValue());
+        });
+        HBox areaControls = new HBox(6, shape, feet, new Label("ft"));
+        areaControls.setAlignment(Pos.CENTER_LEFT);
+        areaControls.visibleProperty().bind(ts.tool.isEqualTo(MapTool.TEMPLATE));
+        areaControls.managedProperty().bind(ts.tool.isEqualTo(MapTool.TEMPLATE));
+        quickTools.getChildren().add(areaControls);
+
+        Region gap = new Region();
+        HBox.setHgrow(gap, Priority.ALWAYS);
+        // one switch for what the players see: the ruler and the area
+        CheckBox share = new CheckBox("Show ruler and area to players");
+        share.setFocusTraversable(false);
+        share.setTooltip(new Tooltip("When on, the ruler and the area you lay on the map are also drawn in the player window"));
+        share.setSelected(ts.rulerShared.get() || ts.templateShared.get());
+        share.setOnAction(e -> {
+            boolean on = share.isSelected(); // read once: setting the first property updates the box through its listener
+            ts.rulerShared.set(on);
+            ts.templateShared.set(on);
+        });
+        ts.rulerShared.addListener((o, a, n) -> share.setSelected(n || ts.templateShared.get()));
+        ts.templateShared.addListener((o, a, n) -> share.setSelected(n || ts.rulerShared.get()));
+        Button clear = new Button("Clear");
+        clear.setFocusTraversable(false);
+        clear.setTooltip(new Tooltip("Take the ruler and the area off the map (Esc)"));
+        clear.setOnAction(e -> view.clearMeasures());
+        quickTools.getChildren().addAll(gap, share, clear);
+    }
 
     Node rightPane() { return right; }
 

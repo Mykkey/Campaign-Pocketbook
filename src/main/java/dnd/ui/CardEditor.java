@@ -55,6 +55,7 @@ public class CardEditor extends BorderPane implements ItemView {
                 new FeatureList("Traits", card.traits), attackSection(),
                 new FeatureList("Other actions", card.actions), new FeatureList("Reactions", card.reactions),
                 new FeatureList("Legendary actions", card.legendary), notesSection());
+        if (portraits) form.getChildren().add(relationsSection()); // shared library creatures have no relationships
         ScrollPane formScroll = new ScrollPane(form);
         formScroll.setFitToWidth(true);
 
@@ -183,7 +184,14 @@ public class CardEditor extends BorderPane implements ItemView {
         portraitBox.setVisible(portraits);
         portraitBox.setManaged(portraits);
 
+        TextField aliases = field(String.join(", ", card.aliases), v -> {
+            card.aliases = new java.util.ArrayList<>();
+            for (String part : v.split(",")) if (!part.isBlank()) card.aliases.add(part.trim());
+        }, "e.g. Jasper, Jas, Captain Egan");
+        aliases.setTooltip(new Tooltip("Other names this card goes by, separated by commas. On whiteboards, typing one of them "
+                + "(at least 3 letters) offers to link or preview this card, just like its full name."));
         VBox left = new VBox(8, labelled("Name (press Enter to apply)", name),
+                labelled("Also known as (comma separated, for name hints on whiteboards)", aliases),
                 row(labelled("Kind", kind), labelled("Size", size),
                         labelled("Creature type", field(card.creatureType, v -> card.creatureType = v, "humanoid")),
                         labelled("Alignment", field(card.alignment, v -> card.alignment = v, "neutral evil"))));
@@ -299,6 +307,122 @@ public class CardEditor extends BorderPane implements ItemView {
             changed();
         });
         return section("Notes", notes);
+    }
+
+    // ================================================================ relationships
+
+    private record CardRef(String id, String name) {
+        @Override
+        public String toString() {
+            return name;
+        }
+    }
+
+    private List<CardRef> otherCards() {
+        List<CardRef> out = new java.util.ArrayList<>();
+        for (String id : store.allCardIds()) {
+            dnd.model.Card c = store.card(id);
+            if (c != null && !id.equals(card.id)) out.add(new CardRef(id, c.name));
+        }
+        out.sort(java.util.Comparator.comparing(r -> r.name().toLowerCase()));
+        return out;
+    }
+
+    /** Who this card is related to. Only one of the two cards needs the relationship; the other side is worked out. */
+    private Node relationsSection() {
+        VBox rows = new VBox(6);
+        VBox incoming = new VBox(3);
+        Label hint = new Label("Enter a relationship on either card; the other card shows it too. Parents, partners and siblings "
+                + "build the family tree (Relations... in the top bar).");
+        hint.setWrapText(true);
+        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+        Button add = new Button("+ Add relationship");
+
+        Runnable[] refreshIncoming = new Runnable[1];
+        Runnable[] rebuild = new Runnable[1];
+        refreshIncoming[0] = () -> {
+            incoming.getChildren().clear();
+            java.util.Map<String, dnd.model.Card> all = new java.util.LinkedHashMap<>();
+            for (String id : store.allCardIds()) {
+                dnd.model.Card c = store.card(id);
+                if (c != null) all.put(id, c);
+            }
+            dnd.relations.RelationGraph g = new dnd.relations.RelationGraph(all);
+            for (dnd.relations.RelationGraph.Link l : g.linksOf(card.id)) {
+                if (l.listedOnThis()) continue;
+                Label lab = new Label(l.type().label + " " + g.nameOf(l.otherId()) + (l.note().isBlank() ? "" : "  (" + l.note() + ")")
+                        + "   - set on their card");
+                lab.setStyle("-fx-text-fill: -t-text2;");
+                incoming.getChildren().add(lab);
+            }
+            incoming.setVisible(!incoming.getChildren().isEmpty());
+            incoming.setManaged(!incoming.getChildren().isEmpty());
+        };
+        rebuild[0] = () -> {
+            rows.getChildren().clear();
+            List<CardRef> others = otherCards();
+            add.setDisable(others.isEmpty());
+            for (dnd.model.Relation r : new java.util.ArrayList<>(card.relations)) rows.getChildren().add(relationRow(r, others, rebuild[0], refreshIncoming[0]));
+            if (rows.getChildren().isEmpty()) {
+                Label none = new Label(others.isEmpty() ? "Create more cards to connect them." : "No relationships yet.");
+                none.setStyle("-fx-text-fill: -t-text3;");
+                rows.getChildren().add(none);
+            }
+            refreshIncoming[0].run();
+        };
+        add.setOnAction(e -> {
+            List<CardRef> others = otherCards();
+            if (others.isEmpty()) return;
+            card.relations.add(new dnd.model.Relation(others.get(0).id(), dnd.model.RelationType.ALLY, ""));
+            changed();
+            rebuild[0].run();
+        });
+        rebuild[0].run();
+        return section("Relationships", rows, add, incoming, hint);
+    }
+
+    private Node relationRow(dnd.model.Relation r, List<CardRef> others, Runnable rebuild, Runnable refreshIncoming) {
+        ComboBox<dnd.model.RelationType> type = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(dnd.model.RelationType.values()));
+        type.setValue(r.type);
+        type.setPrefWidth(190);
+        List<CardRef> choices = new java.util.ArrayList<>(others);
+        CardRef current = choices.stream().filter(c -> c.id().equals(r.targetCardId)).findFirst().orElse(null);
+        if (current == null) { // the other card was deleted
+            current = new CardRef(r.targetCardId, "(deleted card)");
+            choices.add(0, current);
+        }
+        ComboBox<CardRef> target = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(choices));
+        target.setValue(current);
+        target.setPrefWidth(190);
+        TextField note = new TextField(r.note == null ? "" : r.note);
+        note.setPromptText("note (optional)");
+        HBox.setHgrow(note, Priority.ALWAYS);
+        Button remove = new Button("x");
+        remove.setTooltip(new Tooltip("Remove this relationship from this card"));
+        type.valueProperty().addListener((o, a, n) -> {
+            if (n == null) return;
+            r.type = n;
+            changed();
+            refreshIncoming.run();
+        });
+        target.valueProperty().addListener((o, a, n) -> {
+            if (n == null) return;
+            r.targetCardId = n.id();
+            changed();
+            refreshIncoming.run();
+        });
+        note.textProperty().addListener((o, a, n) -> {
+            r.note = n;
+            changed();
+        });
+        remove.setOnAction(e -> {
+            card.relations.remove(r);
+            changed();
+            rebuild.run();
+        });
+        HBox row = new HBox(8, type, target, note, remove);
+        row.setAlignment(Pos.CENTER_LEFT);
+        return row;
     }
 
     private static VBox section(String title, Node... content) {

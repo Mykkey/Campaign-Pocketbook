@@ -14,6 +14,7 @@ public class TreeNode {
     public static final String KIND_BATTLEMAP = "battlemap";
     public static final String KIND_CARD = "card";
     public static final String KIND_ENCOUNTER = "encounter";
+    public static final String KIND_SPELL = "spell";
 
     public String id = UUID.randomUUID().toString();
     public String name = "";
@@ -47,8 +48,14 @@ public class TreeNode {
     }
 
     @JsonIgnore
+    public boolean isSpell() {
+        return !folder && KIND_SPELL.equals(kind);
+    }
+
+    @JsonIgnore
     public boolean isBoard() {
-        return !folder && !KIND_BATTLEMAP.equals(kind) && !KIND_CARD.equals(kind) && !KIND_ENCOUNTER.equals(kind);
+        return !folder && !KIND_BATTLEMAP.equals(kind) && !KIND_CARD.equals(kind) && !KIND_ENCOUNTER.equals(kind)
+                && !KIND_SPELL.equals(kind);
     }
 
     public TreeNode find(String nodeId) {
@@ -94,6 +101,12 @@ public class TreeNode {
         int n = 0;
         for (TreeNode c : children) n += c.folder ? c.countItems() : 1;
         return n;
+    }
+
+    /** Appends every spell card at or below this node. */
+    public void collectSpells(List<TreeNode> out) {
+        if (isSpell()) out.add(this);
+        for (TreeNode c : children) c.collectSpells(out);
     }
 
     /** Appends every encounter at or below this node. */

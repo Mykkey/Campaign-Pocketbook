@@ -3,6 +3,7 @@ package dnd.ui;
 import dnd.model.BattleMap;
 import dnd.model.Terrain;
 import dnd.storage.ProjectStore;
+import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.control.*;
@@ -51,6 +52,7 @@ public class MapEditor extends BorderPane implements ItemView {
         this.openItem = openItem;
         this.view = new MapView(map, store, ts);
         this.view.openCard = openItem;
+        this.view.openItem = openItem;
         // render the pieces this map uses in the background so the first draw doesn't stall
         java.util.List<String> used = new java.util.ArrayList<>();
         for (dnd.model.MapObject o : map.objects) used.add(o.assetId);
@@ -84,10 +86,11 @@ public class MapEditor extends BorderPane implements ItemView {
         ToggleGroup group = new ToggleGroup();
         Map<MapTool, ToggleButton> buttons = new EnumMap<>(MapTool.class);
         for (MapTool t : MapTool.values()) {
-            ToggleButton b = new ToggleButton((t.ordinal() + 1) + " " + t.label);
+            String key = String.valueOf((t.ordinal() + 1) % 10); // keys 1-9, then 0 for the tenth tool
+            ToggleButton b = new ToggleButton(key + " " + t.label);
             b.setToggleGroup(group);
             b.setFocusTraversable(false);
-            b.setTooltip(new Tooltip(t.tip + " [" + (t.ordinal() + 1) + "]"));
+            b.setTooltip(new Tooltip(t.tip + " [" + key + "]"));
             b.setOnAction(e -> {
                 ts.tool.set(t);
                 b.setSelected(true);
@@ -119,8 +122,7 @@ public class MapEditor extends BorderPane implements ItemView {
         brush.valueProperty().addListener((o, a, n) -> {
             if (n != null) ts.brush.set(n);
         });
-        bar.getChildren().addAll(new Label("Terrain"), terrain, new Label("Brush"), brush);
-        bar.getChildren().add(new Separator(Orientation.VERTICAL));
+        bar.getChildren().add(toolGroup(MapTool.TERRAIN, new Label("Terrain"), terrain, new Label("Brush"), brush));
 
         ColorPicker tokenColor = new ColorPicker(ts.tokenColor.get());
         tokenColor.setTooltip(new Tooltip("Token colour (also recolours selected tokens)"));
@@ -140,7 +142,8 @@ public class MapEditor extends BorderPane implements ItemView {
         snap.setFocusTraversable(false);
         snap.setTooltip(new Tooltip("Snap pieces to the grid"));
         snap.selectedProperty().bindBidirectional(ts.snap);
-        bar.getChildren().addAll(new Label("Token"), tokenColor, grid, snap, new Separator(Orientation.VERTICAL));
+        bar.getChildren().add(toolGroup(MapTool.TOKEN, new Label("Token colour"), tokenColor));
+        bar.getChildren().addAll(grid, snap, new Separator(Orientation.VERTICAL));
 
         // ---- fog of war
         CheckBox fog = new CheckBox("Fog");
@@ -161,7 +164,57 @@ public class MapEditor extends BorderPane implements ItemView {
         Button revealAll = action("Reveal all", "Remove all fog", () -> view.revealAllFog());
         Button hideAll = action("Hide all", "Cover the whole map in fog (tokens that reveal fog keep their surroundings clear)",
                 () -> view.hideAllFog());
-        bar.getChildren().addAll(fog, fogMode, revealAll, hideAll, new Separator(Orientation.VERTICAL));
+        bar.getChildren().add(toolGroup(MapTool.FOG, fog, fogMode, revealAll, hideAll));
+
+        // ---- ruler: the players can be shown the measurement too
+        CheckBox rulerShare = new CheckBox("Show players");
+        rulerShare.setFocusTraversable(false);
+        rulerShare.setTooltip(new Tooltip("Also draw the ruler in the players' window"));
+        rulerShare.selectedProperty().bindBidirectional(ts.rulerShared);
+        bar.getChildren().add(toolGroup(MapTool.RULER, new Label("Ruler"), rulerShare,
+                action("Clear", "Take the ruler off the map (Esc)", view::clearMeasures)));
+
+        bar.getChildren().add(toolGroup(MapTool.PIN, new Label("Click the map to add a note (only you see pins). Double-click a pin to edit it.")));
+
+        // ---- area templates (cone, circle, line, cube)
+        ComboBox<dnd.model.AreaTemplate.Shape> shape = new ComboBox<>(FXCollections.observableArrayList(dnd.model.AreaTemplate.Shape.values()));
+        shape.setValue(ts.templateShape.get());
+        shape.setFocusTraversable(false);
+        shape.setTooltip(new Tooltip("Shape of the area the Area tool (key 8) lays over the map"));
+        shape.valueProperty().addListener((o, a, n) -> {
+            if (n == null) return;
+            ts.templateShape.set(n);
+            ts.tool.set(MapTool.TEMPLATE);
+        });
+        Spinner<Integer> feet = new Spinner<>(5, 300, ts.templateFeet.get(), 5);
+        feet.setPrefWidth(78);
+        feet.setTooltip(new Tooltip("Size in feet: radius of a circle, length of a cone or line, side of a cube"));
+        feet.valueProperty().addListener((o, a, n) -> {
+            if (n != null) ts.templateFeet.set(n);
+        });
+        CheckBox share = new CheckBox("Show players");
+        share.setFocusTraversable(false);
+        share.setTooltip(new Tooltip("Also draw the area in the players' window"));
+        share.selectedProperty().bindBidirectional(ts.templateShared);
+        Button clearArea = action("Clear area", "Take the area off the map (Esc)", view::clearTemplate);
+        bar.getChildren().add(toolGroup(MapTool.TEMPLATE, new Label("Area"), shape, feet, new Label("ft"), share, clearArea));
+
+        // ---- lighting
+        ComboBox<dnd.map.LightPresets.Preset> lightKind = new ComboBox<>(FXCollections.observableArrayList(dnd.map.LightPresets.ALL));
+        lightKind.setValue(ts.lightPreset.get());
+        lightKind.setFocusTraversable(false);
+        lightKind.setTooltip(new Tooltip("Kind of light the Light tool (key 0) places: bright light, then dim light, in feet"));
+        lightKind.valueProperty().addListener((o, a, n) -> {
+            if (n == null) return;
+            ts.lightPreset.set(n);
+            ts.tool.set(MapTool.LIGHT);
+        });
+        CheckBox dark = new CheckBox("Dark map");
+        dark.setFocusTraversable(false);
+        dark.setTooltip(new Tooltip("The map is dark: only places lit by a light, or within a creature's darkvision, are clear. "
+                + "Tokens with darkvision or a carried light clear the fog around them"));
+        dark.selectedProperty().bindBidirectional(ts.darkMap);
+        bar.getChildren().add(toolGroup(MapTool.LIGHT, new Label("Light"), lightKind, dark));
 
         Button popOut = action("Pop out", "Open this map in its own window for the players. Drag it to your "
                 + "playtable monitor and press F11 for fullscreen. It updates live as you edit",
@@ -183,13 +236,24 @@ public class MapEditor extends BorderPane implements ItemView {
         return bar;
     }
 
+    /** Controls that only matter for one tool: shown while that tool is selected, hidden (and taking no space) otherwise. */
+    private javafx.scene.layout.HBox toolGroup(MapTool tool, javafx.scene.Node... nodes) {
+        javafx.scene.layout.HBox g = new javafx.scene.layout.HBox(6, nodes);
+        g.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        g.getChildren().add(new Separator(Orientation.VERTICAL));
+        javafx.beans.binding.BooleanBinding show = ts.tool.isEqualTo(tool);
+        g.visibleProperty().bind(show);
+        g.managedProperty().bind(show);
+        return g;
+    }
+
     /** Opens or closes the battle screen: a banner on top, the creature cards on the right, the turn order below. */
     private void setBattleVisible(boolean on) {
         battleOpen = on;
         if (battleBtn != null) battleBtn.setSelected(on);
         if (on) {
             if (battleScreen == null) {
-                battleScreen = new BattleScreen(map, store, view, new BattleScreen.Host() {
+                battleScreen = new BattleScreen(map, store, view, ts, new BattleScreen.Host() {
                     @Override public void exit() { setBattleVisible(false); }
 
                     @Override public void showMapTools(boolean show) {
@@ -210,7 +274,7 @@ public class MapEditor extends BorderPane implements ItemView {
             }
             setLeft(null);
             setTop(null);
-            battleTop.getChildren().setAll(battleScreen.banner(), toolbar);
+            battleTop.getChildren().setAll(battleScreen.banner(), battleScreen.quickTools(), toolbar);
             toolbar.setVisible(false); // hidden until "Map tools" is pressed
             toolbar.setManaged(false);
             setTop(battleTop);

@@ -8,18 +8,24 @@ import dnd.storage.ProjectStore;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Bounds;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TextArea;
 import javafx.scene.image.Image;
 import javafx.scene.input.*;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.StrokeLineCap;
@@ -54,6 +60,14 @@ public class BoardView extends Pane implements ItemView {
 
         /** Lets the user pick a battlemap only (for inserting previews). */
         Optional<String> pickMap(String title);
+
+        /**
+         * Lets the user write or edit a note. Returns the new text, an empty string to remove the note, or nothing
+         * if they cancelled.
+         */
+        default Optional<String> editNote(String title, String current) {
+            return NoteDialog.show(title, current);
+        }
     }
 
     @Override public String itemId() { return board.id; }
@@ -105,6 +119,19 @@ public class BoardView extends Pane implements ItemView {
     private final Map<String, Object[]> wrapCache = new HashMap<>();
     private final ContextMenu menu = new ContextMenu();
 
+    // hover previews (tooltips) and "link this name?" hints
+    private final javafx.stage.Popup tipPopup = new javafx.stage.Popup();
+    private final javafx.stage.Popup hintPopup = new javafx.stage.Popup();
+    private final javafx.animation.PauseTransition hoverDelay = new javafx.animation.PauseTransition(javafx.util.Duration.millis(350));
+    private final javafx.animation.PauseTransition hintHide = new javafx.animation.PauseTransition(javafx.util.Duration.millis(700));
+    private String hoverKey;
+    /** True while the pointer is on the hint box (its own window, so the canvas sees the pointer "leave"). */
+    private boolean hintHovered;
+    private boolean pickingTarget;
+    private java.util.List<dnd.text.NameHints.Entry> nameIndex = java.util.List.of();
+    private int nameIndexVersion = -1;
+    private final Map<String, Object[]> hintCache = new HashMap<>();
+
     private Mode mode = Mode.NONE;
     private boolean gestureCheckpointed, dragStarted, spaceDown;
     private double pressSX, pressSY, lastSX, lastSY, pressWX, pressWY, resizeRatio = 1;
@@ -142,6 +169,22 @@ public class BoardView extends Pane implements ItemView {
             }
         });
         setOnContextMenuRequested(this::onContextMenu);
+        setOnMouseMoved(this::onHover);
+        setOnMouseExited(e -> {
+            hoverDelay.stop();
+            hideTip();
+            hintHide.playFromStart();
+        });
+        tipPopup.setAutoFix(true);
+        tipPopup.setAutoHide(false);
+        hintPopup.setAutoFix(true);
+        hintPopup.setAutoHide(true);
+        hintHide.setOnFinished(e -> {
+            if (hintHovered) return; // the pointer is on the box: leave it open
+            hintPopup.hide();
+            hoverKey = null;
+        });
+        ts.nameHints.addListener((o, was, now) -> redraw());
         setOnDragOver(e -> {
             if (e.getDragboard().hasFiles()) e.acceptTransferModes(TransferMode.COPY);
             e.consume();
@@ -213,44 +256,126 @@ public class BoardView extends Pane implements ItemView {
         o.h = Math.max(o.fontSize * 1.3, lines.size() * RichLayout.lineHeight(o));
     }
 
-    /** Draws laid-out lines (each word in its own bold/italic) starting at (x, y), top-aligned. */
-    private static void drawLines(GraphicsContext g, List<RichLayout.Line> lines, BoardObject o, double x, double y,
-                                  double maxY) {
+    private static Color linkColor(boolean ok) {
+        boolean dark = Theme.isDark();
+        return Color.web(ok ? (dark ? "#6aa5ff" : "#2563eb") : (dark ? "#f87171" : "#dc2626"));
+    }
+
+    private static Color noteColor() {
+        return Color.web(Theme.isDark() ? "#4ade80" : "#16a34a");
+    }
+
+    /**
+     * Draws laid-out lines (each word in its own bold/italic) starting at (x, y), top-aligned. Words that carry a
+     * link are blue and underlined, note-only words are green and underlined, words with both are blue with a
+     * small green dot after them, and names of cards and spells that could be linked get a faint dotted underline.
+     */
+    private void drawLines(GraphicsContext g, List<RichLayout.Line> lines, BoardObject o, double x, double y,
+                           double maxY) {
         double lh = RichLayout.lineHeight(o);
+        javafx.scene.paint.Paint base = g.getFill();
+        double underline = Math.min(lh - 1, o.fontSize * 1.12);
         for (RichLayout.Line line : lines) {
             if (y + lh > maxY) break;
-            for (RichLayout.Seg s : line.segs()) {
+            List<RichLayout.Seg> segs = line.segs();
+            for (int i = 0; i < segs.size(); i++) {
+                RichLayout.Seg s = segs.get(i);
+                dnd.model.SpanRef sr = o.ref(s.ref());
+                boolean link = sr != null && sr.link != null, note = sr != null && sr.hasNote();
+                Color color = link ? linkColor(store.itemExists(sr.link)) : note ? noteColor() : null;
                 g.setFont(RichLayout.font(o, s.bold(), s.italic()));
+                g.setFill(color != null ? color : base);
                 g.fillText(s.text(), x + s.x(), y);
+                if (color != null) {
+                    g.setStroke(color);
+                    g.setLineWidth(1.3);
+                    g.setLineDashes((double[]) null);
+                    g.strokeLine(x + s.x(), y + underline, x + s.x() + s.w(), y + underline);
+                    boolean last = i + 1 >= segs.size() || segs.get(i + 1).ref() != s.ref();
+                    if (link && note && last) { // both: blue words with a small green dot after them
+                        g.setFill(noteColor());
+                        g.fillOval(x + s.x() + s.w() + 2, y + lh * 0.18, 5, 5);
+                    }
+                } else if (s.hint() != null) {
+                    g.setStroke(Theme.isDark() ? Color.web("#8d95a1") : Color.web("#7a8394"));
+                    g.setLineWidth(1.1);
+                    g.setLineDashes(2, 3);
+                    g.strokeLine(x + s.x(), y + underline, x + s.x() + s.w(), y + underline);
+                    g.setLineDashes((double[]) null);
+                }
             }
             y += lh;
         }
+        g.setFill(base);
     }
 
     /** Lines of a TEXT object (no wrapping), cached so redraws while panning don't re-measure every word. */
     private List<RichLayout.Line> textLines(BoardObject o) {
-        String key = "T|" + o.text + "|" + o.fontSize + o.bold + o.italic;
+        String key = "T|" + o.text + "|" + o.fontSize + o.bold + o.italic + hintKey(o);
         Object[] cached = wrapCache.get(o.id);
         if (cached != null && cached[0].equals(key)) {
             @SuppressWarnings("unchecked") List<RichLayout.Line> l = (List<RichLayout.Line>) cached[1];
             return l;
         }
-        List<RichLayout.Line> out = RichLayout.layout(o.text, o, 0);
+        List<RichLayout.Line> out = RichLayout.layout(o.text, o, 0, hintsFor(o));
         wrapCache.put(o.id, new Object[]{key, out});
         return out;
     }
 
     private List<RichLayout.Line> wrappedLines(BoardObject o) {
         double width = o.w - 20;
-        String key = o.text + "|" + width + "|" + o.fontSize + o.bold + o.italic;
+        String key = o.text + "|" + width + "|" + o.fontSize + o.bold + o.italic + hintKey(o);
         Object[] cached = wrapCache.get(o.id);
         if (cached != null && cached[0].equals(key)) {
             @SuppressWarnings("unchecked") List<RichLayout.Line> l = (List<RichLayout.Line>) cached[1];
             return l;
         }
-        List<RichLayout.Line> out = RichLayout.layout(o.text, o, width);
+        List<RichLayout.Line> out = RichLayout.layout(o.text, o, width, hintsFor(o));
         wrapCache.put(o.id, new Object[]{key, out});
         return out;
+    }
+
+    // ================================================================ name hints
+
+    /** Changes when the set of card/spell names, the dismissed names or the hint switch changes. */
+    private String hintKey(BoardObject o) {
+        return ts.nameHints.get() && (o.type == Type.TEXT || o.type == Type.STICKY)
+                ? "|h" + store.namesVersion() + o.dismissedNames : "|h-";
+    }
+
+    private List<dnd.text.NameHints.Entry> nameIndex() {
+        if (nameIndexVersion != store.namesVersion()) {
+            List<dnd.text.NameHints.ItemNames> items = new ArrayList<>();
+            for (String id : store.allCardIds()) {
+                dnd.model.Card c = store.card(id);
+                if (c != null) items.add(new dnd.text.NameHints.ItemNames(id, c.name, c.aliases));
+            }
+            for (String id : store.allSpellIds()) {
+                dnd.model.Spell s = store.spell(id);
+                if (s != null) items.add(new dnd.text.NameHints.ItemNames(id, s.name, List.of()));
+            }
+            nameIndex = dnd.text.NameHints.index(dnd.text.NameHints.entriesFor(items));
+            nameIndexVersion = store.namesVersion();
+            hintCache.clear();
+        }
+        return nameIndex;
+    }
+
+    /** The card and spell names in a text object that could be linked (none while editing or with hints off). */
+    private List<dnd.text.NameHints.Hint> hintsFor(BoardObject o) {
+        if (!ts.nameHints.get() || o == editing || (o.type != Type.TEXT && o.type != Type.STICKY)) return List.of();
+        List<dnd.text.NameHints.Entry> index = nameIndex();
+        if (index.isEmpty()) return List.of();
+        String key = o.text + "|" + o.dismissedNames;
+        Object[] cached = hintCache.get(o.id);
+        if (cached != null && cached[0].equals(key)) {
+            @SuppressWarnings("unchecked") List<dnd.text.NameHints.Hint> l = (List<dnd.text.NameHints.Hint>) cached[1];
+            return l;
+        }
+        List<dnd.text.NameHints.Hint> found = dnd.text.NameHints.find(dnd.text.RichText.plain(o.text),
+                dnd.text.RichText.spans(o.text), index, o.dismissedNames);
+        hintCache.put(o.id, new Object[]{key, found});
+        return found;
     }
 
     private Image image(BoardObject o) {
@@ -336,6 +461,14 @@ public class BoardView extends Pane implements ItemView {
                     g.setLineWidth(1.5);
                     g.strokeLine(o.x, o.y + o.h, o.x + o.w, o.y + o.h);
                 }
+                if (o.hasNote()) {
+                    g.setStroke(noteColor());
+                    g.setLineWidth(1.5);
+                    g.setLineDashes(4, 3);
+                    double yy = o.y + o.h + (o.link != null ? 3 : 0);
+                    g.strokeLine(o.x, yy, o.x + o.w, yy);
+                    g.setLineDashes((double[]) null);
+                }
             }
             case STICKY -> {
                 g.setFill(Color.web("#00000026"));
@@ -410,6 +543,20 @@ public class BoardView extends Pane implements ItemView {
             }
         }
         if (o.link != null) drawLinkBadge(g, o);
+        if (o.hasNote()) drawNoteBadge(g, o, o.link != null);
+    }
+
+    /** A small green "i" badge for an object that carries a note; sits left of the link badge if there is one. */
+    private void drawNoteBadge(GraphicsContext g, BoardObject o, boolean besideLink) {
+        double z = zoom(), r = 9 / z;
+        double cx = o.right() - (besideLink ? 22 / z : 0), cy = o.top();
+        g.setFill(noteColor());
+        g.fillOval(cx - r, cy - r, 2 * r, 2 * r);
+        g.setStroke(Color.WHITE);
+        g.setFill(Color.WHITE);
+        g.setLineWidth(1.8 / z);
+        g.strokeLine(cx, cy - 1 / z, cx, cy + 4 / z);
+        g.fillOval(cx - 1.3 / z, cy - 5 / z, 2.6 / z, 2.6 / z);
     }
 
     private boolean linkOk(BoardObject o) {
@@ -564,6 +711,7 @@ public class BoardView extends Pane implements ItemView {
     }
 
     private void onPressed(MouseEvent e) {
+        clearHover();
         if (insideEditor(e)) return;
         menu.hide();
         requestFocus();
@@ -791,6 +939,7 @@ public class BoardView extends Pane implements ItemView {
     }
 
     private void onScroll(ScrollEvent e) {
+        clearHover();
         if (e.getDeltaY() == 0) return;
         double factor = Math.exp(e.getDeltaY() * 0.0015);
         double nz = Math.max(0.1, Math.min(5, board.zoom * factor));
@@ -813,7 +962,24 @@ public class BoardView extends Pane implements ItemView {
         }
         selected.clear();
         selected.add(o.id);
-        if (o.link != null) {
+        SpanHit span = spanAt(px, py);
+        if (span != null) {
+            dnd.model.SpanRef sr = span.o().ref(span.seg().ref());
+            if (sr != null && sr.link != null) {
+                if (store.itemExists(sr.link)) host.openItem(sr.link);
+                else new Alert(Alert.AlertType.INFORMATION, "The item these words linked to no longer exists. Select the words while editing and press Link... to pick a new target.").show();
+                redraw();
+                return;
+            }
+            if (sr != null && sr.hasNote()) { // words that only carry a note: double-click edits it
+                editSpanNote(span);
+                redraw();
+                return;
+            }
+        }
+        if (o.link == null && o.hasNote() && o.type != Type.TEXT && o.type != Type.STICKY) {
+            noteSelected();
+        } else if (o.link != null) {
             if (store.itemExists(o.link)) {
                 host.openItem(o.link);
             } else {
@@ -891,11 +1057,29 @@ public class BoardView extends Pane implements ItemView {
             if (s != null && s.link != null) anyLink = true;
         }
         menu.getItems().clear();
+        // words under the pointer that carry a link or a note
+        SpanHit words = spanAt(ctxWX, ctxWY);
+        dnd.model.SpanRef wordsRef = words == null ? null : words.o().ref(words.seg().ref());
+        if (wordsRef != null) {
+            final SpanHit w = words;
+            final dnd.model.SpanRef wr = wordsRef;
+            menu.getItems().add(item(wr.hasNote() ? "Edit note on these words..." : "Add note to these words...", false, () -> editSpanNote(w)));
+            if (wr.hasNote()) menu.getItems().add(item("Remove note from these words", false, () -> removeSpanNote(w)));
+            if (wr.link != null) menu.getItems().add(item("Open link", !store.itemExists(wr.link), () -> host.openItem(wr.link)));
+            menu.getItems().add(new SeparatorMenuItem());
+        }
         if (single != null && (single.type == Type.TEXT || single.type == Type.STICKY)) {
             menu.getItems().add(item("Edit text", false, () -> startEdit(single, false)));
         }
-        menu.getItems().add(item("Link to whiteboard...", !has, this::linkSelected));
+        boolean anyNote = false;
+        for (String id : selected) {
+            BoardObject s = board.find(id);
+            if (s != null && s.hasNote()) anyNote = true;
+        }
+        menu.getItems().add(item("Link to...", !has, this::linkSelected));
         menu.getItems().add(item("Remove link", !anyLink, this::unlinkSelected));
+        menu.getItems().add(item(anyNote ? "Edit note..." : "Note...", !has, this::noteSelected));
+        menu.getItems().add(item("Remove note", !anyNote, this::removeNoteSelected));
         menu.getItems().add(new SeparatorMenuItem());
         menu.getItems().add(item("Copy", !has, this::copy));
         menu.getItems().add(item("Cut", !has, () -> { copy(); deleteSelected(); }));
@@ -992,7 +1176,7 @@ public class BoardView extends Pane implements ItemView {
             ta.setPrefSize(Math.max(180, o.w * z + 60), Math.max(70, o.h * z + 30));
         }
         ta.focusedProperty().addListener((obs, was, is) -> {
-            if (!is) commitEdit();
+            if (!is && !pickingTarget) commitEdit(); // a picker dialog takes the focus for a moment: not the end of the edit
         });
         ta.setOnKeyPressed(ev -> {
             if (ev.getCode() == KeyCode.ESCAPE || (ev.getCode() == KeyCode.ENTER && ev.isShortcutDown())) {
@@ -1002,8 +1186,12 @@ public class BoardView extends Pane implements ItemView {
                     && (ev.getCode() == KeyCode.B || ev.getCode() == KeyCode.I)) {
                 styleSelectedWords(ev.getCode() == KeyCode.B);
                 ev.consume();
+            } else if (ev.isShortcutDown() && !ev.isAltDown() && !ev.isShiftDown() && ev.getCode() == KeyCode.L) {
+                linkSelected(); // links the selected words
+                ev.consume();
             }
         });
+        clearHover();
         getChildren().add(ta);
         redraw();
         Platform.runLater(() -> {
@@ -1055,13 +1243,39 @@ public class BoardView extends Pane implements ItemView {
             }
             board.objects.remove(o);
             selected.remove(o.id);
-        } else if (!nt.equals(o.text)) {
-            if (!isNew) checkpoint();
-            o.text = nt;
-            measure(o);
+        } else {
+            String cleaned = cleanSpans(o, nt);
+            if (!cleaned.equals(o.text)) {
+                if (!isNew) checkpoint();
+                o.text = cleaned;
+                measure(o);
+            }
+            pruneRefs(o);
         }
         changed();
         requestFocus();
+    }
+
+    /** Takes the span markers out of words whose reference no longer links or previews anything. */
+    private static String cleanSpans(BoardObject o, String text) {
+        String out = text;
+        for (dnd.text.RichText.Span s : dnd.text.RichText.spans(text)) {
+            dnd.model.SpanRef sr = o.ref(s.ref());
+            if (sr == null || sr.isEmpty()) out = dnd.text.RichText.setSpanRef(out, s.plainStart(), s.plainEnd(), 0).markup();
+        }
+        return out;
+    }
+
+    /** Forgets reference table entries that no span uses any more. */
+    private static void pruneRefs(BoardObject o) {
+        java.util.Set<Integer> used = dnd.text.RichText.refsUsed(o.text);
+        o.refs.entrySet().removeIf(e -> {
+            try {
+                return !used.contains(Integer.parseInt(e.getKey())) || e.getValue().isEmpty();
+            } catch (NumberFormatException ex) {
+                return true;
+            }
+        });
     }
 
     public void deleteSelected() {
@@ -1261,14 +1475,48 @@ public class BoardView extends Pane implements ItemView {
 
     // ================================================================ links & styling
 
+    /** The words selected in the text being typed, as plain-text positions, or null if there are none. */
+    private int[] selectedWords() {
+        if (editor == null) return null;
+        javafx.scene.control.IndexRange sel = editor.getSelection();
+        if (sel.getLength() == 0) return null;
+        int[] r = dnd.text.RichText.toPlainRange(editor.getText(), sel.getStart(), sel.getEnd());
+        return r[0] < r[1] ? r : null;
+    }
+
+    private Optional<String> pickTarget(String title) {
+        pickingTarget = true;
+        try {
+            return host.pickBoard(title);
+        } finally {
+            pickingTarget = false;
+        }
+    }
+
+    /** Links the selected words (while typing) or the selected objects to another item. */
     public void linkSelected() {
+        if (editor != null) {
+            int[] words = selectedWords();
+            if (words == null) {
+                info("Select the words first, then press Link...");
+                return;
+            }
+            Optional<String> target = pickTarget("Link to...");
+            if (target.isEmpty() || editor == null) {
+                if (editor != null) editor.requestFocus();
+                return;
+            }
+            setWordsSpan(words, sr -> sr.link = target.get());
+            return;
+        }
         if (selected.isEmpty()) {
-            Alert a = new Alert(Alert.AlertType.INFORMATION, "Select an object first, then link it.");
+            Alert a = new Alert(Alert.AlertType.INFORMATION, "Select an object first, then link it."
+                    + " To link just some words, double-click the text and select them.");
             a.setHeaderText(null);
             a.showAndWait();
             return;
         }
-        host.pickBoard("Link to whiteboard").ifPresent(target -> {
+        pickTarget("Link to...").ifPresent(target -> {
             checkpoint();
             for (String id : selected) {
                 BoardObject o = board.find(id);
@@ -1278,18 +1526,339 @@ public class BoardView extends Pane implements ItemView {
         });
     }
 
+    /** Writes or edits a note for the selected words (while typing) or the selected objects. */
+    public void noteSelected() {
+        if (editor != null) {
+            int[] words = selectedWords();
+            if (words == null) {
+                info("Select the words first, then press Note...");
+                return;
+            }
+            String text = editor.getText();
+            int ref = wordsRef(text, words);
+            dnd.model.SpanRef existing = ref == 0 ? null : editing.ref(ref);
+            String plain = dnd.text.RichText.plain(text);
+            Optional<String> note = askNote("Note for \"" + shorten(plain.substring(words[0], Math.min(words[1], plain.length()))) + "\"",
+                    existing == null ? null : existing.note);
+            if (note.isEmpty() || editor == null) {
+                if (editor != null) editor.requestFocus();
+                return;
+            }
+            if (note.get().isBlank()) {
+                removeNoteSelected(); // "Remove note" in the box
+                return;
+            }
+            setWordsSpan(words, sr -> sr.note = note.get());
+            return;
+        }
+        if (selected.isEmpty()) {
+            Alert a = new Alert(Alert.AlertType.INFORMATION, "Select an object first, then add a note to it."
+                    + " To add a note to just some words, double-click the text and select them.");
+            a.setHeaderText(null);
+            a.showAndWait();
+            return;
+        }
+        BoardObject first = board.find(selected.iterator().next());
+        askNote(selected.size() == 1 ? "Note for this object" : "Note for the " + selected.size() + " selected objects",
+                first == null ? null : first.note).ifPresent(note -> {
+            checkpoint();
+            for (String id : selected) {
+                BoardObject o = board.find(id);
+                if (o != null) o.note = note.isBlank() ? null : note;
+            }
+            changed();
+        });
+    }
+
+    private Optional<String> askNote(String title, String current) {
+        pickingTarget = true; // the dialog takes the focus for a moment: that must not end the edit
+        try {
+            return host.editNote(title, current);
+        } finally {
+            pickingTarget = false;
+        }
+    }
+
+    private void info(String message) {
+        Alert a = new Alert(Alert.AlertType.INFORMATION, message);
+        a.setHeaderText(null);
+        pickingTarget = true;
+        try {
+            a.showAndWait();
+        } finally {
+            pickingTarget = false;
+        }
+        if (editor != null) editor.requestFocus();
+    }
+
+    private static String shorten(String s) {
+        String flat = s.replace('\n', ' ').trim();
+        return flat.length() > 30 ? flat.substring(0, 27) + "..." : flat;
+    }
+
+    /** The reference number when the words are exactly one existing span (so a link and a note share it), else 0. */
+    private static int wordsRef(String text, int[] words) {
+        int ref = dnd.text.RichText.refAt(text, words[0]);
+        for (int k = words[0]; k < words[1] && ref != 0; k++) if (dnd.text.RichText.refAt(text, k) != ref) ref = 0;
+        return ref;
+    }
+
+    /** Puts a span around the selected words (while typing) and lets {@code apply} fill in its link or note. */
+    private void setWordsSpan(int[] words, java.util.function.Consumer<dnd.model.SpanRef> apply) {
+        BoardObject o = editing;
+        String text = editor.getText();
+        checkpoint();
+        int ref = wordsRef(text, words);
+        if (ref == 0) ref = o.nextRef();
+        dnd.model.SpanRef sr = o.refs.computeIfAbsent(String.valueOf(ref), k -> new dnd.model.SpanRef());
+        apply.accept(sr);
+        dnd.text.RichText.Edit e = dnd.text.RichText.setSpanRef(text, words[0], words[1], ref);
+        editor.setText(e.markup());
+        editor.selectRange(e.selStart(), e.selEnd());
+        editor.requestFocus();
+    }
+
+    /** Edits the note on the words under the pointer (not while typing), from the right-click menu or a double-click. */
+    private void editSpanNote(SpanHit at) {
+        BoardObject o = at.o();
+        dnd.model.SpanRef sr = o.ref(at.seg().ref());
+        if (sr == null) return;
+        String title = "Note for \"" + shorten(spanText(o, at.seg())) + "\"";
+        askNote(title, sr.note).ifPresent(note -> {
+            checkpoint();
+            sr.note = note.isBlank() ? null : note;
+            afterSpanChange(o);
+        });
+    }
+
+    private void removeSpanNote(SpanHit at) {
+        BoardObject o = at.o();
+        dnd.model.SpanRef sr = o.ref(at.seg().ref());
+        if (sr == null || !sr.hasNote()) return;
+        checkpoint();
+        sr.note = null;
+        afterSpanChange(o);
+    }
+
+    /** Drops span markers whose words no longer link or carry a note, then saves. */
+    private void afterSpanChange(BoardObject o) {
+        o.text = cleanSpans(o, o.text);
+        pruneRefs(o);
+        wrapCache.remove(o.id);
+        measure(o);
+        changed();
+    }
+
+    /** The plain words of the span a laid-out piece belongs to. */
+    private static String spanText(BoardObject o, RichLayout.Seg seg) {
+        String plain = dnd.text.RichText.plain(o.text);
+        for (dnd.text.RichText.Span s : dnd.text.RichText.spans(o.text)) {
+            if (s.ref() == seg.ref() && seg.plainStart() >= s.plainStart() && seg.plainStart() < s.plainEnd()) {
+                return plain.substring(s.plainStart(), Math.min(s.plainEnd(), plain.length()));
+            }
+        }
+        return seg.text();
+    }
+
+    /** Removes the link from the selected words (while typing) or the selected objects. */
     public void unlinkSelected() {
+        removeTarget(false);
+    }
+
+    /** Removes the note from the selected words (while typing) or the selected objects. */
+    public void removeNoteSelected() {
+        removeTarget(true);
+    }
+
+    private void removeTarget(boolean note) {
+        if (editor != null) {
+            int[] words = selectedWords();
+            if (words == null) return;
+            BoardObject o = editing;
+            String text = editor.getText();
+            String out = text;
+            boolean any = false;
+            checkpoint();
+            for (dnd.text.RichText.Span s : dnd.text.RichText.spans(text)) {
+                if (s.plainEnd() <= words[0] || s.plainStart() >= words[1]) continue;
+                dnd.model.SpanRef sr = o.ref(s.ref());
+                if (sr == null) continue;
+                any = true;
+                if (note) sr.note = null;
+                else sr.link = null;
+                if (sr.isEmpty()) out = dnd.text.RichText.setSpanRef(out, s.plainStart(), s.plainEnd(), 0).markup();
+            }
+            if (any) editor.setText(out);
+            editor.requestFocus();
+            return;
+        }
         boolean any = false;
         for (String id : selected) {
             BoardObject o = board.find(id);
-            if (o != null && o.link != null) any = true;
+            if (o != null && (note ? o.hasNote() : o.link != null)) any = true;
         }
         if (!any) return;
         checkpoint();
         for (String id : selected) {
             BoardObject o = board.find(id);
-            if (o != null) o.link = null;
+            if (o == null) continue;
+            if (note) o.note = null;
+            else o.link = null;
         }
+        changed();
+    }
+
+    // ================================================================ hover: tooltips and name hints
+
+    /** The word piece under a point in a text object, with where it sits (map units). */
+    private record SpanHit(BoardObject o, RichLayout.Seg seg, double left, double bottom) { }
+
+    private SpanHit spanAt(double px, double py) {
+        BoardObject o = hit(px, py);
+        if (o == null || (o.type != Type.TEXT && o.type != Type.STICKY) || o == editing) return null;
+        List<RichLayout.Line> lines = o.type == Type.TEXT ? textLines(o) : wrappedLines(o);
+        double ox = o.type == Type.TEXT ? o.x : o.x + 10, oy = o.type == Type.TEXT ? o.y : o.y + 10;
+        double lh = RichLayout.lineHeight(o);
+        int li = (int) Math.floor((py - oy) / lh);
+        if (li < 0 || li >= lines.size()) return null;
+        for (RichLayout.Seg s : lines.get(li).segs()) {
+            if (px >= ox + s.x() && px <= ox + s.x() + s.w()) return new SpanHit(o, s, ox + s.x(), oy + (li + 1) * lh);
+        }
+        return null;
+    }
+
+    private void clearHover() {
+        hoverDelay.stop();
+        hintHide.stop();
+        hideTip();
+        hintPopup.hide();
+        hintHovered = false;
+        hoverKey = null;
+    }
+
+    private void hideTip() {
+        tipPopup.hide();
+    }
+
+    private void onHover(MouseEvent e) {
+        if (editor != null || mode != Mode.NONE) {
+            clearHover();
+            return;
+        }
+        double px = wx(e.getX()), py = wy(e.getY());
+        SpanHit sh = spanAt(px, py);
+        String key = null, noteText = null, previewId = null;
+        dnd.text.NameHints.Hint hint = null;
+        boolean linkCursor = false;
+        boolean previews = ts.linkPreviews.get();
+        if (sh != null) {
+            dnd.model.SpanRef sr = sh.o().ref(sh.seg().ref());
+            if (sr != null) {
+                boolean preview = sr.link != null && previews;
+                if (sr.hasNote() || preview) {
+                    noteText = sr.hasNote() ? sr.note : null;
+                    previewId = preview ? sr.link : null;
+                    key = "span|" + sh.o().id + "|" + sh.seg().ref();
+                }
+                if (sr.link != null) linkCursor = true;
+            } else if (sh.seg().hint() != null) {
+                for (dnd.text.NameHints.Hint h : hintsFor(sh.o())) {
+                    if (sh.seg().plainStart() >= h.start() && sh.seg().plainStart() < h.end()) hint = h;
+                }
+                if (hint != null) key = "hint|" + sh.o().id + "|" + hint.start();
+            }
+        }
+        if (key == null) {
+            BoardObject o = hit(px, py);
+            // a map preview already shows its map, so it needs no second preview
+            boolean preview = o != null && o.link != null && previews && o.type != Type.MAP_PREVIEW;
+            if (o != null && (o.hasNote() || preview)) {
+                noteText = o.hasNote() ? o.note : null;
+                previewId = preview ? o.link : null;
+                key = "obj|" + o.id;
+            }
+        }
+        if (linkCursor) setCursor(Cursor.HAND);
+        else refreshCursor();
+
+        if (java.util.Objects.equals(key, hoverKey)) {
+            if (key != null && key.startsWith("hint|")) hintHide.stop();
+            return;
+        }
+        boolean wasHint = hoverKey != null && hoverKey.startsWith("hint|");
+        hoverKey = key;
+        hoverDelay.stop();
+        hideTip();
+        if (key == null) {
+            if (wasHint) hintHide.playFromStart(); // leave time to move onto the hint's buttons
+            return;
+        }
+        hintHide.stop();
+        if (!hintHovered) hintPopup.hide();
+        final double sx = e.getScreenX(), sy = e.getScreenY();
+        final String showNote = noteText, showLink = previewId;
+        final dnd.text.NameHints.Hint showHint = hint;
+        final SpanHit at = sh;
+        hoverDelay.setOnFinished(ev -> {
+            if (showNote != null || showLink != null) {
+                Node preview = ItemPreview.hover(store, showNote, showLink);
+                preview.setMouseTransparent(true);
+                tipPopup.getContent().setAll(preview);
+                tipPopup.show(this, sx + 18, sy + 18);
+            } else if (showHint != null && at != null) {
+                showHintPopup(at, showHint);
+            }
+        });
+        hoverDelay.playFromStart();
+    }
+
+    /** The small "Link / Dismiss" box offered under a card or spell name found in the text. */
+    private void showHintPopup(SpanHit at, dnd.text.NameHints.Hint hint) {
+        BoardObject o = at.o();
+        String itemName = store.itemName(hint.itemId());
+        boolean alias = itemName != null && !itemName.equalsIgnoreCase(hint.name());
+        Label name = new Label(alias ? hint.name() + "  \u2192  " + itemName : hint.name()); // "Jasper -> Jasper Egan"
+        name.setStyle("-fx-font-weight: bold; -fx-text-fill: -t-text;");
+        Button link = new Button("Link");
+        link.setTooltip(new Tooltip("Make these words a link that opens " + (itemName == null ? hint.name() : itemName)));
+        link.setOnAction(ev -> applyHint(o, hint));
+        Button dismiss = new Button("Dismiss");
+        dismiss.setTooltip(new Tooltip("Stop underlining this name in this text"));
+        dismiss.setOnAction(ev -> {
+            hintPopup.hide();
+            hoverKey = null;
+            checkpoint();
+            o.dismissedNames.add(hint.name().toLowerCase(java.util.Locale.ROOT));
+            changed();
+        });
+        HBox row = new HBox(6, name, link, dismiss);
+        row.setAlignment(Pos.CENTER_LEFT);
+        row.setPadding(new Insets(6, 8, 6, 8));
+        row.setStyle("-fx-background-color: -t-surface; -fx-border-color: -t-border; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 8, 0.2, 0, 2);");
+        row.setOnMouseEntered(ev -> {
+            hintHovered = true;
+            hintHide.stop();
+        });
+        row.setOnMouseExited(ev -> {
+            hintHovered = false;
+            hintHide.playFromStart();
+        });
+        hintHovered = false;
+        hintPopup.getContent().setAll(row);
+        javafx.geometry.Point2D p = localToScreen(board.offsetX + at.left() * zoom(), board.offsetY + at.bottom() * zoom() + 2);
+        if (p != null) hintPopup.show(this, p.getX(), p.getY());
+    }
+
+    private void applyHint(BoardObject o, dnd.text.NameHints.Hint hint) {
+        hintPopup.hide();
+        hoverKey = null;
+        checkpoint();
+        int ref = o.nextRef();
+        dnd.model.SpanRef sr = new dnd.model.SpanRef();
+        sr.link = hint.itemId();
+        o.refs.put(String.valueOf(ref), sr);
+        o.text = dnd.text.RichText.setSpanRef(o.text, hint.start(), hint.end(), ref).markup();
+        measure(o);
         changed();
     }
 

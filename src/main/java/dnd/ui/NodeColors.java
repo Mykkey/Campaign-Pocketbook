@@ -21,6 +21,7 @@ public final class NodeColors {
     public static final String BATTLEMAP = "#4e9e6a";
     public static final String CARD = "#e0a030";
     public static final String ENCOUNTER = "#cf4b4b";
+    public static final String SPELL = "#8b5fd6";
 
     /** The colour a node has unless the DM picked one. */
     public static String defaultFor(TreeNode n) {
@@ -28,6 +29,7 @@ public final class NodeColors {
         if (n.isBattleMap()) return BATTLEMAP;
         if (n.isCard()) return CARD;
         if (n.isEncounter()) return ENCOUNTER;
+        if (n.isSpell()) return SPELL;
         return BOARD;
     }
 

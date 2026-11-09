@@ -75,6 +75,7 @@ public final class MapRenderer {
             if (o.hidden && who == Audience.PLAYERS) continue;
             drawObject(g, o, lib, scale, o.hidden && who == Audience.DM ? 0.45 : 1.0);
         }
+        if (m.darkMap && who != Audience.PLAIN) drawLighting(g, m, grid, who == Audience.PLAYERS ? 1.0 : 0.55);
         // battle state: whose turn it is and who is down, looked up by token id
         java.util.Set<String> active = new java.util.HashSet<>(), down = new java.util.HashSet<>();
         Map<String, List<String>> rings = new HashMap<>();
@@ -91,7 +92,187 @@ public final class MapRenderer {
             drawToken(g, t, grid, m.cellSize, t.hidden && who == Audience.DM ? 0.45 : 1.0,
                     active.contains(t.id), down.contains(t.id), rings.getOrDefault(t.id, List.of()));
         }
+        if (m.template != null && who != Audience.PLAIN && (who == Audience.DM || m.template.shared)) drawTemplate(g, m, grid, scale, who == Audience.DM);
+        if (m.ruler != null && who != Audience.PLAIN && (who == Audience.DM || m.ruler.shared)) drawRuler(g, m, grid, scale);
         if (who != Audience.PLAIN && m.fogEnabled) drawFog(g, m, grid, who == Audience.PLAYERS);
+        if (who == Audience.DM) { // the DM's own marks sit above the fog
+            drawLights(g, m, grid, scale);
+            drawPins(g, m, scale);
+        }
+    }
+
+    // ---------------------------------------------------------------- lighting, areas, lights and pins
+
+    /** Darkens cells that are dark (a lot) or dimly lit (a little). {@code strength} 1 = what the players see. */
+    public static void drawLighting(GraphicsContext g, BattleMap m, Grid grid, double strength) {
+        g.save();
+        g.beginPath();
+        boolean anyDark = false;
+        for (int r = 0; r < grid.rows(); r++) {
+            for (int c = 0; c < grid.cols(); c++) {
+                if (dnd.map.LightingModel.levelAt(m, grid, c, r) != dnd.map.LightingModel.Level.DARK) continue;
+                addCell(g, grid, c, r);
+                anyDark = true;
+            }
+        }
+        if (anyDark) {
+            g.setFill(Color.web("#04050d", 0.78 * strength));
+            g.fill();
+        }
+        g.beginPath();
+        boolean anyDim = false;
+        for (int r = 0; r < grid.rows(); r++) {
+            for (int c = 0; c < grid.cols(); c++) {
+                if (dnd.map.LightingModel.levelAt(m, grid, c, r) != dnd.map.LightingModel.Level.DIM) continue;
+                addCell(g, grid, c, r);
+                anyDim = true;
+            }
+        }
+        if (anyDim) {
+            g.setFill(Color.web("#04050d", 0.38 * strength));
+            g.fill();
+        }
+        g.restore();
+    }
+
+    private static void addCell(GraphicsContext g, Grid grid, int c, int r) {
+        double[] p = grid.polygon(c, r);
+        g.moveTo(p[0], p[1]);
+        for (int i = 2; i < p.length; i += 2) g.lineTo(p[i], p[i + 1]);
+        g.closePath();
+    }
+
+    /** The measuring line with its length in cells and feet (5 ft per cell). */
+    public static void drawRuler(GraphicsContext g, BattleMap m, Grid grid, double scale) {
+        BattleMap.Ruler r = m.ruler;
+        double z = Math.max(scale, 0.01);
+        g.save();
+        g.setStroke(Color.web("#c0392b"));
+        g.setLineWidth(3 / z);
+        g.setLineDashes((double[]) null);
+        g.strokeLine(r.ax, r.ay, r.bx, r.by);
+        g.setFill(Color.web("#c0392b"));
+        double dot = 5 / z;
+        g.fillOval(r.ax - dot, r.ay - dot, 2 * dot, 2 * dot);
+        g.fillOval(r.bx - dot, r.by - dot, 2 * dot, 2 * dot);
+        int d = r.cells(grid);
+        if (d >= 0) {
+            String text = d + (d == 1 ? " cell" : " cells") + "  (" + (d * 5) + " ft)";
+            double mx = (r.ax + r.bx) / 2, my = (r.ay + r.by) / 2 - 14 / z;
+            g.setFont(Font.font("System", FontWeight.BOLD, 14 / z));
+            g.setTextAlign(TextAlignment.CENTER);
+            g.setTextBaseline(VPos.CENTER);
+            g.setStroke(Color.WHITE);
+            g.setLineWidth(4 / z);
+            g.strokeText(text, mx, my);
+            g.setFill(Color.web("#7b1e12"));
+            g.fillText(text, mx, my);
+        }
+        g.restore();
+    }
+
+    /** The area template: the covered cells tinted and the outline of the shape. */
+    public static void drawTemplate(GraphicsContext g, BattleMap m, Grid grid, double scale, boolean label) {
+        dnd.model.AreaTemplate t = m.template;
+        java.util.List<int[]> covered = t.coveredCells(grid, m.cellSize);
+        g.save();
+        g.beginPath();
+        for (int[] c : covered) addCell(g, grid, c[0], c[1]);
+        g.setFill(Color.web("#f97316", 0.36));
+        g.fill();
+        g.setStroke(Color.web("#ea580c"));
+        g.setLineWidth(2.5 / Math.max(scale, 0.01));
+        g.setLineDashes((double[]) null);
+        double[] outline = t.outline(m.cellSize);
+        if (outline == null) {
+            double rad = t.feet / 5.0 * m.cellSize;
+            g.strokeOval(t.ox - rad, t.oy - rad, 2 * rad, 2 * rad);
+        } else {
+            int n = outline.length / 2;
+            double[] xs = new double[n], ys = new double[n];
+            for (int i = 0; i < n; i++) {
+                xs[i] = outline[2 * i];
+                ys[i] = outline[2 * i + 1];
+            }
+            g.strokePolygon(xs, ys, n);
+        }
+        double dot = 5 / Math.max(scale, 0.01);
+        g.setFill(Color.web("#ea580c"));
+        g.fillOval(t.ox - dot, t.oy - dot, 2 * dot, 2 * dot);
+        if (label) {
+            String text = t.describe(covered.size());
+            double[] lp = t.labelPoint(m.cellSize);
+            g.setFont(Font.font("System", FontWeight.BOLD, 14 / Math.max(scale, 0.01)));
+            g.setTextAlign(TextAlignment.CENTER);
+            g.setTextBaseline(VPos.CENTER);
+            g.setStroke(Color.WHITE);
+            g.setLineWidth(4 / Math.max(scale, 0.01));
+            g.strokeText(text, lp[0], lp[1]);
+            g.setFill(Color.web("#7c2d12"));
+            g.fillText(text, lp[0], lp[1]);
+        }
+        g.restore();
+    }
+
+    /** Light sources as small suns with faint rings for the bright and dim radius (DM only). */
+    public static void drawLights(GraphicsContext g, BattleMap m, Grid grid, double scale) {
+        double s = Math.max(scale, 0.01);
+        for (dnd.model.MapLight l : m.lights) {
+            double[] p = dnd.map.LightingModel.position(m, grid, l);
+            if (p == null) continue;
+            g.save();
+            g.setLineWidth(1.2 / s);
+            g.setLineDashes(6 / s, 5 / s);
+            g.setStroke(Color.web("#f5b301", 0.8));
+            double rb = l.brightFeet / 5.0 * m.cellSize, rd = l.dimFeet / 5.0 * m.cellSize;
+            g.strokeOval(p[0] - rb, p[1] - rb, 2 * rb, 2 * rb);
+            g.setStroke(Color.web("#f5b301", 0.4));
+            g.strokeOval(p[0] - rd, p[1] - rd, 2 * rd, 2 * rd);
+            g.setLineDashes((double[]) null);
+            double r = Math.max(m.cellSize * 0.17, 7 / s);
+            g.setStroke(Color.web("#f5b301"));
+            g.setLineWidth(1.6 / s);
+            for (int i = 0; i < 8; i++) {
+                double a = Math.PI / 4 * i;
+                g.strokeLine(p[0] + Math.cos(a) * r * 1.2, p[1] + Math.sin(a) * r * 1.2, p[0] + Math.cos(a) * r * 1.8, p[1] + Math.sin(a) * r * 1.8);
+            }
+            g.setFill(Color.web("#ffd84d"));
+            g.fillOval(p[0] - r, p[1] - r, 2 * r, 2 * r);
+            g.setStroke(Color.web("#7a5b00"));
+            g.strokeOval(p[0] - r, p[1] - r, 2 * r, 2 * r);
+            g.restore();
+        }
+    }
+
+    /** Numbered DM-only notes. */
+    public static void drawPins(GraphicsContext g, BattleMap m, double scale) {
+        double s = Math.max(scale, 0.01);
+        double r = Math.max(m.cellSize * 0.26, 11 / s);
+        int n = 0;
+        for (dnd.model.MapPin p : m.pins) {
+            n++;
+            g.save();
+            g.setFill(Color.web("#00000040"));
+            g.fillOval(p.x - r + r * 0.12, p.y - r + r * 0.18, 2 * r, 2 * r);
+            g.setFill(Color.web("#7c3aed"));
+            g.fillOval(p.x - r, p.y - r, 2 * r, 2 * r);
+            g.setStroke(Color.WHITE);
+            g.setLineWidth(2 / s);
+            g.strokeOval(p.x - r, p.y - r, 2 * r, 2 * r);
+            g.setFill(Color.WHITE);
+            g.setFont(Font.font("System", FontWeight.BOLD, r * 1.15));
+            g.setTextAlign(TextAlignment.CENTER);
+            g.setTextBaseline(VPos.CENTER);
+            g.fillText(String.valueOf(n), p.x, p.y + r * 0.04);
+            if (p.link != null) { // a small mark: this pin points at something
+                g.setFill(Color.web("#fbbf24"));
+                g.fillOval(p.x + r * 0.6, p.y - r * 1.05, r * 0.7, r * 0.7);
+                g.setStroke(Color.WHITE);
+                g.setLineWidth(1.2 / s);
+                g.strokeOval(p.x + r * 0.6, p.y - r * 1.05, r * 0.7, r * 0.7);
+            }
+            g.restore();
+        }
     }
 
     /**

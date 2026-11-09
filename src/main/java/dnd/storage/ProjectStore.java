@@ -4,6 +4,7 @@ import dnd.model.BattleMap;
 import dnd.model.Board;
 import dnd.model.Card;
 import dnd.model.Encounter;
+import dnd.model.Spell;
 import dnd.model.Project;
 import dnd.model.TreeNode;
 
@@ -24,6 +25,7 @@ import java.util.stream.Stream;
  *   maps/&lt;id&gt;.battlemap  one file per battlemap
  *   cards/&lt;id&gt;.card      one file per character / creature card
  *   encounters/&lt;id&gt;.encounter  one file per planned fight
+ *   spells/&lt;id&gt;.spell        one file per spell card
  *   assets/&lt;file&gt;        imported SVG/PNG pieces for battlemaps
  *   images/&lt;file&gt;        imported pictures
  * </pre>
@@ -44,6 +46,9 @@ public final class ProjectStore {
     private final Set<String> dirtyCards = new HashSet<>();
     private final Map<String, Encounter> encounterCache = new HashMap<>();
     private final Set<String> dirtyEncounters = new HashSet<>();
+    private final Map<String, Spell> spellCache = new HashMap<>();
+    private final Set<String> dirtySpells = new HashSet<>();
+    private int namesVersion;
     private boolean projectDirty;
 
     private ProjectStore(Path dir, Project project) {
@@ -100,6 +105,7 @@ public final class ProjectStore {
         Files.createDirectories(dir.resolve("maps"));
         Files.createDirectories(dir.resolve("cards"));
         Files.createDirectories(dir.resolve("encounters"));
+        Files.createDirectories(dir.resolve("spells"));
         Files.createDirectories(dir.resolve("images"));
         Files.createDirectories(dir.resolve("assets"));
     }
@@ -259,6 +265,7 @@ public final class ProjectStore {
     }
 
     public void markCardDirty(Card c) {
+        namesVersion++;
         dirtyCards.add(c.id);
         onDirty.run();
     }
@@ -331,6 +338,87 @@ public final class ProjectStore {
         onDirty.run();
     }
 
+    // ---------------------------------------------------------------- spell cards
+
+    public boolean isSpell(String id) {
+        TreeNode n = id == null ? null : project.root.find(id);
+        return n != null && n.isSpell();
+    }
+
+    private Path spellPath(String id) {
+        return dir.resolve("spells").resolve(id + ".spell");
+    }
+
+    /** Loads (and caches) a spell card; null if it doesn't exist or can't be read. */
+    public Spell spell(String id) {
+        Spell s = spellCache.get(id);
+        if (s != null) return s;
+        Path p = spellPath(id);
+        if (!Files.isRegularFile(p)) return null;
+        try {
+            s = Json.readFile(p, Spell.class);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return null;
+        }
+        s.id = id;
+        spellCache.put(id, s);
+        return s;
+    }
+
+    /** Adds a spell card to the project under {@code parent}; it gets a fresh id that becomes the tree node's id. */
+    public Spell createSpell(TreeNode parent, Spell spell) {
+        spell.id = java.util.UUID.randomUUID().toString();
+        TreeNode n = new TreeNode(spell.name, false);
+        n.id = spell.id;
+        n.kind = TreeNode.KIND_SPELL;
+        parent.children.add(n);
+        spellCache.put(spell.id, spell);
+        markSpellDirty(spell);
+        markProjectDirty();
+        return spell;
+    }
+
+    /** Copies a spell card next to the original (name + " (copy)"); the copy is not tied to the SRD library. */
+    public Spell duplicateSpell(TreeNode node) {
+        Spell original = spell(node.id);
+        if (original == null) return null;
+        Spell copy = original.copy();
+        copy.name = original.name + " (copy)";
+        copy.libraryId = null;
+        TreeNode parent = project.root.parentOf(node.id);
+        return createSpell(parent == null ? project.root : parent, copy);
+    }
+
+    public List<String> allSpellIds() {
+        List<TreeNode> nodes = new ArrayList<>();
+        project.root.collectSpells(nodes);
+        List<String> ids = new ArrayList<>();
+        for (TreeNode n : nodes) ids.add(n.id);
+        return ids;
+    }
+
+    /** The spell card already made from this SRD library spell, or null. */
+    public Spell spellFromLibrary(String libraryId) {
+        if (libraryId == null) return null;
+        for (String id : allSpellIds()) {
+            Spell s = spell(id);
+            if (s != null && libraryId.equals(s.libraryId)) return s;
+        }
+        return null;
+    }
+
+    public void markSpellDirty(Spell s) {
+        dirtySpells.add(s.id);
+        namesVersion++;
+        onDirty.run();
+    }
+
+    /** Changes whenever a card or spell is added, renamed, edited or removed (name hints rebuild when it moves). */
+    public int namesVersion() {
+        return namesVersion;
+    }
+
     // ---------------------------------------------------------------- battlemaps
 
     private Path mapPath(String id) {
@@ -400,6 +488,7 @@ public final class ProjectStore {
             if (isBattleMap(id)) battleMap(id);
             else if (isCard(id)) card(id);
             else if (isEncounter(id)) encounter(id);
+            else if (isSpell(id)) spell(id);
             else if (boardExists(id)) board(id);
         }
         assets();
@@ -475,6 +564,12 @@ public final class ProjectStore {
                 c.name = name;
                 markCardDirty(c);
             }
+        } else if (node.isSpell()) {
+            Spell s = spell(node.id);
+            if (s != null) {
+                s.name = name;
+                markSpellDirty(s);
+            }
         } else if (node.isEncounter()) {
             Encounter e = encounter(node.id);
             if (e != null) {
@@ -501,11 +596,14 @@ public final class ProjectStore {
             dirtyCards.remove(b.id);
             encounterCache.remove(b.id);
             dirtyEncounters.remove(b.id);
+            spellCache.remove(b.id);
+            dirtySpells.remove(b.id);
             try {
                 Files.deleteIfExists(boardPath(b.id));
                 Files.deleteIfExists(mapPath(b.id));
                 Files.deleteIfExists(cardPath(b.id));
                 Files.deleteIfExists(encounterPath(b.id));
+                Files.deleteIfExists(spellPath(b.id));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -578,6 +676,11 @@ public final class ProjectStore {
                 if (e != null) Json.writeFile(encounterPath(id), e);
             }
             dirtyEncounters.clear();
+            for (String id : new ArrayList<>(dirtySpells)) {
+                Spell s = spellCache.get(id);
+                if (s != null) Json.writeFile(spellPath(id), s);
+            }
+            dirtySpells.clear();
             if (projectDirty) {
                 Json.writeFile(dir.resolve(PROJECT_FILE), project);
                 projectDirty = false;

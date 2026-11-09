@@ -80,10 +80,19 @@ public class Card {
         return (v >= 0 ? "+" : "") + v;
     }
 
-    /** A deep copy with a new id. */
+    /**
+     * Other names this card goes by (a first name, a nickname, a title). The whiteboard offers to link these words
+     * as well as the card's full name. Specific to the project: not copied to a duplicate or overwritten by a library sync.
+     */
+    public List<String> aliases = new ArrayList<>();
+
+    /** How this card relates to other cards (parent of, ally of...). Used for the family tree and relationship web. */
+    public List<Relation> relations = new ArrayList<>();
+
     /** Set on a project card that was made from a "common enemy" in the shared library (see CommonEnemies). */
     public String libraryId;
 
+    /** A deep copy with a new id (relationships are not copied: a copy is a different person). */
     public Card copy() {
         Card c = new Card();
         c.copyFrom(this);

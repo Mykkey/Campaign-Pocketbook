@@ -18,13 +18,17 @@ import java.util.List;
 final class RichLayout {
     private RichLayout() { }
 
-    /** A piece of one line drawn in one style, {@code x} pixels from the line's left edge. */
-    record Seg(String text, boolean bold, boolean italic, double x, double w) { }
+    /**
+     * A piece of one line drawn in one style, {@code x} pixels from the line's left edge. {@code ref} is the span
+     * reference (a link and/or tooltip on these words, 0 = none); {@code hint} is the id of a card or spell whose
+     * name these words spell out (null = none).
+     */
+    record Seg(String text, boolean bold, boolean italic, double x, double w, int ref, String hint, int plainStart) { }
 
     record Line(List<Seg> segs, double width) { }
 
     /** One styled stretch inside a word, or a run of spaces. */
-    private record Piece(String text, boolean bold, boolean italic, double w, boolean space) { }
+    private record Piece(String text, boolean bold, boolean italic, double w, boolean space, int ref, String hint, int plainStart) { }
 
     /** The font for a stretch of text: the object's own bold/italic (whole block) plus the word's. */
     static Font font(BoardObject o, boolean bold, boolean italic) {
@@ -50,7 +54,16 @@ final class RichLayout {
      * @param maxWidth wrap at this width in pixels; zero or less means do not wrap (only newlines break lines)
      */
     static List<Line> layout(String markup, BoardObject o, double maxWidth) {
+        return layout(markup, o, maxWidth, List.of());
+    }
+
+    /**
+     * Same, marking the words that spell out a card or spell name (see {@link dnd.text.NameHints}) so they can be
+     * underlined and offered as links. Hint positions are plain-text positions (markup removed).
+     */
+    static List<Line> layout(String markup, BoardObject o, double maxWidth, List<dnd.text.NameHints.Hint> hints) {
         Builder b = new Builder(maxWidth);
+        int plainPos = 0;
         for (Run r : RichText.parse(markup)) {
             String text = r.text();
             int i = 0;
@@ -64,10 +77,24 @@ final class RichLayout {
                 boolean space = c == ' ';
                 int j = i;
                 while (j < text.length() && text.charAt(j) != '\n' && (text.charAt(j) == ' ') == space) j++;
+                // a name hint may start or end inside this stretch: cut the piece there
+                String hintId = null;
+                if (r.ref() == 0) {
+                    for (dnd.text.NameHints.Hint h : hints) {
+                        int abs = plainPos + i;
+                        if (abs >= h.start() && abs < h.end()) {
+                            hintId = h.itemId();
+                            j = Math.min(j, i + (h.end() - abs));
+                        } else if (h.start() > abs && h.start() < plainPos + j) {
+                            j = Math.min(j, h.start() - plainPos);
+                        }
+                    }
+                }
                 String piece = text.substring(i, j);
-                b.add(new Piece(piece, r.bold(), r.italic(), width(o, piece, r.bold(), r.italic()), space));
+                b.add(new Piece(piece, r.bold(), r.italic(), width(o, piece, r.bold(), r.italic()), space, r.ref(), hintId, plainPos + i));
                 i = j;
             }
+            plainPos += text.length();
         }
         return b.finish();
     }
@@ -114,7 +141,7 @@ final class RichLayout {
             // start a new line if this word would stick out (but never leave a line empty)
             if (max > 0 && !cur.isEmpty() && x + wordWidth > max) breakLine();
             for (Piece p : word) {
-                cur.add(new Seg(p.text, p.bold, p.italic, x, p.w));
+                cur.add(new Seg(p.text, p.bold, p.italic, x, p.w, p.ref, p.hint, p.plainStart));
                 x += p.w;
             }
             word.clear();

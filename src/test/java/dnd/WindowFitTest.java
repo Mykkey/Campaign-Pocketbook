@@ -38,4 +38,23 @@ class WindowFitTest {
         assertTrue(b[2] >= 320 - 1e-9 || b[2] <= 300);
         assertTrue(b[0] >= 0 && b[1] >= 0);
     }
+
+    @Test
+    void aWindowThatIsTooBigOrPartlyOffScreenIsPulledBackInside() {
+        // the SRD library: 1150 x 720 on a 1280 x 680 usable area, opened with its top 60 pixels above the screen
+        double[] b = WindowFit.clamp(60, -60, 1150, 720, 0, 0, 1280, 680);
+        assertEquals(680, b[3], 1e-9, "no taller than the screen");
+        assertEquals(0, b[1], 1e-9, "the title bar is on the screen");
+        assertEquals(1150, b[2], 1e-9);
+        // one that is already fine is left alone
+        double[] ok = WindowFit.clamp(100, 50, 800, 500, 0, 0, 1280, 680);
+        assertArrayEquals(new double[]{100, 50, 800, 500}, ok, 1e-9);
+        // pushed off the right and bottom edges: moved back in
+        double[] moved = WindowFit.clamp(1000, 600, 600, 300, 0, 0, 1280, 680);
+        assertEquals(680, moved[0], 1e-9);
+        assertEquals(380, moved[1], 1e-9);
+        // a second monitor to the left
+        double[] left = WindowFit.clamp(-1500, 10, 700, 500, -1366, 0, 1366, 728);
+        assertEquals(-1366, left[0], 1e-9);
+    }
 }

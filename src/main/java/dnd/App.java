@@ -21,6 +21,7 @@ public class App extends Application {
     public void start(Stage stage) {
         this.stage = stage;
         dnd.ui.Theme.install();
+        dnd.ui.WindowFit.install();
         stage.setTitle(TITLE);
         try (java.io.InputStream icon = App.class.getResourceAsStream("/icon.png")) {
             if (icon != null) stage.getIcons().add(new javafx.scene.image.Image(icon));

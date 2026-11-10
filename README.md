@@ -18,34 +18,27 @@
 |---|---|
 | ![Classic ink style](docs/images/world-map-classic.png) | ![Dark fantasy style](docs/images/world-map-dark.png) |
 
-Built with Java 21 and JavaFX. Runs on Windows, macOS and Linux. About 26,000 lines of Java with over 300 automated tests and continuous integration.
+Built with Java 21 and JavaFX. Runs on Windows, macOS and Linux; you need [Java 21 or newer](https://adoptium.net/) installed. About 26,000 lines of Java with over 300 automated tests and continuous integration.
 
 ## Download and run
 
-### 1. Get the app
-**Recommended: clone it with [Git](https://git-scm.com/)**, so you can update with one click later:
+**Requirement: Java 21 or newer** (64-bit). If `java -version` in a terminal does not show 21 or higher, install a free JDK or JRE from **[Adoptium](https://adoptium.net/)** first. Nothing else is needed.
+
+### Easiest: download a ready-to-run zip
+1. Go to the **[latest release](https://github.com/Mykkey/Campaign-Pocketbook/releases/latest)** and download the zip for your system (Windows, macOS on Apple silicon, or Linux).
+2. Unzip it anywhere.
+3. Start it: on **Windows** double-click **`CampaignPocketbook.bat`** (tip: right-click it and choose *Send to > Desktop (create shortcut)* for a desktop icon); on **macOS / Linux** run `./CampaignPocketbook.sh` in a terminal.
+
+To update, download the newer zip and unzip it over (or next to) the old folder. Your campaigns live in `~/CampaignPocketbook/`, outside the app folder, so they are never touched. The app also shows a banner when a newer version is published.
+
+### Or run it from the source code
+This needs [Git](https://git-scm.com/), a Java JDK 21+ ([Adoptium](https://adoptium.net/)) and [Apache Maven](https://maven.apache.org/download.cgi) 3.9+ (JavaFX is downloaded automatically by Maven). On an Intel Mac this is the way to run it.
 ```
 git clone https://github.com/Mykkey/Campaign-Pocketbook.git
+cd Campaign-Pocketbook
+mvn javafx:run
 ```
-
-Don't want Git? You can [download the ZIP](https://github.com/Mykkey/Campaign-Pocketbook/archive/refs/heads/main.zip) and unzip it anywhere instead, but to update you'll have to download and unzip it again.
-
-### 2. Install the two prerequisites (one time only)
-| What | Version | Get it |
-|------|---------|--------|
-| Java JDK (64-bit) | 21 or newer | https://adoptium.net/ |
-| Apache Maven | 3.9 or newer | https://maven.apache.org/download.cgi |
-
-Make sure `java -version` and `mvn -v` both work in a new terminal. (JavaFX is downloaded automatically by Maven, so you don't install it separately.)
-
-### 3. Start it
-- **Windows:** double-click **`CampaignPocketbook.bat`**. Tip: right-click it and choose *Send to > Desktop (create shortcut)* for a desktop icon.
-- **Any OS:** open a terminal in the project folder and run:
-  ```
-  mvn javafx:run
-  ```
-
-The first launch takes a minute while Maven downloads dependencies. After that it starts quickly, and it rebuilds automatically whenever the source code has changed.
+On Windows you can instead double-click **`CampaignPocketbook.bat`** in the project folder. The first launch takes a minute while Maven downloads dependencies; after that it starts quickly and rebuilds itself whenever the source has changed. To update, double-click **`update.bat`** (or run `git pull`).
 
 ## Learn more
 

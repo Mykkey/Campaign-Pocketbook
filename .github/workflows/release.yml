@@ -1,0 +1,91 @@
+name: Release
+
+# Builds the downloadable zips (Windows, macOS, Linux) and attaches them to a GitHub Release,
+# whenever pom.xml changes on main and its version has no release yet. In practice: when you bump the version and push to main.
+on:
+  push:
+    branches: [main]
+    paths: [pom.xml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      exists: ${{ steps.r.outputs.exists }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        run: |
+          VERSION=$(mvn -q -B -DforceStdout help:evaluate -Dexpression=project.version)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      - id: r
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "v${{ steps.v.outputs.version }}" >/dev/null 2>&1; then echo "exists=true" >> "$GITHUB_OUTPUT"; else echo "exists=false" >> "$GITHUB_OUTPUT"; fi
+
+  build:
+    needs: check
+    if: needs.check.outputs.exists == 'false'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            name: windows
+          - os: ubuntu-latest
+            name: linux
+          - os: macos-latest
+            name: mac
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Build
+        run: mvn -B -q -Pdist package -DskipTests
+      - name: Zip (Windows)
+        if: matrix.name == 'windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force out | Out-Null
+          Rename-Item target/dist CampaignPocketbook
+          Compress-Archive -Path target/CampaignPocketbook -DestinationPath "out/CampaignPocketbook-${{ needs.check.outputs.version }}-windows.zip"
+      - name: Zip (macOS, Linux)
+        if: matrix.name != 'windows'
+        run: |
+          mkdir -p out
+          mv target/dist target/CampaignPocketbook
+          chmod +x target/CampaignPocketbook/CampaignPocketbook.sh
+          (cd target && zip -r -q "../out/CampaignPocketbook-${{ needs.check.outputs.version }}-${{ matrix.name }}.zip" CampaignPocketbook)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zip-${{ matrix.name }}
+          path: out/*.zip
+
+  publish:
+    needs: [check, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: zip-*
+          merge-multiple: true
+          path: out
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ needs.check.outputs.version }}" out/*.zip \
+            --repo "${{ github.repository }}" \
+            --target "${{ github.sha }}" \
+            --title "Campaign Pocketbook ${{ needs.check.outputs.version }}" \
+            --notes "Download the zip for your system, unzip it, and run CampaignPocketbook.bat (Windows) or CampaignPocketbook.sh (macOS, Linux). **Requires Java 21 or newer: https://adoptium.net/**. Your campaigns are kept in a separate folder (~/CampaignPocketbook), so replacing the app folder with a newer download never loses anything. The macOS download is for Apple silicon Macs; on an Intel Mac, run the app from source (see the README)."

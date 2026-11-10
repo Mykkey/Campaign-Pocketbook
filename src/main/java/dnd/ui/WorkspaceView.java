@@ -216,7 +216,8 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             if (scene == null) return;
             // Ctrl+Z / Ctrl+Y and number keys 1..9,0 = tools, unless the user is typing in a text field.
             scene.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, ev -> {
-                if (scene.getFocusOwner() instanceof TextInputControl) return;
+                javafx.scene.Node focus = scene.getFocusOwner();
+                if (focus instanceof TextInputControl || focus instanceof Spinner<?> || focus instanceof ComboBoxBase<?>) return; // typing or adjusting a value
                 ItemView v = currentItem();
                 if (v == null) return;
                 KeyCode k = ev.getCode();

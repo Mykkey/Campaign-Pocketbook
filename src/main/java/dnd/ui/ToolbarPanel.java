@@ -101,12 +101,11 @@ public class ToolbarPanel extends FlowPane {
             }
         });
 
-        MenuButton lines = IconMenu.create("sliders", "Line and text size: pen width, font size and filled shapes");
+        MenuButton lines = IconMenu.create("sliders", "Line width and filled shapes");
         lines.getItems().addAll(
                 IconMenu.control("pen", "Line / pen width", width),
-                IconMenu.control("text", "Font size", font),
                 IconMenu.toggle("fill-shapes", "Fill rectangles and ellipses with the fill colour", null, ts.useFill));
-        getChildren().addAll(color, fill, bold, italic, lines, new Separator(Orientation.VERTICAL));
+        getChildren().addAll(labelled("Colour", color), labelled("Fill", fill), labelled("Font size", font), bold, italic, lines, new Separator(Orientation.VERTICAL));
 
         // --- links and notes
         MenuButton links = IconMenu.create("link", "Links and notes: link words or objects to other items, add hover notes");
@@ -124,6 +123,13 @@ public class ToolbarPanel extends FlowPane {
                 action("undo", dnd.keys.Shortcuts.tip("Undo", "item.undo"), v -> v.undo(), current),
                 action("redo", dnd.keys.Shortcuts.tip("Redo", "item.redo"), v -> v.redo(), current),
                 action("delete", "Delete the selection", v -> v.deleteSelected(), current));
+    }
+
+    /** A control with a small caption beside it, so it is clear what it sets. */
+    private static javafx.scene.layout.HBox labelled(String caption, javafx.scene.Node control) {
+        javafx.scene.layout.HBox box = new javafx.scene.layout.HBox(4, new Label(caption), control);
+        box.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        return box;
     }
 
     private static MenuItem row(String icon, String label, String actionId, Consumer<BoardView> run, Supplier<BoardView> current) {

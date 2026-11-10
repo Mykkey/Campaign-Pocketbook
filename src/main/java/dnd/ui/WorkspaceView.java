@@ -101,7 +101,13 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         newButton(newWorld, TreeNode.KIND_WORLDMAP, "New world map: paint land, sea and biomes, then add mountains, forests, towns and labels");
         newButton(newEncounter, TreeNode.KIND_ENCOUNTER, "New encounter: pick creatures and see how hard the fight is for your party");
         newButton(newFolder, "folder", "New folder: to keep related items together");
-        FlowPane treeButtons = new FlowPane(4, 4, newBoard, newSession, newQuest, newWorld, newMap, newEncounter, newCard, newSpell, newItem, newFolder);
+        // one row per group, with a faint line between the groups: notes, maps and fights, then reference cards and the folder
+        VBox treeButtons = new VBox(3,
+                new HBox(4, newBoard, newSession, newQuest),
+                treeDivider(),
+                new HBox(4, newWorld, newMap, newEncounter),
+                treeDivider(),
+                new HBox(4, newCard, newSpell, newItem, new Separator(javafx.geometry.Orientation.VERTICAL), newFolder));
         tree.setCellFactory(v -> createTreeCell(true));
         tree.setOnMouseClicked(e -> {
             if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2) {
@@ -865,7 +871,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         colour.getItems().addAll(new SeparatorMenuItem(), defaultColour);
         MenuItem del = new MenuItem("Delete");
         del.setOnAction(e -> deleteSelected());
-        ContextMenu m = new ContextMenu(nb, nse, nq, nw, nm, ne, nc, nsp, nmi, nf, new SeparatorMenuItem(), up, down, dup, rn, colour, del);
+        ContextMenu m = new ContextMenu(nb, nse, nq, new SeparatorMenuItem(), nw, nm, ne, new SeparatorMenuItem(), nc, nsp, nmi, new SeparatorMenuItem(), nf, new SeparatorMenuItem(), up, down, dup, rn, colour, del);
         m.setOnShowing(e -> {
             TreeItem<TreeNode> it = tree.getSelectionModel().getSelectedItem();
             boolean isRoot = it == null || it.getValue() == store.project.root;
@@ -894,6 +900,13 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             case 1 -> "-fx-border-color: #2563eb; -fx-border-width: 0 0 2 0;";
             default -> "-fx-background-color: rgba(37,99,235,0.22);";
         };
+    }
+
+    /** A thin, faint line that breaks the "new" buttons into groups. */
+    private static Separator treeDivider() {
+        Separator sep = new Separator();
+        sep.setOpacity(0.5);
+        return sep;
     }
 
     /** Turns a "+ Something" button into a small icon button (the item's icon with a plus) with a tooltip. */

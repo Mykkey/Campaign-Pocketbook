@@ -835,6 +835,31 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         return cell;
     }
 
+    private TreeNode selectedNode() {
+        TreeItem<TreeNode> it = tree.getSelectionModel().getSelectedItem();
+        return it == null ? null : it.getValue();
+    }
+
+    /** Saves the selected battlemap, world map or whiteboard as a PNG picture. */
+    private void exportSelectedImage() {
+        TreeNode n = selectedNode();
+        if (n == null || n.folder) return;
+        javafx.stage.Window owner = getScene().getWindow();
+        if (n.isBattleMap()) {
+            dnd.model.BattleMap m = store.battleMap(n.id);
+            if (m != null) BattleExportDialog.show(owner, m, store);
+        } else if (n.isWorldMap()) {
+            dnd.model.WorldMap m = store.worldMap(n.id);
+            if (m != null) WorldExportDialog.show(owner, m, store);
+        } else if (n.isBoard()) {
+            openItem(n.id);
+            Platform.runLater(() -> {
+                BoardView v = viewFor(n.id);
+                if (v != null) v.exportImage();
+            });
+        }
+    }
+
     private ContextMenu buildTreeMenu() {
         MenuItem nb = new MenuItem("New whiteboard");
         nb.setOnAction(e -> newBoard(selectedFolder()));
@@ -856,6 +881,18 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         ne.setOnAction(e -> newEncounter(selectedFolder()));
         MenuItem dup = new MenuItem("Duplicate");
         dup.setOnAction(e -> duplicateSelectedCard());
+        MenuItem exportMd = new MenuItem("Export as Markdown...");
+        exportMd.setOnAction(e -> {
+            TreeNode n = selectedNode();
+            if (ItemExport.isTextItem(n)) ItemExport.saveMarkdown(getScene().getWindow(), store, n);
+        });
+        MenuItem printItem = new MenuItem("Print...");
+        printItem.setOnAction(e -> {
+            TreeNode n = selectedNode();
+            if (ItemExport.isTextItem(n)) ItemExport.print(getScene().getWindow(), store, n);
+        });
+        MenuItem exportImage = new MenuItem("Export image...");
+        exportImage.setOnAction(e -> exportSelectedImage());
         MenuItem nf = new MenuItem("New folder");
         nf.setOnAction(e -> newFolder(selectedFolder()));
         MenuItem up = new MenuItem("Move up   (Alt+Up)");
@@ -877,11 +914,15 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         colour.getItems().addAll(new SeparatorMenuItem(), defaultColour);
         MenuItem del = new MenuItem("Delete");
         del.setOnAction(e -> deleteSelected());
-        ContextMenu m = new ContextMenu(nb, nse, nq, new SeparatorMenuItem(), nw, nm, ne, new SeparatorMenuItem(), nc, nsp, nmi, new SeparatorMenuItem(), nf, new SeparatorMenuItem(), up, down, dup, rn, colour, del);
+        ContextMenu m = new ContextMenu(nb, nse, nq, new SeparatorMenuItem(), nw, nm, ne, new SeparatorMenuItem(), nc, nsp, nmi, new SeparatorMenuItem(), nf, new SeparatorMenuItem(), up, down, dup, new SeparatorMenuItem(), exportMd, printItem, exportImage, new SeparatorMenuItem(), rn, colour, del);
         m.setOnShowing(e -> {
             TreeItem<TreeNode> it = tree.getSelectionModel().getSelectedItem();
             boolean isRoot = it == null || it.getValue() == store.project.root;
             dup.setDisable(it == null || !(it.getValue().isCard() || it.getValue().isEncounter() || it.getValue().isSpell() || it.getValue().isMagicItem() || it.getValue().isWorldMap()));
+            TreeNode sel = it == null ? null : it.getValue();
+            exportMd.setDisable(!ItemExport.isTextItem(sel));
+            printItem.setDisable(!ItemExport.isTextItem(sel));
+            exportImage.setDisable(sel == null || sel.folder || !(sel.isBattleMap() || sel.isWorldMap() || sel.isBoard()));
             rn.setDisable(it == null);
             up.setDisable(isRoot || !canMove(it, -1));
             down.setDisable(isRoot || !canMove(it, 1));

@@ -181,6 +181,16 @@ Press **Library...** in the top bar to browse the 5e SRD monsters and spells. Th
 
 The **Rules...** button in the top bar (or **Ctrl+R**, or the page button on the battle screen) opens a small window with the rules a DM looks up most, written in plain words as a memory aid: all the conditions, concentration, death saves, grappling, cover, light and vision, travel pace, resting, falling, suffocation and more. Search it, or pick from the list. In a battle, **hover a condition** on a creature to read its rule, and click it to open the full entry.
 
+## Exporting and printing
+
+Right-click an item in the project tree:
+
+- **Export as Markdown...** (character and monster cards, spells, magic items, quests, session logs and encounters) saves a plain `.md` file you can open in any notes app, wiki or word processor: stat blocks as a table of abilities with traits and actions, quests as a checklist, sessions with their recap and next steps, encounters with their treasure.
+- **Print...** (the same kinds of item) opens your system's print dialog and prints the item as a clean page in the light colours, whatever mode the app is in. A long stat block continues on more pages. To get a PDF, choose a PDF printer in the print dialog ("Microsoft Print to PDF" on Windows, "Save as PDF" on macOS and most Linux systems).
+- **Export image...** saves a **battlemap** (the DM's version or the players' version, 1024 to 8192 pixels wide, with or without the grid), a **world map** (see World maps) or a **whiteboard** (everything on it, at up to twice the size) as a PNG. Large pictures are drawn in strips with a progress window, so they do not use much memory.
+
+To print a map or a whiteboard, export the picture and print that.
+
 ## Loot generator
 Press **Loot...** in the top bar (or **Ctrl+L**) for random treasure. Pick a **tier** (the challenge rating of what the party beat: 0-4, 5-10, 11-16, 17+) and either **a creature's pockets** (coins and the odd keepsake; set how many creatures and the coins are added together) or **a treasure hoard** (coins, gems, art objects, magic items of rarities that suit the tier, and a few curios). It changes as you change the options, **Roll** rolls again, **Copy** copies it and **Add to board** puts it on the open whiteboard as a text note. The amounts are rough guidance in the spirit of the usual treasure tiers, not a published table, so change anything you like.
 

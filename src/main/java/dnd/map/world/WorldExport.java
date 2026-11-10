@@ -36,7 +36,7 @@ public final class WorldExport {
     }
 
     /** One export in progress. */
-    public static final class Job implements AutoCloseable {
+    public static final class Job implements dnd.map.BandJob {
         private final WorldMap map;
         private final AssetLibrary lib;
         private final Options options;
@@ -56,15 +56,18 @@ public final class WorldExport {
             this.png = new PngStream(out, width, height);
         }
 
+        @Override
         public int width() {
             return width;
         }
 
+        @Override
         public int height() {
             return height;
         }
 
         /** How far along the picture is, 0 to 1. */
+        @Override
         public double progress() {
             return (double) done / height;
         }
@@ -74,6 +77,7 @@ public final class WorldExport {
         }
 
         /** Draws and writes the next band; returns true once the whole picture has been written. */
+        @Override
         public boolean step() throws IOException {
             if (finished()) return true;
             int rows = Math.min(band, height - done);

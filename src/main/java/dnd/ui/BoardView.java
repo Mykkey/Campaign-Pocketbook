@@ -1554,6 +1554,62 @@ public class BoardView extends Pane implements ItemView {
         });
     }
 
+    // ---- saving the whole board as a picture
+
+    /** The area covering every object on the board plus a margin, as {x, y, width, height}, or null if the board is empty. */
+    double[] contentBounds() {
+        if (board.objects.isEmpty()) return null;
+        double l = Double.MAX_VALUE, t = Double.MAX_VALUE, r = -Double.MAX_VALUE, b = -Double.MAX_VALUE;
+        for (BoardObject o : board.objects) {
+            l = Math.min(l, o.left());
+            t = Math.min(t, o.top());
+            r = Math.max(r, o.right());
+            b = Math.max(b, o.bottom());
+        }
+        double pad = 40;
+        return new double[]{l - pad, t - pad, r - l + 2 * pad, b - t + 2 * pad};
+    }
+
+    /** Draws every object of the board (no selection, no grid dots) into a picture, as large as sensible (at most 2x, and not too many pixels). */
+    Image renderAll() {
+        double[] area = contentBounds();
+        if (area == null) return null;
+        double scale = Math.min(2.0, Math.min(8000 / Math.max(area[2], area[3]), Math.sqrt(25_000_000 / (area[2] * area[3]))));
+        int w = Math.max(1, (int) Math.ceil(area[2] * scale)), h = Math.max(1, (int) Math.ceil(area[3] * scale));
+        Canvas c = new Canvas(w, h);
+        GraphicsContext g = c.getGraphicsContext2D();
+        g.setFill(Theme.isDark() ? Color.web("#1c1e22") : Color.web("#fbfaf6")); // the same paper as on screen, so the ink stays readable
+        g.fillRect(0, 0, w, h);
+        g.setTransform(scale, 0, 0, scale, -area[0] * scale, -area[1] * scale);
+        g.setLineCap(StrokeLineCap.ROUND);
+        g.setLineJoin(StrokeLineJoin.ROUND);
+        for (BoardObject o : board.objects) drawObject(g, o);
+        javafx.scene.image.WritableImage out = new javafx.scene.image.WritableImage(w, h);
+        c.snapshot(null, out);
+        return out;
+    }
+
+    /** Asks where to save and writes the whole board as a PNG picture. */
+    public void exportImage() {
+        Image img = renderAll();
+        if (img == null) {
+            error("The board is empty, so there is nothing to save.");
+            return;
+        }
+        FileChooser fc = new FileChooser();
+        fc.setTitle("Save the board as a picture");
+        fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG picture", "*.png"));
+        fc.setInitialFileName(dnd.export.MarkdownExport.fileName(board.name, ".png"));
+        File f = fc.showSaveDialog(getScene().getWindow());
+        if (f == null) return;
+        if (!f.getName().toLowerCase().endsWith(".png")) f = new File(f.getParentFile(), f.getName() + ".png");
+        try {
+            ImageIO.write(javafx.embed.swing.SwingFXUtils.fromFXImage(img, null), "png", f);
+        } catch (IOException ex) {
+            error("Could not save the picture: " + ex.getMessage());
+        }
+    }
+
     // ---- images
 
     public void addImageFromChooser() {

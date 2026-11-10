@@ -73,7 +73,7 @@ final class ItemPreview {
         return n != null ? n : p;
     }
 
-    private static Node content(ProjectStore store, String id) {
+    static Node content(ProjectStore store, String id) {
         TreeNode node = id == null ? null : store.project.root.find(id);
         if (node == null || node.folder) return plain("(deleted item)", List.of());
         if (node.isCard()) {

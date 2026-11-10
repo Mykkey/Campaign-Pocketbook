@@ -19,7 +19,7 @@ import java.util.stream.Stream;
 
 /**
  * The DM's own shelf of creatures that can be dropped into any encounter or battle without first creating a card in
- * the project. It lives in one folder shared by all projects ({@code ~/DnDCampaignNotes/Common Enemies}), one
+ * the project. It lives in one folder shared by all projects ({@code ~/CampaignPocketbook/Common Enemies}), one
  * {@code .card} file per creature. The first time it is used it is filled with the bundled starter creatures
  * (goblin, orc, wolf...); after that the DM can edit their stats, delete them, and add homebrew creatures.
  */

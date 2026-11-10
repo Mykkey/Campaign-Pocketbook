@@ -16,7 +16,7 @@ import java.util.List;
 
 /**
  * Monsters and spells imported from the SRD JSON files, kept in one folder shared by all projects
- * ({@code ~/DnDCampaignNotes/SRD Library}). Importing a file replaces what was there for that kind.
+ * ({@code ~/CampaignPocketbook/SRD Library}). Importing a file replaces what was there for that kind.
  */
 public final class SrdLibrary {
     private static SrdLibrary shared;

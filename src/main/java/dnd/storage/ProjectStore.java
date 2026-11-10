@@ -78,7 +78,7 @@ public final class ProjectStore {
     // ---------------------------------------------------------------- project management
 
     public static Path baseDir() {
-        return Paths.get(System.getProperty("user.home"), "DnDCampaignNotes");
+        return dnd.util.AppHome.dir();
     }
 
     public static List<String> listProjects(Path base) {

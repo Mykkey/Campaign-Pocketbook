@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 
 /**
  * Automatic safety copies of a campaign: when a project is closed (if anything was saved in the session) and just
- * before something is deleted, the whole project is zipped into {@code ~/DnDCampaignNotes/.backups/<project>/}. The
+ * before something is deleted, the whole project is zipped into {@code ~/CampaignPocketbook/.backups/<project>/}. The
  * newest few are kept. A copy can be brought back with Import backup..., which always makes a new project.
  */
 public final class ProjectBackups {

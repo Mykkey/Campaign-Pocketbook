@@ -3,14 +3,13 @@ package dnd.util;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
 /**
- * Writes problems to {@code ~/DnDCampaignNotes/app.log} (kept to about 1 MB, plus the previous file) so there is
+ * Writes problems to {@code ~/CampaignPocketbook/app.log} (kept to about 1 MB, plus the previous file) so there is
  * something to look at, or send, when the app misbehaves. If the file cannot be written it falls back to the console.
  */
 public final class Log {
@@ -23,7 +22,7 @@ public final class Log {
         Logger l = Logger.getLogger("dnd");
         l.setUseParentHandlers(true);
         try {
-            Path dir = Paths.get(System.getProperty("user.home"), "DnDCampaignNotes");
+            Path dir = AppHome.dir();
             Files.createDirectories(dir);
             FileHandler h = new FileHandler(dir.resolve("app.log").toString(), 1_000_000, 2, true);
             h.setFormatter(new SimpleFormatter());

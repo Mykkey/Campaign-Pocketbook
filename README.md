@@ -9,10 +9,10 @@ Built with Java and JavaFX. Runs on Windows, macOS and Linux.
 ### 1. Get the app
 **Recommended: clone it with [Git](https://git-scm.com/)**, so you can update with one click later:
 ```
-git clone https://github.com/Mykkey/DnD-Campaign-Notes.git
+git clone https://github.com/Mykkey/Campaign-Pocketbook.git
 ```
 
-Don't want Git? You can [download the ZIP](https://github.com/Mykkey/DnD-Campaign-Notes/archive/refs/heads/main.zip) and unzip it anywhere instead, but to update you'll have to download and unzip it again.
+Don't want Git? You can [download the ZIP](https://github.com/Mykkey/Campaign-Pocketbook/archive/refs/heads/main.zip) and unzip it anywhere instead, but to update you'll have to download and unzip it again.
 
 ### 2. Install the two prerequisites (one time only)
 | What | Version | Get it |
@@ -23,7 +23,7 @@ Don't want Git? You can [download the ZIP](https://github.com/Mykkey/DnD-Campaig
 Make sure `java -version` and `mvn -v` both work in a new terminal. (JavaFX is downloaded automatically by Maven, so you don't install it separately.)
 
 ### 3. Start it
-- **Windows:** double-click **`DnDCampaignNotes.bat`**. Tip: right-click it and choose *Send to > Desktop (create shortcut)* for a desktop icon.
+- **Windows:** double-click **`CampaignPocketbook.bat`**. Tip: right-click it and choose *Send to > Desktop (create shortcut)* for a desktop icon.
 - **Any OS:** open a terminal in the project folder and run:
   ```
   mvn javafx:run
@@ -37,7 +37,7 @@ If you cloned with Git, double-click **`update.bat`** (or run `git pull`) to get
 The app also checks GitHub when it starts (only needs an internet connection; it stays silent if offline). If a newer version number is published, a blue banner appears at the top with an **Update now** button (git copies) or a link to the download page (ZIP copies).
 
 ## Where your data lives
-Projects are saved as plain files in `~/DnDCampaignNotes/<project name>/` (`project.json`, then a folder per kind of item: `boards/`, `maps/`, `cards/`, `spells/`, `items/`, `quests/`, `sessions/`, `encounters/`, plus `images/` and `assets/`). Everything autosaves. If something goes wrong the app writes the details to `~/DnDCampaignNotes/app.log` (about 1 MB, plus the previous file); send that file along when reporting a problem. To back up or move a campaign, copy its folder, or use **Export backup...** on the project list (see "Backing up and sharing a campaign" below).
+Projects are saved as plain files in `~/CampaignPocketbook/<project name>/` (`project.json`, then a folder per kind of item: `boards/`, `maps/`, `cards/`, `spells/`, `items/`, `quests/`, `sessions/`, `encounters/`, plus `images/` and `assets/`). Everything autosaves. (The app used to be called D&D Campaign Notes and kept its files in `~/DnDCampaignNotes`; the first time the new version starts it moves that folder to the new name, so nothing is lost.) If something goes wrong the app writes the details to `~/CampaignPocketbook/app.log` (about 1 MB, plus the previous file); send that file along when reporting a problem. To back up or move a campaign, copy its folder, or use **Export backup...** on the project list (see "Backing up and sharing a campaign" below).
 
 ## Using it
 The toolbars (whiteboard, battlemap and the top bar) use small icons to stay uncluttered. **Hover any icon** to see its name, what it does and its shortcut key; the tool icons keep their number keys (1 to 0), and switches such as Name hints, Link previews, Grid, Snap and Fog show as pressed (highlighted) when they are on.
@@ -206,7 +206,7 @@ When the party talks to someone you had not planned, press **NPC...** in the top
 ## Backing up and sharing a campaign
 On the first screen (the project list), select a campaign and press **Export backup...** to save the whole thing (whiteboards, maps, cards, spells, items, quests, sessions, encounters, pictures and imported map pieces) as one `.zip` file. Press **Import backup...** and choose such a file to bring a campaign in, on the same computer after a mishap or on another one. An import always becomes a **new project** (a name that is already taken gets "(2)" and so on), so nothing you already have is ever overwritten, and a file that is not a campaign backup or tries to write outside its own folder is refused. The SRD library and your other settings are shared by all campaigns and are not part of a backup.
 
-**Automatic safety copies:** you do not have to remember to back up. When you close a campaign (or the app) after changing it, and just before you delete anything, the app saves a backup zip of the whole campaign into `~/DnDCampaignNotes/.backups/<campaign name>/` and keeps the newest five. To go back, press **Import backup...** on the project list (it opens in that folder) and pick one; it comes back as a new campaign, so nothing is overwritten. If an item's file is ever damaged, the app tells you which file, leaves it untouched, and the rest of the campaign still opens.
+**Automatic safety copies:** you do not have to remember to back up. When you close a campaign (or the app) after changing it, and just before you delete anything, the app saves a backup zip of the whole campaign into `~/CampaignPocketbook/.backups/<campaign name>/` and keeps the newest five. To go back, press **Import backup...** on the project list (it opens in that folder) and pick one; it comes back as a new campaign, so nothing is overwritten. If an item's file is ever damaged, the app tells you which file, leaves it untouched, and the rest of the campaign still opens.
 
 ## Organising your project
 - **Icons:** the project tree and the tabs show a small drawn icon for each kind of item: a folder (it opens when expanded), a whiteboard, a battlemap, a card, a spell (book with a sparkle), a magic item (gem), a quest (banner), a session (calendar page) and an encounter (crossed swords). Folders show how many items are inside them, for example `NPCs (7)`.

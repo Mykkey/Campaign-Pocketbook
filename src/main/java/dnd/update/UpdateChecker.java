@@ -16,8 +16,8 @@ import java.util.regex.Pattern;
  * Every failure (offline, rate limited, odd response) just means "no update info".
  */
 public final class UpdateChecker {
-    public static final String REPO_URL = "https://github.com/Mykkey/DnD-Campaign-Notes";
-    static final String POM_URL = "https://raw.githubusercontent.com/Mykkey/DnD-Campaign-Notes/main/pom.xml";
+    public static final String REPO_URL = "https://github.com/Mykkey/Campaign-Pocketbook";
+    static final String POM_URL = "https://raw.githubusercontent.com/Mykkey/Campaign-Pocketbook/main/pom.xml";
     private static final Pattern POM_VERSION =
             Pattern.compile("<artifactId>dnd-campaign-notes</artifactId>\\s*<version>([^<]+)</version>");
 

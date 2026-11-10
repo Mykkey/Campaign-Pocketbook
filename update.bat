@@ -13,7 +13,7 @@ if errorlevel 1 (
 if not exist ".git" (
     echo This copy was downloaded as a ZIP, so it can't update itself.
     echo To get automatic updates, install Git and run this instead:
-    echo     git clone https://github.com/Mykkey/DnD-Campaign-Notes.git
+    echo     git clone https://github.com/Mykkey/Campaign-Pocketbook.git
     echo Then use update.bat inside that new folder from now on.
     pause
     exit /b 1
@@ -29,5 +29,5 @@ if errorlevel 1 (
 )
 
 echo.
-echo Done. Launch the app with DnDCampaignNotes.bat - it rebuilds itself on the first start.
+echo Done. Launch the app with CampaignPocketbook.bat - it rebuilds itself on the first start.
 pause

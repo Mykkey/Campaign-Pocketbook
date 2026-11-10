@@ -888,6 +888,23 @@ public final class ProjectStore {
         return true;
     }
 
+    /**
+     * Moves an item one place up (delta -1) or down (delta 1) among the items in its folder.
+     *
+     * @return false if it is already first or last, or is the root
+     */
+    public boolean moveWithinParent(String nodeId, int delta) {
+        TreeNode node = project.root.find(nodeId);
+        TreeNode parent = node == null ? null : project.root.parentOf(nodeId);
+        if (parent == null) return false;
+        int i = parent.children.indexOf(node), j = i + delta;
+        if (j < 0 || j >= parent.children.size()) return false;
+        parent.children.remove(i);
+        parent.children.add(j, node);
+        markProjectDirty();
+        return true;
+    }
+
     // ---------------------------------------------------------------- images
 
     public Path imagePath(String name) {

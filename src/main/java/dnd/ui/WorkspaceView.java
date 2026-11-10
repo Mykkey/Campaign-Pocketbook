@@ -101,6 +101,11 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         });
         tree.setContextMenu(buildTreeMenu());
         tree.setOnKeyPressed(e -> {
+            if (e.isAltDown() && (e.getCode() == KeyCode.UP || e.getCode() == KeyCode.DOWN)) {
+                moveSelected(e.getCode() == KeyCode.UP ? -1 : 1);
+                e.consume();
+                return;
+            }
             if (e.getCode() == KeyCode.F2) {
                 renameSelected();
                 e.consume();
@@ -818,6 +823,10 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         dup.setOnAction(e -> duplicateSelectedCard());
         MenuItem nf = new MenuItem("New folder");
         nf.setOnAction(e -> newFolder(selectedFolder()));
+        MenuItem up = new MenuItem("Move up   (Alt+Up)");
+        up.setOnAction(e -> moveSelected(-1));
+        MenuItem down = new MenuItem("Move down   (Alt+Down)");
+        down.setOnAction(e -> moveSelected(1));
         MenuItem rn = new MenuItem("Rename   (F2)");
         rn.setOnAction(e -> renameSelected());
         Menu colour = new Menu("Set colour");
@@ -833,16 +842,35 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         colour.getItems().addAll(new SeparatorMenuItem(), defaultColour);
         MenuItem del = new MenuItem("Delete");
         del.setOnAction(e -> deleteSelected());
-        ContextMenu m = new ContextMenu(nb, nm, nc, nsp, nmi, nq, nse, nw, ne, nf, new SeparatorMenuItem(), dup, rn, colour, del);
+        ContextMenu m = new ContextMenu(nb, nm, nc, nsp, nmi, nq, nse, nw, ne, nf, new SeparatorMenuItem(), up, down, dup, rn, colour, del);
         m.setOnShowing(e -> {
             TreeItem<TreeNode> it = tree.getSelectionModel().getSelectedItem();
             boolean isRoot = it == null || it.getValue() == store.project.root;
             dup.setDisable(it == null || !(it.getValue().isCard() || it.getValue().isEncounter() || it.getValue().isSpell() || it.getValue().isMagicItem() || it.getValue().isWorldMap()));
             rn.setDisable(it == null);
+            up.setDisable(isRoot || !canMove(it, -1));
+            down.setDisable(isRoot || !canMove(it, 1));
             colour.setDisable(it == null);
             del.setDisable(isRoot);
         });
         return m;
+    }
+
+    private boolean canMove(TreeItem<TreeNode> it, int delta) {
+        TreeItem<TreeNode> parent = it == null ? null : it.getParent();
+        if (parent == null) return false;
+        int j = parent.getChildren().indexOf(it) + delta;
+        return j >= 0 && j < parent.getChildren().size();
+    }
+
+    /** Moves the selected item up or down among its neighbours in the same folder, and keeps it selected. */
+    private void moveSelected(int delta) {
+        TreeItem<TreeNode> it = tree.getSelectionModel().getSelectedItem();
+        if (it == null || it.getValue() == store.project.root) return;
+        String id = it.getValue().id;
+        if (!store.moveWithinParent(id, delta)) return;
+        refreshTree();
+        selectInTree(id);
     }
 
     /** The folder new items should go into: the selected folder, the selected board's parent, or the root. */

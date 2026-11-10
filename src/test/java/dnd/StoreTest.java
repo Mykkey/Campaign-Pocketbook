@@ -106,4 +106,24 @@ class StoreTest {
         h.forget("b");
         assertEquals(List.of("a", "d"), h.trail(5));
     }
+
+    @Test
+    void itemsCanBeMovedUpAndDownWithinTheirFolder(@TempDir Path tmp) throws Exception {
+        ProjectStore store = ProjectStore.create(tmp, "Camp");
+        dnd.model.TreeNode folder = store.createFolder(store.project.root, "Places");
+        dnd.model.Board a = store.createBoard(folder, "A");
+        dnd.model.Board b = store.createBoard(folder, "B");
+        dnd.model.Board c = store.createBoard(folder, "C");
+        assertFalse(store.moveWithinParent(a.id, -1), "already first");
+        assertFalse(store.moveWithinParent(c.id, 1), "already last");
+        assertTrue(store.moveWithinParent(c.id, -1));
+        assertEquals(java.util.List.of(a.id, c.id, b.id), folder.children.stream().map(n -> n.id).toList());
+        assertTrue(store.moveWithinParent(a.id, 1));
+        assertEquals(java.util.List.of(c.id, a.id, b.id), folder.children.stream().map(n -> n.id).toList());
+        assertFalse(store.moveWithinParent(store.project.root.id, 1), "the root cannot move");
+        store.flush();
+        dnd.model.TreeNode back = ProjectStore.open(tmp, "Camp").project.root.find(folder.id);
+        assertEquals(java.util.List.of(c.id, a.id, b.id), back.children.stream().map(n -> n.id).toList(), "the order is saved");
+    }
+
 }

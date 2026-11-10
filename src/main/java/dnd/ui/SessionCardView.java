@@ -37,12 +37,12 @@ public class SessionCardView extends VBox {
         getChildren().clear();
         Label title = new Label(s.label());
         title.setWrapText(true);
-        title.setStyle("-fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: -t-text;");
+        title.setStyle("-fx-font-size: 1.417em; -fx-font-weight: bold; -fx-text-fill: -t-text;");
         getChildren().add(title);
         String dates = datesText(s);
         if (!dates.isEmpty()) {
             Label d = new Label(dates);
-            d.setStyle("-fx-font-size: 11px; -fx-text-fill: -t-text3;");
+            d.setStyle("-fx-font-size: 0.917em; -fx-text-fill: -t-text3;");
             getChildren().add(d);
         }
         block("Last time on...", s.recap);
@@ -63,7 +63,7 @@ public class SessionCardView extends VBox {
     private void block(String head, String text) {
         if (text == null || text.isBlank()) return;
         Label h = new Label(head);
-        h.setStyle("-fx-font-size: 11px; -fx-text-fill: -t-text3; -fx-padding: 4 0 0 0;");
+        h.setStyle("-fx-font-size: 0.917em; -fx-text-fill: -t-text3; -fx-padding: 4 0 0 0;");
         String shown = text.trim();
         if (shown.length() > 600) shown = shown.substring(0, 597) + "...";
         Label t = new Label(shown);

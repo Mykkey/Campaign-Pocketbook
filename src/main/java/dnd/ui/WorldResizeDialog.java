@@ -144,7 +144,7 @@ final class WorldResizeDialog {
         Label l = new Label(text);
         l.setWrapText(true);
         l.setMaxWidth(420);
-        l.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+        l.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
         return l;
     }
 

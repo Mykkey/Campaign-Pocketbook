@@ -68,7 +68,7 @@ public class AssetPanel extends VBox {
         Label hint = new Label("Click a piece, then click the map to place it. Esc to stop.");
         hint.setWrapText(true);
         hint.setMinHeight(Region.USE_PREF_SIZE);
-        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
 
         getChildren().addAll(title, search, category, scroll, empty, importBtn, hint);
 
@@ -134,7 +134,7 @@ public class AssetPanel extends VBox {
             });
         }
         Label name = new Label(a.name);
-        name.setStyle("-fx-font-size: 10px;");
+        name.setStyle("-fx-font-size: 0.833em;");
         name.setMaxWidth(70);
         VBox box = new VBox(2, iv, name);
         box.setAlignment(Pos.CENTER);

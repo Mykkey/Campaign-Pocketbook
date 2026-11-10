@@ -29,11 +29,11 @@ final class NewWorldMapDialog {
         ComboBox<WorldStyle> style = new ComboBox<>(FXCollections.observableArrayList(WorldStyle.values()));
         style.setValue(WorldStyle.FANTASY_COLOUR);
         Label styleNote = new Label(WorldStyle.FANTASY_COLOUR.description);
-        styleNote.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+        styleNote.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
         styleNote.setWrapText(true);
         style.valueProperty().addListener((o, a, n) -> styleNote.setText(n == null ? "" : n.description));
         Label hint = new Label("The scale sets how far the map is across, for the scale bar and travel times. You can change the art style later.");
-        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
         hint.setWrapText(true);
 
         GridPane grid = new GridPane();

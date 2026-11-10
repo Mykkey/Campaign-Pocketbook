@@ -25,7 +25,7 @@ public class MagicItemEditor extends BorderPane implements ItemView {
         this.store = store;
 
         TextField name = new TextField(item.name);
-        name.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
+        name.setStyle("-fx-font-size: 1.500em; -fx-font-weight: bold;");
         name.textProperty().addListener((o, a, n) -> {
             if (n.isBlank()) return;
             item.name = n.trim();

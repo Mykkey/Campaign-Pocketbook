@@ -122,14 +122,14 @@ public final class NpcDialog {
 
         Button roll = new Button("Roll");
         roll.setDefaultButton(true);
-        roll.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+        roll.setStyle("-fx-font-weight: bold; -fx-font-size: 1.167em;");
         roll.setMaxWidth(Double.MAX_VALUE);
         Button edit = new Button("Edit professions...");
         edit.setMaxWidth(Double.MAX_VALUE);
         edit.setTooltip(new Tooltip("Add your own professions (and what such a person knows) to the list"));
         Label hint = new Label("Anything left on Random is rolled. Pins are kept when you re-roll one detail.");
         hint.setWrapText(true);
-        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
         VBox left = new VBox(10, form, roll, edit, hint);
         left.setPadding(new Insets(14));
         left.setPrefWidth(270);
@@ -167,12 +167,12 @@ public final class NpcDialog {
                 return;
             }
             Label name = new Label(n.name);
-            name.setStyle("-fx-font-size: 22px; -fx-font-weight: bold;");
+            name.setStyle("-fx-font-size: 1.833em; -fx-font-weight: bold;");
             name.setWrapText(true);
             HBox nameRow = new HBox(8, name, reroll("Re-roll the name", () -> gen[0].reroll(n, Detail.NAME, spec.get()), rows));
             nameRow.setAlignment(Pos.CENTER_LEFT);
             Label summary = new Label(n.summary());
-            summary.setStyle("-fx-text-fill: -t-text2; -fx-font-size: 13px;");
+            summary.setStyle("-fx-text-fill: -t-text2; -fx-font-size: 1.083em;");
             rows.getChildren().addAll(nameRow, summary);
             addRow(rows, "Job", n.profession.name() + "  (" + n.profession.category() + ")", Detail.PROFESSION, gen, spec, current);
             addRow(rows, "Age", n.ageGroup.label + ", " + n.age, Detail.AGE, gen, spec, current);
@@ -220,7 +220,7 @@ public final class NpcDialog {
         Stage stage = new Stage();
         stage.setTitle("NPC Generator");
         if (owner != null) stage.initOwner(owner);
-        Scene scene = new Scene(root, 860, 640);
+        Scene scene = new Scene(root, UiScale.px(860), UiScale.px(640));
         scene.setOnKeyPressed(e -> {
             if (dnd.keys.Shortcuts.matches(e, "dialog.close")) stage.close();
         });

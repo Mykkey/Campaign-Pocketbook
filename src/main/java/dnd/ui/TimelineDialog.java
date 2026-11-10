@@ -42,7 +42,7 @@ public final class TimelineDialog {
             String gap = Session.gapText(before, s);
             if (gap != null) {
                 Label g = new Label("      " + gap);
-                g.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px; -fx-padding: 2 0 2 0;");
+                g.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em; -fx-padding: 2 0 2 0;");
                 list.getChildren().add(g);
             }
             list.getChildren().add(entry(s, openItem));
@@ -53,7 +53,7 @@ public final class TimelineDialog {
         Stage stage = new Stage();
         stage.setTitle("Timeline");
         if (owner != null) stage.initOwner(owner);
-        Scene scene = new Scene(scroll, 640, 640);
+        Scene scene = new Scene(scroll, UiScale.px(640), UiScale.px(640));
         scene.setOnKeyPressed(e -> {
             if (dnd.keys.Shortcuts.matches(e, "dialog.close")) stage.close();
         });
@@ -71,12 +71,12 @@ public final class TimelineDialog {
         VBox dotCol = new VBox(dot);
         dotCol.setPadding(new Insets(4, 10, 0, 0));
         Label title = new Label(s.label());
-        title.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: -t-text;");
+        title.setStyle("-fx-font-weight: bold; -fx-font-size: 1.167em; -fx-text-fill: -t-text;");
         VBox text = new VBox(2, title);
         String dates = SessionCardView.datesText(s);
         if (!dates.isEmpty()) {
             Label d = new Label(dates);
-            d.setStyle("-fx-font-size: 11px; -fx-text-fill: -t-text3;");
+            d.setStyle("-fx-font-size: 0.917em; -fx-text-fill: -t-text3;");
             text.getChildren().add(d);
         }
         String body = s.recap != null && !s.recap.isBlank() ? s.recap : s.summary;

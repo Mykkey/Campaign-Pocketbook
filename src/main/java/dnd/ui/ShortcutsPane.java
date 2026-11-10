@@ -42,7 +42,7 @@ final class ShortcutsPane extends VBox {
         Label intro = new Label("Click a key, then press the keys you want instead (Esc cancels). Changes work at once; the hints on buttons show "
                 + "the new keys the next time you open a tab. The same key can be used for different things in different editors.");
         intro.setWrapText(true);
-        intro.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+        intro.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
         message.setWrapText(true);
         Button resetAll = new Button("Reset all shortcuts to the defaults");
         resetAll.setOnAction(e -> {
@@ -80,7 +80,7 @@ final class ShortcutsPane extends VBox {
             for (Action a : Shortcuts.all()) if (a.category().equals(category) && matches(a, q)) actions.add(a);
             if (actions.isEmpty()) continue;
             Label h = new Label(category.toUpperCase());
-            h.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: -t-heading; -fx-padding: 10 0 2 0;");
+            h.setStyle("-fx-font-size: 0.917em; -fx-font-weight: bold; -fx-text-fill: -t-heading; -fx-padding: 10 0 2 0;");
             rows.getChildren().add(h);
             GridPane grid = new GridPane();
             grid.setHgap(10);
@@ -98,7 +98,7 @@ final class ShortcutsPane extends VBox {
                 Label where = new Label(a.context().label);
                 where.setMinWidth(95);
                 where.setMaxWidth(95);
-                where.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+                where.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
                 grid.addRow(r++, name, where, keysOf(a), resetButton(a));
             }
             rows.getChildren().add(grid);

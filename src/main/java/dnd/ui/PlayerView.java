@@ -106,7 +106,7 @@ public class PlayerView extends Pane {
             return;
         }
         Label round = new Label("Round " + b.round);
-        round.setStyle("-fx-text-fill: #e5e7eb; -fx-font-weight: bold; -fx-font-size: 15px; -fx-padding: 0 8 0 4;");
+        round.setStyle("-fx-text-fill: #e5e7eb; -fx-font-weight: bold; -fx-font-size: 1.250em; -fx-padding: 0 8 0 4;");
         strip.getChildren().add(round);
         for (BattleEngine.Slot s : BattleEngine.slots(b)) {
             if (s.defeated()) continue;
@@ -116,7 +116,7 @@ public class PlayerView extends Pane {
             boolean current = b.turnId != null && b.turnId.equals(s.key);
             String name = seen.size() > 1 ? seen.get(0).name.replaceAll("\\s+\\d+$", "") + " x" + seen.size() : seen.get(0).name;
             Label chip = new Label(name);
-            chip.setStyle("-fx-padding: 4 12 4 12; -fx-background-radius: 14; -fx-font-size: 15px; -fx-font-weight: bold;"
+            chip.setStyle("-fx-padding: 4 12 4 12; -fx-background-radius: 14; -fx-font-size: 1.250em; -fx-font-weight: bold;"
                     + (current ? " -fx-background-color: #fbbf24; -fx-text-fill: #1f1300;" : " -fx-background-color: #374151; -fx-text-fill: #f3f4f6;"));
             strip.getChildren().add(chip);
         }

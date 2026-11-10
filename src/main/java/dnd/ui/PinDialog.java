@@ -60,7 +60,7 @@ final class PinDialog {
         });
 
         Label hint = new Label("Pins are for you only: the players never see them.");
-        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
         VBox box = new VBox(8, text, new Label("Link to"), link, open, hint);
         box.setPadding(new Insets(6));
         box.setPrefWidth(420);

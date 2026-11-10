@@ -109,7 +109,7 @@ public class NameGeneratorDialog {
         HBox buttons = new HBox(8, generate, copy, add);
         buttons.setAlignment(Pos.CENTER_LEFT);
         Label hint = new Label("Double-click a name to put it on the current board.");
-        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
 
         VBox root = new VBox(10, form, buttons, results, hint);
         root.setPadding(new Insets(14));
@@ -118,7 +118,7 @@ public class NameGeneratorDialog {
         Stage stage = new Stage();
         stage.setTitle("Name Generator");
         if (owner != null) stage.initOwner(owner);
-        Scene scene = new Scene(root, 360, 460);
+        Scene scene = new Scene(root, UiScale.px(360), UiScale.px(460));
         scene.setOnKeyPressed(e -> {
             if (dnd.keys.Shortcuts.matches(e, "dialog.close")) stage.close();
         });

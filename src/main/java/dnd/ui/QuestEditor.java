@@ -40,7 +40,7 @@ public class QuestEditor extends BorderPane implements ItemView {
         this.preview = new QuestCardView(store);
 
         TextField name = new TextField(quest.name);
-        name.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
+        name.setStyle("-fx-font-size: 1.500em; -fx-font-weight: bold;");
         name.textProperty().addListener((o, a, n) -> {
             if (n.isBlank()) return;
             quest.name = n.trim();
@@ -71,7 +71,7 @@ public class QuestEditor extends BorderPane implements ItemView {
             }
         });
         Label stepHint = new Label("Steps and clues: tick them off as the party does or finds them.");
-        stepHint.setStyle("-fx-font-size: 11px; -fx-text-fill: -t-text3;");
+        stepHint.setStyle("-fx-font-size: 0.917em; -fx-text-fill: -t-text3;");
         rebuildSteps();
 
         RelatedItemsList related = new RelatedItemsList(store, quest.related, picker, openItem, this::changed,

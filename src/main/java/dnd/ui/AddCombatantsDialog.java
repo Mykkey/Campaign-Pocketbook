@@ -67,7 +67,7 @@ public final class AddCombatantsDialog {
             r.use.setText(c.name);
             r.use.setPrefWidth(190);
             Label info = new Label("AC " + c.ac + " | HP " + c.hpMax + " | CR " + c.challenge);
-            info.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+            info.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
             info.setPrefWidth(150);
             HBox h = new HBox(8, r.use, info, new Label("x"), r.count, r.side, r.group);
             h.setAlignment(Pos.CENTER_LEFT);
@@ -82,7 +82,7 @@ public final class AddCombatantsDialog {
         List<Card> commons = dnd.library.CommonEnemies.shared().list();
         if (!commons.isEmpty()) {
             Label head = new Label("COMMON ENEMIES  (from your library; no card needed in this project)");
-            head.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: -t-heading; -fx-padding: 10 0 0 0;");
+            head.setStyle("-fx-font-size: 0.917em; -fx-font-weight: bold; -fx-text-fill: -t-heading; -fx-padding: 10 0 0 0;");
             rows.getChildren().add(head);
             for (Card c : commons) {
                 Row r = new Row(c);
@@ -91,7 +91,7 @@ public final class AddCombatantsDialog {
                 r.use.setText(c.name);
                 r.use.setPrefWidth(190);
                 Label info = new Label("AC " + c.ac + " | HP " + c.hpMax + " | CR " + c.challenge);
-                info.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+                info.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
                 info.setPrefWidth(150);
                 HBox h = new HBox(8, r.use, info, new Label("x"), r.count, r.side, r.group);
                 h.setAlignment(Pos.CENTER_LEFT);

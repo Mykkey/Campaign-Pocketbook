@@ -1,6 +1,7 @@
 package dnd.ui;
 
 import dnd.storage.ProjectStore;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -32,6 +33,9 @@ import java.util.Optional;
  * Changes apply at once and are remembered; it can be opened before any campaign is, from the project list.
  */
 public final class SettingsDialog {
+    private static final String DEFAULT_FONT = "System default";
+    private static final java.util.List<String> PREFERRED_FONTS = java.util.List.of("OpenDyslexic", "Atkinson Hyperlegible", "Lexend", "Verdana",
+            "Tahoma", "Segoe UI", "Calibri", "Arial", "Trebuchet MS", "Georgia", "Comic Sans MS", "Helvetica Neue", "Helvetica", "DejaVu Sans", "Noto Sans");
     private static Stage open;
     private static TabPane tabs;
 
@@ -83,12 +87,16 @@ public final class SettingsDialog {
         Stage stage = new Stage();
         stage.setTitle("Settings");
         if (owner != null) stage.initOwner(owner);
-        Scene scene = new Scene(tabs, 760, 560);
+        Scene scene = new Scene(tabs, UiScale.px(760), UiScale.px(560));
         scene.setOnKeyPressed(e -> {
             if (dnd.keys.Shortcuts.matches(e, "dialog.close")) stage.close();
         });
         stage.setScene(scene);
+        Runnable stopListening = AppSettings.addListener((k, v) -> {
+            if (k.equals(UiScale.KEY) || k.equals("ui.font")) Platform.runLater(() -> rebuild(owner));
+        });
         stage.setOnHidden(e -> {
+            stopListening.run();
             open = null;
             tabs = null;
         });
@@ -111,14 +119,14 @@ public final class SettingsDialog {
 
     private static Label heading(String text) {
         Label l = new Label(text.toUpperCase());
-        l.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: -t-heading; -fx-padding: 6 0 0 0;");
+        l.setStyle("-fx-font-size: 0.917em; -fx-font-weight: bold; -fx-text-fill: -t-heading; -fx-padding: 6 0 0 0;");
         return l;
     }
 
     private static Label note(String text) {
         Label l = new Label(text);
         l.setWrapText(true);
-        l.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+        l.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
         return l;
     }
 
@@ -141,13 +149,69 @@ public final class SettingsDialog {
         Theme.darkProperty().addListener(new javafx.beans.value.WeakChangeListener<>(follow));
         HBox themeRow = new HBox(10, new Label("Colours"), theme);
         themeRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        // ---- text size: changes every window and screen
+        int current = UiScale.clampPercent(AppSettings.getInt(UiScale.KEY, UiScale.DEFAULT));
+        javafx.scene.control.Slider size = new javafx.scene.control.Slider(UiScale.MIN, UiScale.MAX, current);
+        size.setMajorTickUnit(20);
+        size.setMinorTickCount(1);
+        size.setSnapToTicks(false);
+        size.setShowTickMarks(true);
+        size.setPrefWidth(320);
+        Label sizeLabel = new Label(current + "%");
+        sizeLabel.setMinWidth(50);
+        Label sample = new Label("The quick brown fox jumps over the lazy dog. 0123456789");
+        sample.setStyle("-fx-font-size: " + UiScale.em(UiScale.DESIGN_PX) + ";");
+        Runnable commit = () -> {
+            int v = UiScale.clampPercent((int) Math.round(size.getValue() / 5.0) * 5);
+            if (v != AppSettings.getInt(UiScale.KEY, UiScale.DEFAULT)) AppSettings.setInt(UiScale.KEY, v);
+        };
+        size.valueProperty().addListener((o, a1, n1) -> {
+            sizeLabel.setText(Math.round(n1.doubleValue() / 5.0) * 5 + "%");
+            if (!size.isValueChanging()) commit.run();
+        });
+        size.valueChangingProperty().addListener((o, was, now) -> {
+            if (!now) commit.run();
+        });
+        Button smaller = new Button("Smaller"), bigger = new Button("Bigger"), normal = new Button("100%");
+        smaller.setOnAction(e -> size.setValue(Math.max(UiScale.MIN, size.getValue() - 10)));
+        bigger.setOnAction(e -> size.setValue(Math.min(UiScale.MAX, size.getValue() + 10)));
+        normal.setOnAction(e -> size.setValue(UiScale.DEFAULT));
+        HBox sizeRow = new HBox(8, smaller, size, bigger, sizeLabel, normal);
+        sizeRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+        // ---- the font
+        ComboBox<String> font = new ComboBox<>();
+        font.setEditable(true);
+        font.getItems().add(DEFAULT_FONT);
+        java.util.List<String> installed = javafx.scene.text.Font.getFamilies();
+        for (String f : PREFERRED_FONTS) if (installed.contains(f)) font.getItems().add(f);
+        String chosen = AppSettings.getString("ui.font", "");
+        font.setValue(chosen.isBlank() ? DEFAULT_FONT : chosen);
+        font.setPrefWidth(260);
+        font.setOnAction(e -> {
+            String v = font.getValue() == null ? "" : font.getValue().trim();
+            if (v.isEmpty() || v.equals(DEFAULT_FONT)) AppSettings.remove("ui.font");
+            else if (installed.contains(v)) AppSettings.setString("ui.font", v);
+            else font.setValue(AppSettings.getString("ui.font", DEFAULT_FONT)); // not an installed font: keep the old one
+        });
+        boolean friendly = installed.contains("OpenDyslexic") || installed.contains("Atkinson Hyperlegible") || installed.contains("Lexend");
+        HBox fontRow = new HBox(10, new Label("Font"), font);
+        fontRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
         VBox box = new VBox(10,
+                heading("Text size"), sizeRow, sample,
+                note("Makes the text and buttons in every window bigger or smaller. Whiteboards and maps keep their own zoom (use the wheel or Ctrl+= there)."),
+                heading("Font"), fontRow,
+                note(friendly ? "Fonts that are easier to read for many people are in the list."
+                        : "Install a font such as OpenDyslexic, Atkinson Hyperlegible or Lexend on your computer and it appears in the list (you can also type the name of any installed font)."),
                 heading("Colours"), themeRow,
                 note("You can also switch with the sun or moon button in the top bar."),
                 heading("Text and links"),
                 check("Underline names of your cards in whiteboard text (name hints)", "nameHints", true),
                 check("Show a preview when the mouse rests on a link or a note", "linkPreviews", true));
         return new Page("Appearance", box, () -> {
+            AppSettings.remove(UiScale.KEY);
+            AppSettings.remove("ui.font");
             AppSettings.remove("nameHints");
             AppSettings.remove("linkPreviews");
             Theme.setDark(false);
@@ -181,7 +245,7 @@ public final class SettingsDialog {
         });
         Label where = new Label("Settings file: " + ProjectStore.baseDir().resolve("settings.properties"));
         where.setWrapText(true);
-        where.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+        where.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
         VBox box = new VBox(10,
                 heading("Your data"), openFolder,
                 note("Campaigns, backups and these settings are all kept in that folder, apart from the campaigns' own files."),

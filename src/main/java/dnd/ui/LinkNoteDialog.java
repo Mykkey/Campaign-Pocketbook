@@ -61,7 +61,7 @@ final class LinkNoteDialog {
 
         Label hint = new Label("Hover the item on the map to see the note and a preview of what it links to. Double-click it to open the link.");
         hint.setWrapText(true);
-        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
         VBox box = new VBox(8, text, new Label("Link to"), combo, open, hint);
         box.setPadding(new Insets(6));
         box.setPrefWidth(420);

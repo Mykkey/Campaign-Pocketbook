@@ -34,7 +34,7 @@ public final class QuestBoardDialog {
         filter.setPromptText("Filter by name, giver or step...");
         filter.setPrefWidth(280);
         Label hint = new Label("Double-click a quest to open it. Right-click to change its status.");
-        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
         HBox top = new HBox(12, filter, hint);
         top.setAlignment(Pos.CENTER_LEFT);
         top.setPadding(new Insets(10, 12, 6, 12));
@@ -94,7 +94,7 @@ public final class QuestBoardDialog {
         Stage stage = new Stage();
         stage.setTitle("Quests");
         if (owner != null) stage.initOwner(owner);
-        Scene scene = new Scene(root, 1180, 560);
+        Scene scene = new Scene(root, UiScale.px(1180), UiScale.px(560));
         scene.setOnKeyPressed(e -> {
             if (dnd.keys.Shortcuts.matches(e, "dialog.close")) stage.close();
         });

@@ -98,7 +98,7 @@ final class ItemExport {
 
     /** The picture of an item as it is printed: always on white paper in the light colours, whatever mode the app is in. */
     static Node printable(ProjectStore store, TreeNode n, double width) {
-        Node content = ItemPreview.content(store, n.id);
+        Node content = UiScale.withFactor(1.0, () -> ItemPreview.content(store, n.id));
         StackPane page = new StackPane(content);
         StackPane.setAlignment(content, javafx.geometry.Pos.TOP_LEFT);
         page.setPadding(new Insets(0));

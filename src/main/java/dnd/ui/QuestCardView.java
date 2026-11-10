@@ -38,9 +38,9 @@ public class QuestCardView extends VBox {
         getChildren().clear();
         Label title = new Label(q.name == null || q.name.isBlank() ? "(unnamed quest)" : q.name);
         title.setWrapText(true);
-        title.setStyle("-fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: -t-text;");
+        title.setStyle("-fx-font-size: 1.417em; -fx-font-weight: bold; -fx-text-fill: -t-text;");
         Label status = new Label(q.status.label.toUpperCase(java.util.Locale.ROOT));
-        status.setStyle("-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: white; -fx-background-radius: 8; -fx-padding: 1 7 1 7; -fx-background-color: "
+        status.setStyle("-fx-font-size: 0.833em; -fx-font-weight: bold; -fx-text-fill: white; -fx-background-radius: 8; -fx-padding: 1 7 1 7; -fx-background-color: "
                 + statusColor(q.status) + ";");
         getChildren().addAll(title, status);
         line("Given by", q.giverName(store::itemNameOrNull));
@@ -54,7 +54,7 @@ public class QuestCardView extends VBox {
         }
         if (!q.steps.isEmpty()) {
             Label head = new Label("Steps  (" + q.progressText() + ")");
-            head.setStyle("-fx-font-size: 11px; -fx-text-fill: -t-text3; -fx-padding: 4 0 0 0;");
+            head.setStyle("-fx-font-size: 0.917em; -fx-text-fill: -t-text3; -fx-padding: 4 0 0 0;");
             getChildren().add(head);
             for (Quest.Step st : q.steps) {
                 Label l = new Label((st.done ? "✓  " : "•  ") + st.text);

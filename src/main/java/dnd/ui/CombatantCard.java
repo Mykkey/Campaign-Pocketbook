@@ -55,13 +55,13 @@ final class CombatantCard extends VBox {
 
         // ---- header
         Label tag = new Label(active ? "NOW" : "VIEWING");
-        tag.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: white; -fx-padding: 1 7 1 7; -fx-background-radius: 8; "
+        tag.setStyle("-fx-font-size: 0.917em; -fx-font-weight: bold; -fx-text-fill: white; -fx-padding: 1 7 1 7; -fx-background-radius: 8; "
                 + "-fx-background-color: " + (active ? "#d97706" : "#2563eb") + ";");
         Label dot = new Label("●");
-        dot.setStyle("-fx-text-fill: " + sideColor(first.side) + "; -fx-font-size: 18px;");
+        dot.setStyle("-fx-text-fill: " + sideColor(first.side) + "; -fx-font-size: 1.500em;");
         String title = group ? first.name.replaceAll("\\s+\\d+$", "") + " x" + members.size() : first.name;
         Label name = new Label(title);
-        name.setFont(Font.font("System", FontWeight.BOLD, active ? 24 : 18));
+        name.setFont(Font.font("System", FontWeight.BOLD, UiScale.px(active ? 24 : 18)));
         name.setWrapText(true);
         Region sp = new Region();
         HBox.setHgrow(sp, Priority.ALWAYS);
@@ -104,7 +104,7 @@ final class CombatantCard extends VBox {
             for (Attack a : card.attacks) {
                 Label l = new Label(a.name + ":  " + a.summary());
                 l.setWrapText(true);
-                l.setFont(Font.font("System", active ? 15 : 13));
+                l.setFont(Font.font("System", UiScale.px(active ? 15 : 13)));
                 l.setStyle("-fx-padding: 3 6 3 6; -fx-background-color: -t-surface; -fx-border-color: -t-border;");
                 l.setMaxWidth(Double.MAX_VALUE);
                 getChildren().add(l);
@@ -141,7 +141,7 @@ final class CombatantCard extends VBox {
 
     private static Label sectionLabel(String text) {
         Label l = new Label(text.toUpperCase());
-        l.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: -t-heading; -fx-padding: 6 0 0 0;");
+        l.setStyle("-fx-font-size: 0.917em; -fx-font-weight: bold; -fx-text-fill: -t-heading; -fx-padding: 6 0 0 0;");
         return l;
     }
 
@@ -153,7 +153,7 @@ final class CombatantCard extends VBox {
         bar.setPrefHeight(big ? 18 : 12);
         bar.setStyle("-fx-accent: " + (ratio > 0.5 ? "#16a34a" : ratio > 0.25 ? "#f59e0b" : "#dc2626") + ";");
         Label hp = new Label(c.hpCurrent + " / " + c.hpMax + (c.tempHp > 0 ? "  (+" + c.tempHp + " temp)" : ""));
-        hp.setFont(Font.font("System", FontWeight.BOLD, big ? 16 : 12));
+        hp.setFont(Font.font("System", FontWeight.BOLD, UiScale.px(big ? 16 : 12)));
         TextField box = new TextField();
         box.setPromptText(big ? "-7   +5   -5 -7 -3" : "-7 / +5");
         box.setPrefWidth(big ? 150 : 90);
@@ -171,7 +171,7 @@ final class CombatantCard extends VBox {
         });
         box.textProperty().addListener((o, a, n) -> box.setStyle(""));
         Label ac = new Label("AC " + c.ac);
-        ac.setFont(Font.font("System", FontWeight.BOLD, big ? 15 : 12));
+        ac.setFont(Font.font("System", FontWeight.BOLD, UiScale.px(big ? 15 : 12)));
         ac.setStyle("-fx-text-fill: -t-text2;");
         HBox row = new HBox(8, bar, hp, box, ac);
         row.setAlignment(Pos.CENTER_LEFT);
@@ -208,7 +208,7 @@ final class CombatantCard extends VBox {
             ok.setStyle("-fx-text-fill: #15803d; -fx-font-weight: bold;");
             Label bad = new Label("Failures " + pips(c.deathFailures, "\u2715", "\u25CB"));
             bad.setStyle("-fx-text-fill: #b91c1c; -fx-font-weight: bold;");
-            HBox row = new HBox(10, head, ok, bad);
+            FlowPane row = new FlowPane(10, 6, head, ok, bad); // wraps when the text is big
             row.setAlignment(Pos.CENTER_LEFT);
             if (dying) {
                 Button roll = new Button("Roll death save");
@@ -240,7 +240,7 @@ final class CombatantCard extends VBox {
                 String line = b.log.get(i);
                 if (line.startsWith(c.name + " ")) {
                     Label l = new Label(line);
-                    l.setStyle("-fx-text-fill: -t-text2; -fx-font-size: 12px;");
+                    l.setStyle("-fx-text-fill: -t-text2; -fx-font-size: 1.000em;");
                     box.getChildren().add(1, l);
                     shown++;
                 }
@@ -259,7 +259,7 @@ final class CombatantCard extends VBox {
             row.setAlignment(Pos.CENTER_LEFT);
             box.getChildren().add(row);
         }
-        HBox misc = new HBox(10);
+        FlowPane misc = new FlowPane(10, 6);
         misc.setAlignment(Pos.CENTER_LEFT);
         ToggleButton reaction = new ToggleButton("Reaction used");
         reaction.setSelected(c.reactionUsed);
@@ -291,7 +291,7 @@ final class CombatantCard extends VBox {
             FlowPane chips = new FlowPane(4, 4);
             for (TimedEffect eff : new ArrayList<>(c.effects)) {
                 Label chip = new Label(eff.name + " (" + eff.turns + (eff.turns == 1 ? " turn" : " turns") + ")");
-                chip.setStyle("-fx-background-color: -t-slate; -fx-border-color: #94a3b8; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 1 7 1 7; -fx-font-size: 12px;");
+                chip.setStyle("-fx-background-color: -t-slate; -fx-border-color: #94a3b8; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 1 7 1 7; -fx-font-size: 1.000em;");
                 chip.setTooltip(new Tooltip("Lasts this many more of the creature's own turns. Click to end it now."));
                 chip.setCursor(javafx.scene.Cursor.HAND);
                 chip.setOnMouseClicked(ev -> {
@@ -338,7 +338,7 @@ final class CombatantCard extends VBox {
                 chip.setOnMouseClicked(ev -> RulesReferenceDialog.show(chip.getScene() == null ? null : chip.getScene().getWindow(), cond));
             }
             chip.setGraphicTextGap(4);
-            chip.setStyle("-fx-background-color: -t-slate; -fx-border-color: " + col + "; -fx-border-radius: 8; -fx-padding: 1 7 1 6; -fx-background-radius: 8; -fx-font-size: 12px;");
+            chip.setStyle("-fx-background-color: -t-slate; -fx-border-color: " + col + "; -fx-border-radius: 8; -fx-padding: 1 7 1 6; -fx-background-radius: 8; -fx-font-size: 1.000em;");
             chips.getChildren().add(chip);
         }
         return chips;

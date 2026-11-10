@@ -134,7 +134,7 @@ public final class CommonEnemiesDialog {
                 + "making a card first. Edit the stats here; the first time one is used in a project a card for it is "
                 + "made in a \"" + ProjectStore.COMMON_FOLDER + "\" folder and refreshed from here each time.");
         hint.setWrapText(true);
-        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
 
         VBox left = new VBox(6, list, add, fromCard, dup, del, restore, hint);
         left.setPadding(new Insets(8));
@@ -144,7 +144,7 @@ public final class CommonEnemiesDialog {
         BorderPane root = new BorderPane();
         root.setLeft(left);
         root.setCenter(editorHolder);
-        stage.setScene(new Scene(root, 1250, 760));
+        stage.setScene(new Scene(root, UiScale.px(1250), UiScale.px(760)));
         stage.show();
         if (selectId != null) selectById(list, selectId);
     }

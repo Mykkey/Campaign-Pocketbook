@@ -128,7 +128,7 @@ public class StatBlockView extends VBox {
 
     static Text styled(String s, double size, FontWeight w, FontPosture p, String color) {
         Text t = new Text(s);
-        t.setFont(Font.font(FONT, w, p, size));
+        t.setFont(Font.font(FONT, w, p, UiScale.px(size)));
         t.setFill(Color.web(color));
         return t;
     }

@@ -44,10 +44,10 @@ public class ProjectLauncher extends VBox {
         setMaxWidth(520);
 
         Label title = new Label("Campaign Pocketbook");
-        title.setStyle("-fx-font-size: 28px; -fx-font-weight: bold;");
+        title.setStyle("-fx-font-size: 2.333em; -fx-font-weight: bold;");
         Label sub = new Label("Choose a campaign to open, or create a new one.");
         Label where = new Label("Saved in: " + base);
-        where.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+        where.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
 
         Button open = new Button("Open");
         open.setDefaultButton(true);
@@ -98,7 +98,7 @@ public class ProjectLauncher extends VBox {
     private void buildOverlay() {
         ProgressIndicator spinner = new ProgressIndicator(ProgressIndicator.INDETERMINATE_PROGRESS);
         spinner.setPrefSize(64, 64);
-        overlayText.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: -t-text;");
+        overlayText.setStyle("-fx-font-size: 1.333em; -fx-font-weight: bold; -fx-text-fill: -t-text;");
         VBox box = new VBox(14, spinner, overlayText);
         box.setAlignment(Pos.CENTER);
         box.setMaxSize(VBox.USE_PREF_SIZE, VBox.USE_PREF_SIZE);

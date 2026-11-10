@@ -165,11 +165,11 @@ final class ItemPreview {
     private static Node plain(String title, List<String> lines, String kind) {
         VBox box = base();
         Label t = new Label(title == null || title.isBlank() ? "(unnamed)" : title);
-        t.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: -t-text;");
+        t.setStyle("-fx-font-size: 1.333em; -fx-font-weight: bold; -fx-text-fill: -t-text;");
         box.getChildren().add(t);
         if (kind != null) {
             Label k = new Label(kind);
-            k.setStyle("-fx-font-size: 11px; -fx-text-fill: -t-text3;");
+            k.setStyle("-fx-font-size: 0.917em; -fx-text-fill: -t-text3;");
             box.getChildren().add(k);
         }
         for (String line : lines) {
@@ -185,9 +185,9 @@ final class ItemPreview {
     private static Node plainWithGraphic(String title, String sub, Node graphic) {
         VBox box = base();
         Label t = new Label(title);
-        t.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: -t-text;");
+        t.setStyle("-fx-font-size: 1.333em; -fx-font-weight: bold; -fx-text-fill: -t-text;");
         Label k = new Label(sub);
-        k.setStyle("-fx-font-size: 11px; -fx-text-fill: -t-text3;");
+        k.setStyle("-fx-font-size: 0.917em; -fx-text-fill: -t-text3;");
         box.getChildren().addAll(t, k, graphic);
         return box;
     }

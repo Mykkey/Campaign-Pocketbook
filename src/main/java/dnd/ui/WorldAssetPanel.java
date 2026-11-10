@@ -55,7 +55,7 @@ final class WorldAssetPanel extends VBox {
         category.setFocusTraversable(false);
         Label hint = new Label("Pick a symbol, then Stamp it one at a time or Scatter a whole forest or range.");
         hint.setWrapText(true);
-        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
 
         list.setCellFactory(v -> new ListCell<>() {
             private final ImageView iv = new ImageView();

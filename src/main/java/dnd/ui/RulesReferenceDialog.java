@@ -66,18 +66,18 @@ public final class RulesReferenceDialog {
                 }
                 Label t = new Label(e.title());
                 Label c = new Label(e.category());
-                c.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 10px;");
+                c.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.833em;");
                 setGraphic(new VBox(0, t, c));
                 setText(null);
             }
         });
         Label heading = new Label();
-        heading.setStyle("-fx-font-size: 17px; -fx-font-weight: bold;");
+        heading.setStyle("-fx-font-size: 1.417em; -fx-font-weight: bold;");
         Label category = new Label();
         category.setStyle("-fx-text-fill: -t-text3;");
         Label body = new Label();
         body.setWrapText(true);
-        body.setStyle("-fx-font-size: 13.5px;");
+        body.setStyle("-fx-font-size: 1.125em;");
         VBox detail = new VBox(8, heading, category, body);
         detail.setPadding(new Insets(14));
         ScrollPane scroll = new ScrollPane(detail);
@@ -96,7 +96,7 @@ public final class RulesReferenceDialog {
 
         Label note = new Label("A memory aid in plain words, not a rulebook: when in doubt, your book and your judgement win.");
         note.setWrapText(true);
-        note.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+        note.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
         VBox left = new VBox(6, searchField, list, note);
         left.setPadding(new Insets(8));
         VBox.setVgrow(list, Priority.ALWAYS);
@@ -106,7 +106,7 @@ public final class RulesReferenceDialog {
         Stage stage = new Stage();
         stage.setTitle("Quick reference");
         if (owner != null) stage.initOwner(owner);
-        Scene scene = new Scene(split, 760, 540);
+        Scene scene = new Scene(split, UiScale.px(760), UiScale.px(540));
         scene.setOnKeyPressed(e -> {
             if (dnd.keys.Shortcuts.matches(e, "dialog.close")) stage.close();
         });

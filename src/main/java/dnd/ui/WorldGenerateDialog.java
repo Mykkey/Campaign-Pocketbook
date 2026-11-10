@@ -28,7 +28,7 @@ final class WorldGenerateDialog {
         Label size = new Label("The map keeps its size (" + map.cols + " x " + map.rows + " cells), its scale and its art style. Big maps take a few seconds.");
         size.setWrapText(true);
         size.setMaxWidth(380);
-        size.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+        size.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
         VBox box = new VBox(10, pane, warn, size);
         box.setPadding(new Insets(6));
 

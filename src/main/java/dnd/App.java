@@ -22,6 +22,7 @@ public class App extends Application {
         this.stage = stage;
         dnd.ui.SettingsMigration.run(dnd.ui.SettingsMigration.oldRoot());
         dnd.ui.Theme.install();
+        dnd.ui.Theme.onLookChanged = this::rebuildScreen;
         dnd.ui.WindowFit.install();
         stage.setTitle(TITLE);
         try (java.io.InputStream icon = App.class.getResourceAsStream("/icon.png")) {
@@ -42,6 +43,17 @@ public class App extends Application {
         UpdateBanner.startCheck();
         showLauncher();
         stage.show();
+    }
+
+    /** Shows the current screen again, built afresh (after the text size changed); the open campaign and its tabs come back as they were. */
+    private void rebuildScreen() {
+        if (workspace != null) {
+            ProjectStore store = workspace.store();
+            workspace.shutdown();
+            showWorkspace(store);
+        } else {
+            showLauncher();
+        }
     }
 
     private void showLauncher() {

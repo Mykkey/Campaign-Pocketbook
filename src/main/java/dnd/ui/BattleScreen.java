@@ -259,14 +259,14 @@ final class BattleScreen implements BattleContext {
                 : "-fx-background-color: #334155; -fx-border-color: #0f172a; -fx-border-width: 0 0 3 0;");
 
         Label title = new Label(active ? "BATTLE  -  Round " + b.round : "BATTLE SETUP");
-        title.setFont(Font.font("System", FontWeight.BOLD, 22));
+        title.setFont(Font.font("System", FontWeight.BOLD, UiScale.px(22)));
         title.setStyle("-fx-text-fill: " + (active ? "#1f1300" : "white") + ";");
         banner.getChildren().add(title);
 
         if (active) {
             Slot now = BattleEngine.currentSlot(b);
             Label who = new Label(now == null ? "nobody can act" : "Now: " + now.name());
-            who.setFont(Font.font("System", FontWeight.BOLD, 16));
+            who.setFont(Font.font("System", FontWeight.BOLD, UiScale.px(16)));
             who.setStyle("-fx-text-fill: #1f1300; -fx-padding: 2 12 2 12; -fx-background-color: #fde68a; -fx-background-radius: 12;");
             banner.getChildren().add(who);
         }

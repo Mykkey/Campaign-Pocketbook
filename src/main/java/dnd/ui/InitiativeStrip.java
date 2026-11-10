@@ -43,8 +43,8 @@ final class InitiativeStrip extends ScrollPane {
         setFitToHeight(true);
         setVbarPolicy(ScrollBarPolicy.NEVER);
         setHbarPolicy(ScrollBarPolicy.AS_NEEDED);
-        setPrefHeight(112);
-        setMinHeight(112);
+        setPrefHeight(UiScale.px(112));
+        setMinHeight(UiScale.px(112));
         setStyle("-fx-background: #1e293b; -fx-background-color: #1e293b;");
     }
 
@@ -56,7 +56,7 @@ final class InitiativeStrip extends ScrollPane {
         List<Slot> slots = BattleEngine.slots(b);
         if (slots.isEmpty()) {
             Label none = new Label("No one is in the battle yet.");
-            none.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 15px;");
+            none.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 1.250em;");
             box.getChildren().add(none);
             return;
         }
@@ -75,12 +75,11 @@ final class InitiativeStrip extends ScrollPane {
         boolean down = s.defeated();
 
         Label init = new Label(has ? String.valueOf(s.initiative()) : "?");
-        init.setStyle("-fx-font-weight: bold; -fx-text-fill: " + (current ? "#78350f" : "-t-text2") + "; -fx-font-size: " + (current ? 18 : 14)
-                + "px; -fx-background-color: " + (current ? "#fde68a" : "-t-surface2") + "; -fx-background-radius: 10; -fx-padding: 1 8 1 8;");
+        init.setStyle("-fx-font-weight: bold; -fx-text-fill: " + (current ? "#78350f" : "-t-text2") + "; -fx-font-size: " + UiScale.em(current ? 18 : 14) + "; -fx-background-color: " + (current ? "#fde68a" : "-t-surface2") + "; -fx-background-radius: 10; -fx-padding: 1 8 1 8;");
         Label dot = new Label("●");
         dot.setStyle("-fx-text-fill: " + sideColor(first.side) + ";");
         Label name = new Label(s.name());
-        name.setFont(Font.font("System", FontWeight.BOLD, current ? 19 : 14));
+        name.setFont(Font.font("System", FontWeight.BOLD, UiScale.px(current ? 19 : 14)));
         name.setStyle(down ? "-fx-strikethrough: true; -fx-text-fill: -t-text3;" : "-fx-text-fill: " + (current ? "#0f172a" : "-t-text") + ";");
         HBox top = new HBox(6, init, dot, name);
         top.setAlignment(Pos.CENTER_LEFT);
@@ -89,7 +88,7 @@ final class InitiativeStrip extends ScrollPane {
         for (Combatant c : s.members) if (!c.defeated) conds.addAll(c.conditions);
         for (String cond : conds) {
             Label cd = new Label("\u25CF");
-            cd.setStyle("-fx-text-fill: " + dnd.battle.ConditionStyle.colorOf(cond) + "; -fx-font-size: " + (current ? 16 : 12) + "px;");
+            cd.setStyle("-fx-text-fill: " + dnd.battle.ConditionStyle.colorOf(cond) + "; -fx-font-size: " + UiScale.em(current ? 16 : 12) + ";");
             Tooltip.install(cd, new Tooltip(cond));
             top.getChildren().add(cd);
         }
@@ -97,7 +96,7 @@ final class InitiativeStrip extends ScrollPane {
         for (Combatant c : s.members) {
             if (dnd.battle.CombatStatus.isDying(c)) {
                 Label skull = new Label("\u2620");
-                skull.setStyle("-fx-text-fill: #b91c1c; -fx-font-size: " + (current ? 18 : 14) + "px; -fx-font-weight: bold;");
+                skull.setStyle("-fx-text-fill: #b91c1c; -fx-font-size: " + UiScale.em(current ? 18 : 14) + "; -fx-font-weight: bold;");
                 Tooltip.install(skull, new Tooltip(c.name + " is dying: " + c.deathSuccesses + " successes, " + c.deathFailures + " failures"));
                 top.getChildren().add(skull);
             }
@@ -120,7 +119,7 @@ final class InitiativeStrip extends ScrollPane {
         Label sub = new Label(dyingNow ? "dying: " + only.deathSuccesses + " saved, " + only.deathFailures + " failed" : down ? downText : s.members.size() > 1
                 ? s.aliveCount() + " of " + s.members.size() + " up  |  " + hp + "/" + max + " HP"
                 : hp + "/" + max + " HP  |  AC " + first.ac);
-        sub.setStyle("-fx-font-size: " + (current ? 13 : 11) + "px; -fx-text-fill: " + (current ? "#334155" : "-t-text2") + ";");
+        sub.setStyle("-fx-font-size: " + UiScale.em(current ? 13 : 11) + "; -fx-text-fill: " + (current ? "#334155" : "-t-text2") + ";");
 
         VBox chip = new VBox(3, top, bar, sub);
         chip.setPadding(current ? new Insets(8, 16, 8, 14) : new Insets(6, 12, 6, 10));

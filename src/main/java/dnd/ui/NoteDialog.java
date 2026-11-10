@@ -20,7 +20,7 @@ final class NoteDialog {
         text.setWrapText(true);
         text.setPrefRowCount(6);
         Label hint = new Label("Supports **bold** and *italic*. It shows when you hover over the words.");
-        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
         VBox box = new VBox(8, text, hint);
         box.setPadding(new Insets(6));
         box.setPrefWidth(400);

@@ -59,7 +59,7 @@ final class FormKit {
     /** A small grey caption above a control. */
     static VBox labelled(String label, Node n) {
         Label l = new Label(label);
-        l.setStyle("-fx-font-size: 11px; -fx-text-fill: -t-text3;");
+        l.setStyle("-fx-font-size: 0.917em; -fx-text-fill: -t-text3;");
         VBox box = new VBox(3, l, n);
         HBox.setHgrow(box, Priority.ALWAYS);
         return box;

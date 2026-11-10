@@ -24,6 +24,9 @@ public final class Theme {
     private static final BooleanProperty DARK = new SimpleBooleanProperty(false);
     private static boolean installed;
 
+    /** Called after the text size or font changed, so the main window can build itself again with the new sizes (set by the app). */
+    public static Runnable onLookChanged;
+
     public static BooleanProperty darkProperty() {
         return DARK;
     }
@@ -52,6 +55,15 @@ public final class Theme {
         AppSettings.addListener((k, v) -> {
             if ("theme".equals(k)) Platform.runLater(() -> setDark("dark".equals(v)));
         });
+        AppSettings.addListener((k, v) -> {
+            if (k.equals(UiScale.KEY) || k.equals("ui.font")) {
+                Platform.runLater(() -> {
+                    for (Window w : Window.getWindows()) if (w.getScene() != null) apply(w.getScene());
+                    Runnable r = onLookChanged;
+                    if (r != null) r.run();
+                });
+            }
+        });
         for (Window w : Window.getWindows()) hook(w);
         Window.getWindows().addListener((ListChangeListener<Window>) c -> {
             while (c.next()) for (Window w : c.getAddedSubList()) hook(w);
@@ -78,6 +90,7 @@ public final class Theme {
         String url = Theme.class.getResource(isDark() ? "/theme-dark.css" : "/theme-light.css").toExternalForm();
         scene.getStylesheets().removeIf(u -> u.endsWith("/theme-dark.css") || u.endsWith("/theme-light.css"));
         scene.getStylesheets().add(url);
+        UiScale.applyTo(scene);
     }
 
     /**

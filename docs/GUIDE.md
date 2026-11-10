@@ -201,6 +201,14 @@ Press **Library...** in the top bar to browse the 5e SRD monsters and spells. Th
 - **Spells:** search by name and filter by level, class and school. **Add as spell card** turns the spell into an editable spell card in your project (in a "Spells" folder; if you already made one from that spell it opens that one instead). **Add to board** puts the spell on the open whiteboard as a text note, and **Copy** copies it.
 - Importing a file again replaces what was imported before for that kind (monsters or spells).
 
+## Settings
+
+The **gear** button in the top bar (also on the project list, and **Ctrl+,**) opens the settings of the whole app, not of one campaign. Changes apply at once and are kept in `settings.properties` in your CampaignPocketbook folder.
+
+- **Appearance:** **Text size** from 80% to 200% makes the text and buttons of every window bigger or smaller (the open campaign and its tabs come back as they were; whiteboards and maps keep their own zoom, and printing is never scaled). **Font** lets you choose an installed font; fonts that are easier to read, such as OpenDyslexic, Atkinson Hyperlegible or Lexend, appear in the list when they are installed on your computer (the app cannot include them). **Colours** switches light and dark mode.
+- **Shortcuts:** see Keyboard shortcuts above.
+- **Data & updates:** open the folder where your campaigns are kept, save all settings (including shortcuts) to a file and load them on another computer, or reset everything to the defaults. Every tab also has its own **Reset this tab** button.
+
 ## Quick reference
 
 The **Rules...** button in the top bar (or **Ctrl+R**, or the page button on the battle screen) opens a small window with the rules a DM looks up most, written in plain words as a memory aid: all the conditions, concentration, death saves, grappling, cover, light and vision, travel pace, resting, falling, suffocation and more. Search it, or pick from the list. In a battle, **hover a condition** on a creature to read its rule, and click it to open the full entry.

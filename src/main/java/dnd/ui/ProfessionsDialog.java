@@ -125,7 +125,7 @@ final class ProfessionsDialog {
         Label hint = new Label("Saved NPC cards of this job use that creature's stats. Built-in professions can't be edited, "
                 + "but your own can reuse their categories.");
         hint.setWrapText(true);
-        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
         VBox right = new VBox(10, form, new Label("What they know"), knows, new HBox(8, save, add, remove), message, hint);
         right.setPadding(new Insets(0, 0, 0, 12));
         VBox.setVgrow(knows, Priority.ALWAYS);

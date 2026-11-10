@@ -339,6 +339,11 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
                 + "\n\nYour other items are not affected, and the file has been left as it is. A backup (Import backup... on the project list) may have a good copy.").show();
     }
 
+    /** The campaign this workspace shows. */
+    public ProjectStore store() {
+        return store;
+    }
+
     /** Saves everything immediately (called when the window closes or the project is left). */
     public void shutdown() {
         saver.stop();

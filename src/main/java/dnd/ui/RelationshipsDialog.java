@@ -126,7 +126,7 @@ public final class RelationshipsDialog {
         Stage stage = new Stage();
         stage.setTitle("Relationships");
         if (owner != null) stage.initOwner(owner);
-        Scene scene = new Scene(root, 1100, 720);
+        Scene scene = new Scene(root, UiScale.px(1100), UiScale.px(720));
         scene.setOnKeyPressed(e -> {
             if (dnd.keys.Shortcuts.matches(e, "dialog.close")) stage.close();
         });

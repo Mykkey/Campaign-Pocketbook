@@ -38,7 +38,7 @@ public class SessionEditor extends BorderPane implements ItemView {
         this.preview = new SessionCardView(store);
 
         TextField name = new TextField(session.name);
-        name.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
+        name.setStyle("-fx-font-size: 1.500em; -fx-font-weight: bold;");
         name.textProperty().addListener((o, a, n) -> {
             if (n.isBlank()) return;
             session.name = n.trim();

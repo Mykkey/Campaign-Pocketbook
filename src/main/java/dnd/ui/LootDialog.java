@@ -113,7 +113,7 @@ public class LootDialog {
         HBox buttons = new HBox(8, roll, copy, add);
         buttons.setAlignment(Pos.CENTER_LEFT);
         Label hint = new Label("Amounts are rough guidance, not a published table. Change anything you like.");
-        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
         hint.setWrapText(true);
 
         VBox root = new VBox(10, form, buttons, result, hint);
@@ -123,7 +123,7 @@ public class LootDialog {
         Stage stage = new Stage();
         stage.setTitle("Loot Generator");
         if (owner != null) stage.initOwner(owner);
-        Scene scene = new Scene(root, 420, 520);
+        Scene scene = new Scene(root, UiScale.px(420), UiScale.px(520));
         scene.setOnKeyPressed(e -> {
             if (dnd.keys.Shortcuts.matches(e, "dialog.close")) stage.close();
         });

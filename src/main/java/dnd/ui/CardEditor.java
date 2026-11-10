@@ -83,7 +83,7 @@ public class CardEditor extends BorderPane implements ItemView {
 
     private static Label heading(String text) {
         Label l = new Label(text);
-        l.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: -t-heading;");
+        l.setStyle("-fx-font-size: 1.167em; -fx-font-weight: bold; -fx-text-fill: -t-heading;");
         return l;
     }
 
@@ -132,7 +132,7 @@ public class CardEditor extends BorderPane implements ItemView {
 
     private static VBox labelled(String label, Node n) {
         Label l = new Label(label);
-        l.setStyle("-fx-font-size: 11px; -fx-text-fill: -t-text3;");
+        l.setStyle("-fx-font-size: 0.917em; -fx-text-fill: -t-text3;");
         return new VBox(2, l, n);
     }
 
@@ -140,7 +140,7 @@ public class CardEditor extends BorderPane implements ItemView {
 
     private Node identitySection() {
         TextField name = new TextField(card.name);
-        name.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
+        name.setStyle("-fx-font-size: 1.500em; -fx-font-weight: bold;");
         Runnable applyName = () -> {
             String n = name.getText().trim();
             if (n.isEmpty() || n.equals(card.name)) return;
@@ -335,7 +335,7 @@ public class CardEditor extends BorderPane implements ItemView {
         Label hint = new Label("Enter a relationship on either card; the other card shows it too. Parents, partners and siblings "
                 + "build the family tree (Relations... in the top bar).");
         hint.setWrapText(true);
-        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
         Button add = new Button("+ Add relationship");
 
         Runnable[] refreshIncoming = new Runnable[1];
@@ -502,7 +502,7 @@ public class CardEditor extends BorderPane implements ItemView {
                 changed();
             });
             Label hint = new Label("Shown in the battle tracker on this creature's turn. Damage uses dice like 1d6+2.");
-            hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+            hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
             getChildren().addAll(row(heading("Attacks"), add), hint, rows);
             setPadding(new Insets(10));
             setStyle("-fx-background-color: -t-cream; -fx-border-color: -t-border; -fx-background-radius: 4; -fx-border-radius: 4;");

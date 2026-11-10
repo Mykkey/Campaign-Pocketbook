@@ -29,7 +29,7 @@ public class SpellEditor extends BorderPane implements ItemView {
         this.store = store;
 
         TextField name = new TextField(spell.name);
-        name.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
+        name.setStyle("-fx-font-size: 1.500em; -fx-font-weight: bold;");
         name.textProperty().addListener((o, a, n) -> {
             if (n.isBlank()) return;
             spell.name = n.trim();

@@ -97,7 +97,7 @@ public final class LibraryDialog {
         });
         Label hint = new Label("The SRD data is not bundled with the app. Download both files once (your browser will show the "
                 + "text: press Ctrl+S to save it as a .json file), then press Import.");
-        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
         hint.setWrapText(true);
         Hyperlink dlMonsters = link("Download monsters (5e-SRD-Monsters.json)", MONSTERS_URL, hostServices);
         Hyperlink dlSpells = link("Download spells (5e-SRD-Spells.json)", SPELLS_URL, hostServices);
@@ -113,7 +113,7 @@ public final class LibraryDialog {
         root.setTop(header);
         if (owner != null) stage.initOwner(owner);
         stage.setTitle("Monster and spell library");
-        Scene scene = new Scene(root, 1150, 720);
+        Scene scene = new Scene(root, UiScale.px(1150), UiScale.px(720));
         scene.setOnKeyPressed(e -> {
             if (dnd.keys.Shortcuts.matches(e, "dialog.close") && !(scene.getFocusOwner() instanceof TextInputControl)) stage.close();
         });
@@ -382,7 +382,7 @@ public final class LibraryDialog {
     private static Node emptyNote(String message) {
         Label l = new Label(message);
         l.setWrapText(true);
-        l.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 14px;");
+        l.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 1.167em;");
         VBox box = new VBox(l);
         box.setPadding(new Insets(30));
         return box;

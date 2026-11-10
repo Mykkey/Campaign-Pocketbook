@@ -43,7 +43,7 @@ final class BattleSetupView extends VBox {
         Battle b = ctx.battle();
 
         Label title = new Label("Set up the battle");
-        title.setFont(Font.font("System", FontWeight.BOLD, 20));
+        title.setFont(Font.font("System", FontWeight.BOLD, UiScale.px(20)));
         Label steps = new Label("1. Add the players and monsters.\n2. Enter each initiative (or roll it).\n3. Press Start battle.");
         steps.setStyle("-fx-text-fill: -t-text2;");
         getChildren().addAll(title, steps);
@@ -97,7 +97,7 @@ final class BattleSetupView extends VBox {
         Region spacer = new Region();
         VBox.setVgrow(spacer, Priority.ALWAYS);
         Button start = new Button("Start battle");
-        start.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-base: #fbbf24; -fx-padding: 8 24 8 24;");
+        start.setStyle("-fx-font-size: 1.500em; -fx-font-weight: bold; -fx-base: #fbbf24; -fx-padding: 8 24 8 24;");
         start.setDisable(!BattleEngine.canStart(b));
         start.setOnAction(e -> onStart.run());
         Label why = new Label();
@@ -140,12 +140,12 @@ final class BattleSetupView extends VBox {
             row.getChildren().add(tick);
         }
         Label dot = new Label("●");
-        dot.setStyle("-fx-text-fill: " + sideColor(first.side) + "; -fx-font-size: 16px;");
+        dot.setStyle("-fx-text-fill: " + sideColor(first.side) + "; -fx-font-size: 1.333em;");
         Label name = new Label(s.name());
         name.setStyle("-fx-font-weight: bold;");
         Label info = new Label(group ? s.members.size() + " together | AC " + first.ac + " | HP " + first.hpMax + " each"
                 : "AC " + first.ac + " | HP " + first.hpMax);
-        info.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+        info.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
         VBox who = new VBox(1, name, info);
         HBox.setHgrow(who, Priority.ALWAYS);
 

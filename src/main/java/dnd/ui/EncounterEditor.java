@@ -40,7 +40,7 @@ public class EncounterEditor extends BorderPane implements ItemView {
         this.openItem = openItem;
 
         TextField name = new TextField(enc.name);
-        name.setFont(Font.font("System", FontWeight.BOLD, 20));
+        name.setFont(Font.font("System", FontWeight.BOLD, UiScale.px(20)));
         name.textProperty().addListener((o, a, n) -> {
             if (n.isBlank()) return;
             enc.name = n.trim();
@@ -180,7 +180,7 @@ public class EncounterEditor extends BorderPane implements ItemView {
 
     private static Label sectionLabel(String text) {
         Label l = new Label(text.toUpperCase());
-        l.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: -t-heading; -fx-padding: 6 0 0 0;");
+        l.setStyle("-fx-font-size: 0.917em; -fx-font-weight: bold; -fx-text-fill: -t-heading; -fx-padding: 6 0 0 0;");
         return l;
     }
 
@@ -215,7 +215,7 @@ public class EncounterEditor extends BorderPane implements ItemView {
         Label info = new Label(card == null ? "This creature was deleted, so it is left out of the totals."
                 : "CR " + (card.challenge == null || card.challenge.isBlank() ? "?" : card.challenge)
                 + " | " + EncounterMath.xpOf(card.xp, card.challenge) + " XP each | AC " + card.ac + " | HP " + card.hpMax);
-        info.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+        info.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
         VBox who = new VBox(1, name, info);
         HBox.setHgrow(who, Priority.ALWAYS);
 
@@ -391,7 +391,7 @@ public class EncounterEditor extends BorderPane implements ItemView {
         int[] t = EncounterMath.thresholds(partyLevel, partySize);
 
         Label verdict = new Label(monsters == 0 ? "No enemies yet" : diff.label);
-        verdict.setFont(Font.font("System", FontWeight.BOLD, 28));
+        verdict.setFont(Font.font("System", FontWeight.BOLD, UiScale.px(28)));
         verdict.setStyle("-fx-text-fill: " + (monsters == 0 ? "-t-text3" : colour(diff)) + ";");
         Label forParty = new Label("for " + partySize + " characters of level " + partyLevel);
         forParty.setStyle("-fx-text-fill: -t-text2;");
@@ -433,7 +433,7 @@ public class EncounterEditor extends BorderPane implements ItemView {
         Label note = new Label("Rated with the 5e Dungeon Master's Guide method. Only enemies count; allies and players "
                 + "do not. It is a guide: terrain, tactics and resources change how a fight really goes.");
         note.setWrapText(true);
-        note.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 11px;");
+        note.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
 
         summary.getChildren().addAll(partyTitle, party, sectionLabel("Difficulty"), verdict, forParty, bar, xp, share,
                 sectionLabel("Your party's budget"), budget, note);

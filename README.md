@@ -46,7 +46,13 @@ Built with Java 21 and JavaFX. Runs on Windows, macOS and Linux; you need [Java 
 
 ## Download and run
 
-**Requirement: Java 21 or newer** (64-bit). If `java -version` in a terminal does not show 21 or higher, install a free JDK or JRE from **[Adoptium](https://adoptium.net/)** first. Nothing else is needed.
+**Requirement: Java 21 or newer** (64-bit). That is the only thing you need to install, and only if you do not already have it (check by typing `java -version` in a terminal; it should say 21 or higher).
+
+How to install Java, step by step:
+1. Open **[adoptium.net](https://adoptium.net/)** and press the big download button. It offers **Temurin 21 (LTS)** for your computer; if it offers a different version, pick **21** (any newer one is fine too).
+2. Choose your operating system and the **x64** build (on a Mac with an M1/M2/M3 chip choose **aarch64**). Either the **JRE** or the **JDK** works; the JRE is smaller.
+3. Run the installer it downloads (`.msi` on Windows, `.pkg` on macOS) and accept the defaults. If you are given the option, tick **"Set JAVA_HOME"** and **"Add to PATH"**.
+4. You do not need Maven or anything else to use the download below. Maven is only for building the app from the source code.
 
 ### Easiest: download a ready-to-run zip
 1. Go to the **[latest release](https://github.com/Mykkey/Campaign-Pocketbook/releases/latest)** and download the zip for your system (Windows, macOS on Apple silicon, or Linux).

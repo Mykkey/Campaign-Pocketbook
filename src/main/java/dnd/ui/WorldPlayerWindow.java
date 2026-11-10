@@ -185,7 +185,7 @@ public final class WorldPlayerWindow {
         private final Canvas canvas = new Canvas();
         private double zoom = 1, offX, offY, dragX, dragY;
         private boolean autoFit = true, dirty = true, showGrid;
-        private int drawnRevision = -1, drawnReveal = -1;
+        private int drawnRevision = -1, drawnReveal = -1, drawnCols, drawnRows;
 
         View(WorldMap map, AssetLibrary lib) {
             this.map = map;
@@ -261,6 +261,11 @@ public final class WorldPlayerWindow {
 
         /** Called every frame: redraws only if the map or the camera changed. */
         void tick() {
+            if (map.cols != drawnCols || map.rows != drawnRows) { // the DM resized the map
+                drawnCols = map.cols;
+                drawnRows = map.rows;
+                fit();
+            }
             if (dirty || map.revision != drawnRevision || map.revealVersion != drawnReveal) redraw();
         }
 

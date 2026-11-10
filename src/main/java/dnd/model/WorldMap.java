@@ -140,6 +140,13 @@ public class WorldMap extends ProjectEntry {
         return rows * milesPerCell;
     }
 
+    /** Puts in new paint layers (after the map was resized); they must already have the map's new size. */
+    public void replaceLayers(PaintLayer newBase, PaintLayer newBiome, PaintLayer newReveal) {
+        base = newBase;
+        biome = newBiome;
+        reveal = newReveal;
+    }
+
     public WorldMap copy() {
         WorldMap m = new WorldMap(name, cols, rows, milesAcross(), style);
         m.id = id;

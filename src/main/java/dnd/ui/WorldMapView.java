@@ -11,6 +11,7 @@ import dnd.map.world.WorldTravel;
 import dnd.map.world.WorldPalette;
 import dnd.map.world.WorldPathGeometry;
 import dnd.map.world.WorldPathRenderer;
+import dnd.map.world.WorldResize;
 import dnd.map.world.WorldStampRenderer;
 import dnd.map.world.WorldTerrainCache;
 import dnd.model.PaintLayer;
@@ -752,6 +753,33 @@ final class WorldMapView extends Pane {
         if (java.util.Arrays.equals(before, after)) return;
         applyRevealPatch(0, 0, rv.w, rv.h, after);
         push(new Entry(() -> applyRevealPatch(0, 0, rv.w, rv.h, before), () -> applyRevealPatch(0, 0, rv.w, rv.h, after)));
+    }
+
+    /** Runs a change of the map's size as one undoable step. */
+    void resizeMap(Runnable change) {
+        WorldResize.State before = WorldResize.capture(map);
+        change.run();
+        WorldResize.State after = WorldResize.capture(map);
+        push(new Entry(() -> applyResize(before), () -> applyResize(after)));
+        afterResize();
+    }
+
+    private void applyResize(WorldResize.State s) {
+        WorldResize.restore(map, s);
+        afterResize();
+    }
+
+    /** Forgets everything that referred to the old size and shows the whole map. */
+    private void afterResize() {
+        WorldTerrainCache.of(map).invalidateAll();
+        selected.clear();
+        selShape = null;
+        ruler.clear();
+        rulerDone = false;
+        drawingPath = null;
+        drawingRegion = null;
+        store.markWorldMapDirty(map, true);
+        fitToWindow();
     }
 
     /** Turns "hide what the players have not explored" on or off. */

@@ -355,6 +355,8 @@ public class WorldMapEditor extends BorderPane implements ItemView {
 
         bar.getChildren().addAll(
                 iconButton("fit", "Fit: zoom to show the whole map", this::fit),
+                iconButton("resize", "Map size: made the map too big (or too small)? Scale the whole map, crop or extend its canvas, or change how many miles across it is. Can be undone", () ->
+                        WorldResizeDialog.show(getScene() == null ? null : getScene().getWindow(), map, view::resizeMap)),
                 iconButton("undo", "Undo (Ctrl+Z)", view::undo),
                 iconButton("redo", "Redo (Ctrl+Y)", view::redo));
 

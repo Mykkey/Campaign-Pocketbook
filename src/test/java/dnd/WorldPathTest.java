@@ -135,4 +135,21 @@ class WorldPathTest {
         assertEquals(1, m.regions.size());
         assertEquals(1, m.copy().paths.size());
     }
+
+    @Test
+    void aRegionNameCanBeMovedAndStaysMoved() {
+        WorldRegion r = new WorldRegion();
+        r.add(0, 0);
+        r.add(10, 0);
+        r.add(10, 10);
+        r.add(0, 10);
+        assertArrayEquals(new double[]{5, 5}, r.labelAt(), 1e-9, "in the middle until moved");
+        r.labelX = 2.0;
+        r.labelY = 8.0;
+        assertArrayEquals(new double[]{2, 8}, r.labelAt(), 1e-9);
+        assertArrayEquals(new double[]{2, 8}, r.copy().labelAt(), 1e-9);
+        WorldRegion back = dnd.storage.Json.read(dnd.storage.Json.write(r), WorldRegion.class);
+        assertArrayEquals(new double[]{2, 8}, back.labelAt(), 1e-9);
+    }
+
 }

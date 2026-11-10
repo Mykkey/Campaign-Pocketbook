@@ -654,6 +654,15 @@ final class WorldMapView extends Pane {
         // the points of the selected line or region
         Object shape = shapeById(selShape);
         if (shape != null) {
+            if (shape instanceof WorldRegion rg && rg.name != null && !rg.name.isBlank()) {
+                double[] at = rg.labelAt();
+                if (Math.abs(at[0] - px) <= 9 / zoom() && Math.abs(at[1] - py) <= 9 / zoom()) {
+                    dragPoint = -2;
+                    mode = Mode.DRAGPOINT;
+                    stampsBefore = WorldObjects.capture(map);
+                    return;
+                }
+            }
             int idx = pointAt(shape, px, py);
             if (idx >= 0 && alt && pointCount(shape) > (shape instanceof WorldRegion ? 3 : 2)) {
                 String before = WorldObjects.capture(map);
@@ -830,6 +839,11 @@ final class WorldMapView extends Pane {
 
     private void movePoint(double px, double py) {
         Object shape = shapeById(selShape);
+        if (shape instanceof WorldRegion rg && dragPoint == -2) {
+            rg.labelX = px;
+            rg.labelY = py;
+            return;
+        }
         if (shape == null || dragPoint < 0) return;
         List<Double> pts = shape instanceof WorldPath p ? p.points : ((WorldRegion) shape).points;
         pts.set(2 * dragPoint, px);
@@ -1186,6 +1200,15 @@ final class WorldMapView extends Pane {
             g.setStroke(Color.web("#2563eb", 0.55));
             g.setLineWidth(3 / zoom());
             g.strokePolygon(xs, ys, r.count());
+        }
+        if (shape instanceof WorldRegion rg && rg.name != null && !rg.name.isBlank()) {
+            double[] at = rg.labelAt();
+            double d = 6 / zoom();
+            g.setFill(Color.web("#f59e0b"));
+            g.setStroke(Color.WHITE);
+            g.setLineWidth(1.5 / zoom());
+            g.fillPolygon(new double[]{at[0], at[0] + d, at[0], at[0] - d}, new double[]{at[1] - d, at[1], at[1] + d, at[1]}, 4);
+            g.strokePolygon(new double[]{at[0], at[0] + d, at[0], at[0] - d}, new double[]{at[1] - d, at[1], at[1] + d, at[1]}, 4);
         }
         if (shape != null) {
             g.setFill(Color.WHITE);

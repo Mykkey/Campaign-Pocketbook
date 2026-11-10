@@ -78,7 +78,7 @@ public final class WorldPathRenderer {
         else g.strokePolyline(xs, ys, n);
         g.setLineDashes((double[]) null);
         if (r.name != null && !r.name.isBlank() && n >= 3) {
-            double[] c = r.centre();
+            double[] c = r.labelAt();
             double size = Math.max(2.5, Math.min(18, Math.sqrt(r.area()) * 0.09));
             g.setFont(Font.font("Serif", FontWeight.BOLD, size));
             g.setTextAlign(TextAlignment.CENTER);

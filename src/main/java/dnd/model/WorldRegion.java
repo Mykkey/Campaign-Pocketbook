@@ -13,6 +13,8 @@ public class WorldRegion {
     /** "#RRGGBB", or null for the style's border colour. */
     public String tint;
     public boolean hidden;
+    /** Where the name is written, or null for the middle of the outline. */
+    public Double labelX, labelY;
     public String link;
     public String note;
 
@@ -57,6 +59,11 @@ public class WorldRegion {
         return new double[]{sx / n, sy / n};
     }
 
+    /** Where the name is written: where the user put it, or the middle of the outline. */
+    public double[] labelAt() {
+        return labelX != null && labelY != null ? new double[]{labelX, labelY} : centre();
+    }
+
     /** The area inside the outline, in square map cells. */
     public double area() {
         double a = 0;
@@ -71,6 +78,8 @@ public class WorldRegion {
         r.points = new ArrayList<>(points);
         r.tint = tint;
         r.hidden = hidden;
+        r.labelX = labelX;
+        r.labelY = labelY;
         r.link = link;
         r.note = note;
         return r;

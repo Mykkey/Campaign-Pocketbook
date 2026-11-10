@@ -13,7 +13,7 @@ Projects are saved as plain files in `~/CampaignPocketbook/<project name>/` (`pr
 ## Using it
 The toolbars (whiteboard, battlemap and the top bar) use small icons to stay uncluttered. **Hover any icon** to see its name, what it does and its shortcut key; the tool icons keep their number keys (1 to 0), and switches such as Name hints, Link previews, Grid, Snap and Fog show as pressed (highlighted) when they are on. The buttons above the project tree are icons too: each shows the icon of the kind of item it creates with a small green plus (hover one for its name). This guide still calls them **+ Board**, **+ Battlemap**, **+ Card**, **+ World map** and so on.
 
-The **top bar icons**, left to right: house = Projects (back to the campaign list), arrows = Back / Forward, name badge = **Names...**, person = **NPC...**, chest = **Loot...**, three joined dots = **Relations...**, flag = **Quests...**, calendar = **Timeline...**, book = **Library...**, sun / moon = light or dark mode, clock = **Recent**, chain = **Backlinks**, then the search box. The rest of this guide refers to them by those names.
+The **top bar icons**, left to right: house = Projects (back to the campaign list), arrows = Back / Forward, name badge = **Names...**, person = **NPC...**, chest = **Loot...**, page = **Rules...**, three joined dots = **Relations...**, flag = **Quests...**, calendar = **Timeline...**, book = **Library...**, sun / moon = light or dark mode, clock = **Recent**, chain = **Backlinks**, then the search box. The rest of this guide refers to them by those names.
 
 | Do this | How |
 |---------|-----|
@@ -169,6 +169,10 @@ Press **Library...** in the top bar to browse the 5e SRD monsters and spells. Th
 - **Monsters:** search by name and filter by type or challenge rating. The full stat block is shown. **Add to project as a card** makes an ordinary, editable card in an "SRD Monsters" folder (its attacks are filled in, so it works in battles straight away). **Add to common enemies** puts it in the dropdown used by the encounter builder and the battle's Add dialog, in every project.
 - **Spells:** search by name and filter by level, class and school. **Add as spell card** turns the spell into an editable spell card in your project (in a "Spells" folder; if you already made one from that spell it opens that one instead). **Add to board** puts the spell on the open whiteboard as a text note, and **Copy** copies it.
 - Importing a file again replaces what was imported before for that kind (monsters or spells).
+
+## Quick reference
+
+The **Rules...** button in the top bar (or **Ctrl+R**, or the page button on the battle screen) opens a small window with the rules a DM looks up most, written in plain words as a memory aid: all the conditions, concentration, death saves, grappling, cover, light and vision, travel pace, resting, falling, suffocation and more. Search it, or pick from the list. In a battle, **hover a condition** on a creature to read its rule, and click it to open the full entry.
 
 ## Loot generator
 Press **Loot...** in the top bar (or **Ctrl+L**) for random treasure. Pick a **tier** (the challenge rating of what the party beat: 0-4, 5-10, 11-16, 17+) and either **a creature's pockets** (coins and the odd keepsake; set how many creatures and the coins are added together) or **a treasure hoard** (coins, gems, art objects, magic items of rarities that suit the tier, and a few curios). It changes as you change the options, **Roll** rolls again, **Copy** copies it and **Add to board** puts it on the open whiteboard as a text note. The amounts are rough guidance in the spirit of the usual treasure tiers, not a published table, so change anything you like.

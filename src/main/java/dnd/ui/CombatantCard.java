@@ -189,6 +189,11 @@ final class CombatantCard extends VBox {
             Label swatch = new Label("\u25CF");
             swatch.setStyle("-fx-text-fill: " + col + ";");
             chip.setGraphic(swatch);
+            String rule = dnd.rules.RulesReference.forCondition(cond);
+            if (rule != null) {
+                chip.setTooltip(IconButtons.tip(cond + ": " + rule));
+                chip.setOnMouseClicked(ev -> RulesReferenceDialog.show(chip.getScene() == null ? null : chip.getScene().getWindow(), cond));
+            }
             chip.setGraphicTextGap(4);
             chip.setStyle("-fx-background-color: -t-slate; -fx-border-color: " + col + "; -fx-border-radius: 8; -fx-padding: 1 7 1 6; -fx-background-radius: 8; -fx-font-size: 12px;");
             chips.getChildren().add(chip);

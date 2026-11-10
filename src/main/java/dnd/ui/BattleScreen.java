@@ -296,7 +296,9 @@ final class BattleScreen implements BattleContext {
         players.setOnAction(e -> host.popOutPlayers());
         Button exit = IconButtons.decorate(new Button(), "exit", active ? "Exit (keeps the battle)" : "Close the battle screen");
         exit.setOnAction(e -> host.exit());
-        banner.getChildren().addAll(tools, players, exit);
+        Button rules = IconButtons.decorate(new Button(), "rules", "Quick reference: conditions, cover, grappling and other rules (Ctrl+R)");
+        rules.setOnAction(e -> RulesReferenceDialog.show(view.getScene() == null ? null : view.getScene().getWindow()));
+        banner.getChildren().addAll(tools, players, rules, exit);
     }
 
     private void buildCards(Battle b) {

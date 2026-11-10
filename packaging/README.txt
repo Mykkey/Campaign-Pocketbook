@@ -3,7 +3,8 @@ Campaign Pocketbook
 
 1. Install Java 21 or newer (a "JDK" or "JRE") if you do not have it: https://adoptium.net/
 2. Start the app:
-   - Windows: double-click CampaignPocketbook.bat
+   - Windows: double-click CampaignPocketbook.bat. For a Desktop icon, double-click make-shortcut.bat once
+     (a .bat file cannot have its own icon, so it makes a shortcut that has one).
    - macOS / Linux: run ./CampaignPocketbook.sh in a terminal (you may need: chmod +x CampaignPocketbook.sh)
 
 Your campaigns are saved in a folder called CampaignPocketbook in your home folder, not in this folder,

@@ -42,7 +42,7 @@ public class LootDialog {
         ComboBox<Tier> tier = new ComboBox<>(FXCollections.observableArrayList(Tier.values()));
         tier.setValue(lastTier);
         tier.setMaxWidth(Double.MAX_VALUE);
-        tier.setTooltip(new Tooltip("The challenge rating of what the party defeated, or how rich the place is"));
+        tier.setTooltip(IconButtons.tip("The challenge rating of what the party defeated, or how rich the place is"));
         ComboBox<Kind> kind = new ComboBox<>(FXCollections.observableArrayList(Kind.values()));
         kind.setValue(lastKind);
         kind.setMaxWidth(Double.MAX_VALUE);

@@ -71,7 +71,7 @@ public final class LibraryDialog {
         Stage stage = new Stage();
         Button importBtn = new Button("Import SRD file...");
         importBtn.setStyle("-fx-font-weight: bold;");
-        importBtn.setTooltip(new Tooltip("Choose 5e-SRD-Monsters.json and/or 5e-SRD-Spells.json (you can pick both at once)"));
+        importBtn.setTooltip(IconButtons.tip("Choose 5e-SRD-Monsters.json and/or 5e-SRD-Spells.json (you can pick both at once)"));
         importBtn.setOnAction(e -> {
             FileChooser fc = new FileChooser();
             fc.setTitle("Choose the SRD JSON file(s)");
@@ -125,7 +125,7 @@ public final class LibraryDialog {
 
     private static Hyperlink link(String text, String url, javafx.application.HostServices hostServices) {
         Hyperlink h = new Hyperlink(text);
-        h.setTooltip(new Tooltip(url));
+        h.setTooltip(IconButtons.tip(url));
         h.setOnAction(e -> {
             if (hostServices != null) hostServices.showDocument(url);
         });
@@ -181,9 +181,9 @@ public final class LibraryDialog {
         previewScroll.setStyle("-fx-background: -t-paperbg;");
         Button toProject = new Button("Add to project as a card");
         toProject.setStyle("-fx-font-weight: bold;");
-        toProject.setTooltip(new Tooltip("Makes a card in the open project (in an \"" + SRD_FOLDER + "\" folder) that you can edit freely"));
+        toProject.setTooltip(IconButtons.tip("Makes a card in the open project (in an \"" + SRD_FOLDER + "\" folder) that you can edit freely"));
         Button toCommon = new Button("Add to common enemies");
-        toCommon.setTooltip(new Tooltip("Adds it to the dropdown in the encounter builder and the battle's Add dialog, in every project"));
+        toCommon.setTooltip(IconButtons.tip("Adds it to the dropdown in the encounter builder and the battle's Add dialog, in every project"));
         toProject.setDisable(true);
         toCommon.setDisable(true);
         list.getSelectionModel().selectedItemProperty().addListener((o, a, c) -> {
@@ -327,7 +327,7 @@ public final class LibraryDialog {
         Button add = new Button("Add to board");
         Button asCard = new Button("Add as spell card");
         asCard.setStyle("-fx-font-weight: bold;");
-        asCard.setTooltip(new Tooltip("Makes an editable spell card in this project (in a \"Spells\" folder). If you already made one from this spell, it is opened instead."));
+        asCard.setTooltip(IconButtons.tip("Makes an editable spell card in this project (in a \"Spells\" folder). If you already made one from this spell, it is opened instead."));
         asCard.setDisable(true);
         copy.setDisable(true);
         add.setDisable(true);

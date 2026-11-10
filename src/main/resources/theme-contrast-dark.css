@@ -1,0 +1,59 @@
+/* High contrast on top of the dark theme: white on black, heavy outlines, a bright yellow focus ring. */
+.root {
+    -t-text: #ffffff;
+    -t-text2: #ffffff;
+    -t-text3: #e6e6e6;
+    -t-surface: #000000;
+    -t-cream: #000000;
+    -t-slate: #000000;
+    -t-surface2: #262626;
+    -t-border: #ffffff;
+    -t-paperbg: #000000;
+    -t-amber: #2e2500;
+    -t-red: #330000;
+    -t-blue: #001a4d;
+    -t-blue2: #000000;
+    -t-blue-border: #8fb8ff;
+    -t-heading: #ffb39e;
+    -t-blue-text: #bcd5ff;
+    -t-danger: #ff8080;
+    -t-ok: #6dff9a;
+
+    -fx-base: #000000;
+    -fx-background: #000000;
+    -fx-control-inner-background: #000000;
+    -fx-control-inner-background-alt: #0d0d0d;
+    -fx-accent: #ffe14a;
+    -fx-focus-color: #ffe14a;
+    -fx-faint-focus-color: transparent;
+    -fx-text-base-color: #ffffff;
+    -fx-text-background-color: #ffffff;
+    -fx-text-inner-color: #ffffff;
+    -fx-light-text-color: #ffffff;
+    -fx-mid-text-color: #ffffff;
+    -fx-dark-text-color: #ffffff;
+    -fx-prompt-text-fill: #cccccc;
+    -fx-selection-bar: #ffe14a;
+    -fx-selection-bar-non-focused: #7a6a10;
+    -fx-selection-bar-text: #000000;
+}
+.button, .toggle-button, .combo-box-base, .text-field, .text-area, .spinner, .choice-box {
+    -fx-border-color: #ffffff;
+    -fx-border-width: 2;
+    -fx-border-radius: 3;
+}
+.button:focused, .toggle-button:focused, .combo-box-base:focused, .text-field:focused, .text-area:focused, .spinner:focused, .hyperlink:focused, .check-box:focused > .box {
+    -fx-border-color: #ffe14a;
+    -fx-border-width: 3;
+    -fx-background-insets: 0;
+}
+.toggle-button:selected { -fx-background-color: #ffffff; -fx-text-fill: #000000; }
+.icon-button { -fx-border-color: #ffffff; -fx-border-width: 1; }
+.icon-button:hover { -fx-background-color: #4d4400; }
+.toggle-button.icon-button:selected { -fx-background-color: #001a4d; -fx-border-color: #ffe14a; -fx-border-width: 3; }
+.hyperlink { -fx-text-fill: #8fe0ff; -fx-underline: true; }
+.tooltip { -fx-background-color: #ffffff; -fx-text-fill: #000000; -fx-font-size: 1.1em; }
+.tab:selected { -fx-border-color: #ffffff; -fx-border-width: 2; }
+.tree-cell:filled:selected, .list-cell:filled:selected { -fx-background-color: #ffe14a; -fx-text-fill: #000000; }
+.tree-cell:filled:selected .label, .list-cell:filled:selected .label { -fx-text-fill: #000000; }
+.button:default { -fx-base: #ffe14a; -fx-text-fill: #000000; }

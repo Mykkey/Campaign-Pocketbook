@@ -32,14 +32,14 @@ final class WorldGeneratorPane extends GridPane {
         setPadding(new Insets(4));
         seed.setText(String.valueOf(new Random().nextInt(900000) + 100000));
         seed.setPrefWidth(110);
-        seed.setTooltip(new Tooltip("The same seed and settings always make the same world. Press New seed to try another."));
+        seed.setTooltip(IconButtons.tip("The same seed and settings always make the same world. Press New seed to try another."));
         Button reroll = new Button("New seed");
         reroll.setOnAction(e -> seed.setText(String.valueOf(new Random().nextInt(900000) + 100000)));
         land.setEditable(true);
         land.setPrefWidth(80);
-        land.setTooltip(new Tooltip("Roughly how much of the map is land, in percent"));
+        land.setTooltip(IconButtons.tip("Roughly how much of the map is land, in percent"));
         mountains.setPrefWidth(170);
-        mountains.setTooltip(new Tooltip("From rolling hills (left) to rugged mountain ranges (right)"));
+        mountains.setTooltip(IconButtons.tip("From rolling hills (left) to rugged mountain ranges (right)"));
         climate.setValue(Climate.TEMPERATE);
         rivers.setSelected(true);
         symbols.setSelected(true);

@@ -1340,7 +1340,7 @@ public class BoardView extends Pane implements ItemView {
         grip.setMinSize(12, 12);
         grip.setMaxSize(12, 12);
         grip.setStyle("-fx-background-color: white; -fx-border-color: #2563eb; -fx-border-width: 1.5; -fx-cursor: se-resize;");
-        Tooltip.install(grip, new Tooltip("Drag to resize the box"));
+        Tooltip.install(grip, IconButtons.tip("Drag to resize the box"));
         grip.setOnMousePressed(e -> {
             pickingTarget = true; // clicking the grip must not end the edit
             if (!editingNew) checkpoint();

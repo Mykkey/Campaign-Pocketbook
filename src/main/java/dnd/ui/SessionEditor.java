@@ -75,7 +75,7 @@ public class SessionEditor extends BorderPane implements ItemView {
         lastTimeText.setWrapText(true);
         lastTimeText.setStyle("-fx-text-fill: -t-text2;");
         Button copy = new Button("Copy");
-        copy.setTooltip(new Tooltip("Copy this recap to the clipboard"));
+        copy.setTooltip(IconButtons.tip("Copy this recap to the clipboard"));
         copy.setOnAction(e -> {
             ClipboardContent c = new ClipboardContent();
             c.putString(lastTimeText.getText());

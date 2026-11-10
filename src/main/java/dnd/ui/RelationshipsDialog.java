@@ -72,7 +72,7 @@ public final class RelationshipsDialog {
 
         ComboBox<Object> focus = new ComboBox<>();
         focus.setPrefWidth(240);
-        focus.setTooltip(new Tooltip("Show everyone, or only the people connected to one card"));
+        focus.setTooltip(IconButtons.tip("Show everyone, or only the people connected to one card"));
         Label message = new Label();
         message.setStyle("-fx-text-fill: -t-text3;");
         message.setWrapText(true);
@@ -104,7 +104,7 @@ public final class RelationshipsDialog {
         focus.setOnAction(e -> redraw[0].run());
 
         Button refresh = new Button("Refresh");
-        refresh.setTooltip(new Tooltip("Pick up relationships you have just changed on cards"));
+        refresh.setTooltip(IconButtons.tip("Pick up relationships you have just changed on cards"));
         refresh.setOnAction(e -> {
             refreshChoices.run();
             redraw[0].run();

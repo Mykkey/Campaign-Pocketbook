@@ -64,6 +64,7 @@ public final class SettingsDialog {
     private static void build(Window owner) {
         List<Page> pages = new ArrayList<>();
         pages.add(appearance());
+        pages.add(accessibility());
         pages.add(new Page("Shortcuts", new ShortcutsPane(), ShortcutsPane::resetAll));
         pages.add(data());
 
@@ -215,6 +216,39 @@ public final class SettingsDialog {
             AppSettings.remove("nameHints");
             AppSettings.remove("linkPreviews");
             Theme.setDark(false);
+        });
+    }
+
+    private static Page accessibility() {
+        ComboBox<String> speed = new ComboBox<>();
+        int[] ms = {150, 500, 1000, 2500};
+        String[] names = {"Fast (a moment)", "Normal (half a second)", "Slow (a second)", "Very slow (2 seconds and a half)"};
+        speed.getItems().addAll(names);
+        int now = AppSettings.getInt("ui.tooltipDelay", 150);
+        int pick = 0;
+        for (int i = 0; i < ms.length; i++) if (Math.abs(ms[i] - now) < Math.abs(ms[pick] - now)) pick = i;
+        speed.setValue(names[pick]);
+        speed.setOnAction(e -> {
+            int i = speed.getItems().indexOf(speed.getValue());
+            if (i >= 0) AppSettings.setInt("ui.tooltipDelay", ms[i]);
+        });
+        HBox speedRow = new HBox(10, new Label("Hints on buttons appear"), speed);
+        speedRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        VBox box = new VBox(10,
+                heading("Seeing the screen"),
+                check("High contrast: black and white with heavy outlines and a strong focus ring (works with light and dark)", "ui.highContrast", false),
+                check("Colour-blind-safe colours: other colours for conditions, with a two-letter code on tokens and in the turn order", "ui.colourBlind", false),
+                note("Bigger text and a different font are on the Appearance tab."),
+                heading("Movement"),
+                check("Reduce motion: no gliding or fading (the turn order jumps to the current turn, the hint in the player window just disappears)", "ui.reduceMotion", false),
+                heading("Hints"), speedRow,
+                note("Hints already on screen change the next time you open a tab. Everything in the app can be done with the keyboard, and every key can be changed on the Shortcuts tab. "
+                        + "Maps and whiteboards are pictures, so a screen reader cannot read what is drawn on them."));
+        return new Page("Accessibility", box, () -> {
+            AppSettings.remove("ui.highContrast");
+            AppSettings.remove("ui.colourBlind");
+            AppSettings.remove("ui.reduceMotion");
+            AppSettings.remove("ui.tooltipDelay");
         });
     }
 

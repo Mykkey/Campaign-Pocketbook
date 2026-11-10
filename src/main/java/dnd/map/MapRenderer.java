@@ -78,19 +78,22 @@ public final class MapRenderer {
         if (m.darkMap && who != Audience.PLAIN) drawLighting(g, m, grid, who == Audience.PLAYERS ? 1.0 : 0.55);
         // battle state: whose turn it is and who is down, looked up by token id
         java.util.Set<String> active = new java.util.HashSet<>(), down = new java.util.HashSet<>();
-        Map<String, List<String>> rings = new HashMap<>();
+        Map<String, List<String>> rings = new HashMap<>(), ringCodes = new HashMap<>();
         if (m.battle != null) {
             for (dnd.model.Combatant co : m.battle.combatants) {
                 if (co.tokenId == null) continue;
                 if (co.defeated) down.add(co.tokenId);
                 if (dnd.battle.BattleEngine.isCurrent(m.battle, co)) active.add(co.tokenId);
-                if (!co.conditions.isEmpty()) rings.put(co.tokenId, dnd.battle.ConditionStyle.colorsOf(co.conditions));
+                if (!co.conditions.isEmpty()) {
+                    rings.put(co.tokenId, dnd.battle.ConditionStyle.colorsOf(co.conditions));
+                    if (dnd.battle.ConditionStyle.safeColours()) ringCodes.put(co.tokenId, dnd.battle.ConditionStyle.codesOf(co.conditions));
+                }
             }
         }
         for (MapToken t : m.tokens) {
             if (t.hidden && who == Audience.PLAYERS) continue;
             drawToken(g, t, grid, m.cellSize, t.hidden && who == Audience.DM ? 0.45 : 1.0,
-                    active.contains(t.id), down.contains(t.id), rings.getOrDefault(t.id, List.of()));
+                    active.contains(t.id), down.contains(t.id), rings.getOrDefault(t.id, List.of()), ringCodes.getOrDefault(t.id, List.of()));
         }
         if (m.template != null && who != Audience.PLAIN && (who == Audience.DM || m.template.shared)) drawTemplate(g, m, grid, scale, who == Audience.DM);
         if (m.ruler != null && who != Audience.PLAIN && (who == Audience.DM || m.ruler.shared)) drawRuler(g, m, grid, scale);
@@ -473,16 +476,22 @@ public final class MapRenderer {
     }
 
     public static void drawToken(GraphicsContext g, MapToken t, Grid grid, double cellSize, double opacity) {
-        drawToken(g, t, grid, cellSize, opacity, false, false, List.of());
+        drawToken(g, t, grid, cellSize, opacity, false, false, List.of(), List.of());
+    }
+
+    public static void drawToken(GraphicsContext g, MapToken t, Grid grid, double cellSize, double opacity,
+                                 boolean active, boolean down, List<String> rings) {
+        drawToken(g, t, grid, cellSize, opacity, active, down, rings, List.of());
     }
 
     /**
      * @param active it is this creature's turn: a gold ring is drawn around it
      * @param down   the creature is defeated: greyed out with a cross
      * @param rings  condition colours (hex): a ring split into one coloured slice per condition is drawn around it
+     * @param codes  a short code per condition, written on its slice (colour-blind-safe mode); empty for none
      */
     public static void drawToken(GraphicsContext g, MapToken t, Grid grid, double cellSize, double opacity,
-                                 boolean active, boolean down, List<String> rings) {
+                                 boolean active, boolean down, List<String> rings, List<String> codes) {
         if (!grid.inside(t.col, t.row)) return;
         double[] c = grid.center(t.col, t.row);
         double d = cellSize * (0.78 + 0.95 * (Math.max(1, t.size) - 1));
@@ -505,6 +514,20 @@ public final class MapRenderer {
             for (int i = 0; i < rings.size(); i++) {
                 g.setStroke(Color.web(rings.get(i)));
                 g.strokeArc(c[0] - r, c[1] - r, 2 * r, 2 * r, starts[i], extent, javafx.scene.shape.ArcType.OPEN);
+            }
+            if (codes.size() == rings.size()) { // the code of each condition on its slice, so colour is not the only clue
+                g.setFont(Font.font("System", FontWeight.BOLD, Math.max(6, cellSize * 0.2)));
+                g.setTextAlign(TextAlignment.CENTER);
+                g.setTextBaseline(VPos.CENTER);
+                g.setLineWidth(Math.max(2, cellSize * 0.05));
+                for (int i = 0; i < rings.size(); i++) {
+                    double a = Math.toRadians(starts[i] + extent / 2);
+                    double tx = c[0] + (r + cellSize * 0.16) * Math.cos(a), ty = c[1] - (r + cellSize * 0.16) * Math.sin(a);
+                    g.setStroke(Color.web("#000000", 0.85));
+                    g.strokeText(codes.get(i), tx, ty);
+                    g.setFill(Color.WHITE);
+                    g.fillText(codes.get(i), tx, ty);
+                }
             }
         }
         g.setFill(Color.web("#00000040"));

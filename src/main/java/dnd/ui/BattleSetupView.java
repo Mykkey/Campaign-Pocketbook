@@ -52,13 +52,13 @@ final class BattleSetupView extends VBox {
         add.setStyle("-fx-font-weight: bold;");
         add.setOnAction(e -> onAdd.run());
         Button load = new Button("Load encounter...");
-        load.setTooltip(new Tooltip("Add every creature of a saved encounter at once"));
+        load.setTooltip(IconButtons.tip("Add every creature of a saved encounter at once"));
         load.setDisable(ctx.store().allEncounterIds().isEmpty());
         load.setOnAction(e -> onLoadEncounter.run());
         List<Slot> missing = BattleEngine.missingInitiative(b);
         boolean canRollSome = missing.stream().anyMatch(s -> s.members.stream().anyMatch(c -> c.side != Side.PLAYER));
         Button rollAll = new Button("Roll enemies and allies");
-        rollAll.setTooltip(new Tooltip("Rolls d20 + initiative bonus for every enemy and ally that has no initiative yet (one roll per group).\n"
+        rollAll.setTooltip(IconButtons.tip("Rolls d20 + initiative bonus for every enemy and ally that has no initiative yet (one roll per group).\n"
                 + "Players roll their own: type their results in, or use the d20 button on their row. Entered values are never re-rolled."));
         rollAll.setDisable(!canRollSome);
         rollAll.setOnAction(e -> {
@@ -81,7 +81,7 @@ final class BattleSetupView extends VBox {
             getChildren().add(rows);
             if (ticked.size() >= 2) {
                 Button group = new Button("Group the " + ticked.size() + " ticked creatures");
-                group.setTooltip(new Tooltip("They will share one initiative and take their turn together"));
+                group.setTooltip(IconButtons.tip("They will share one initiative and take their turn together"));
                 group.setOnAction(e -> {
                     List<Combatant> picked = new ArrayList<>();
                     for (Combatant c : ctx.battle().combatants) if (ticked.contains(c.id)) picked.add(c);
@@ -131,7 +131,7 @@ final class BattleSetupView extends VBox {
         if (!group) {
             CheckBox tick = new CheckBox();
             tick.setSelected(ticked.contains(first.id));
-            tick.setTooltip(new Tooltip("Tick two or more creatures, then use the Group button below"));
+            tick.setTooltip(IconButtons.tip("Tick two or more creatures, then use the Group button below"));
             tick.setOnAction(e -> {
                 if (tick.isSelected()) ticked.add(first.id);
                 else ticked.remove(first.id);
@@ -152,7 +152,7 @@ final class BattleSetupView extends VBox {
         TextField init = new TextField(has ? String.valueOf(s.initiative()) : "");
         init.setPromptText("init");
         init.setPrefWidth(58);
-        init.setTooltip(new Tooltip("Initiative"));
+        init.setTooltip(IconButtons.tip("Initiative"));
         Runnable apply = () -> {
             String t = init.getText().trim();
             if (t.isEmpty()) return;
@@ -174,7 +174,7 @@ final class BattleSetupView extends VBox {
 
         Button dice = new Button("d20");
         int bonus = s.members.stream().mapToInt(c -> c.initiativeBonus).max().orElse(0);
-        dice.setTooltip(new Tooltip("Roll d20 " + (bonus >= 0 ? "+ " : "- ") + Math.abs(bonus) + " for " + s.name()));
+        dice.setTooltip(IconButtons.tip("Roll d20 " + (bonus >= 0 ? "+ " : "- ") + Math.abs(bonus) + " for " + s.name()));
         dice.setOnAction(e -> {
             BattleEngine.rollOne(ctx.battle(), first, random);
             ctx.changed();
@@ -190,7 +190,7 @@ final class BattleSetupView extends VBox {
             row.getChildren().add(ungroup);
         }
         Button remove = new Button("x");
-        remove.setTooltip(new Tooltip("Remove " + s.name() + " from the battle"));
+        remove.setTooltip(IconButtons.tip("Remove " + s.name() + " from the battle"));
         remove.setOnAction(e -> {
             for (Combatant c : new ArrayList<>(s.members)) ctx.remove(c);
         });

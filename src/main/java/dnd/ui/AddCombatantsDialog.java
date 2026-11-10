@@ -38,7 +38,7 @@ public final class AddCombatantsDialog {
             side.getItems().setAll(Side.values());
             side.setValue(c.kind == Card.Kind.PLAYER ? Side.PLAYER : c.kind == Card.Kind.NPC ? Side.ALLY : Side.ENEMY);
             group.setSelected(c.kind == Card.Kind.MONSTER);
-            group.setTooltip(new Tooltip("Share one initiative and take the turn together (good for a pack of goblins)"));
+            group.setTooltip(IconButtons.tip("Share one initiative and take the turn together (good for a pack of goblins)"));
             count.valueProperty().addListener((o, a, n) -> {
                 if (n != null && n > 1 && !use.isSelected()) use.setSelected(true);
             });

@@ -34,6 +34,42 @@ public final class ConditionStyle {
         COLORS.put("Unconscious", "#1e3a8a");
     }
 
+    /** The same conditions in colours that stay apart for people with common kinds of colour blindness (together with {@link #codeOf}). */
+    public static final Map<String, String> SAFE_COLORS = new LinkedHashMap<>();
+    /** A short, different code for each condition, shown with the colour so colour is never the only clue. */
+    private static final Map<String, String> CODES = new LinkedHashMap<>();
+
+    static {
+        String[][] safe = {{"Blinded", "#000000", "Bl"}, {"Charmed", "#CC79A7", "Ch"}, {"Concentrating", "#0072B2", "Co"}, {"Deafened", "#BBBBBB", "De"},
+                {"Exhausted", "#7A4B1E", "Ex"}, {"Frightened", "#6A3D9A", "Fr"}, {"Grappled", "#E69F00", "Gr"}, {"Incapacitated", "#D55E00", "In"},
+                {"Invisible", "#56B4E9", "Iv"}, {"Paralyzed", "#F0E442", "Pa"}, {"Petrified", "#666666", "Pe"}, {"Poisoned", "#009E73", "Po"},
+                {"Prone", "#FFFFFF", "Pr"}, {"Restrained", "#004D40", "Re"}, {"Stunned", "#FDB863", "St"}, {"Unconscious", "#1A237E", "Un"}};
+        for (String[] c : safe) {
+            SAFE_COLORS.put(c[0], c[1]);
+            CODES.put(c[0], c[2]);
+        }
+    }
+
+    /** Whether the colour-blind-safe colours and the letter codes are turned on in the settings. */
+    public static boolean safeColours() {
+        return dnd.ui.AppSettings.getBoolean("ui.colourBlind", false);
+    }
+
+    /** Two letters for a condition (the first two letters of a custom one), to show next to or instead of its colour. */
+    public static String codeOf(String condition) {
+        if (condition == null || condition.isBlank()) return "";
+        for (Map.Entry<String, String> e : CODES.entrySet()) if (e.getKey().equalsIgnoreCase(condition.trim())) return e.getValue();
+        String c = condition.trim();
+        return c.length() <= 2 ? c : Character.toUpperCase(c.charAt(0)) + c.substring(1, 2).toLowerCase();
+    }
+
+    /** The codes of a list of conditions, in order. */
+    public static List<String> codesOf(List<String> conditions) {
+        List<String> out = new ArrayList<>();
+        if (conditions != null) for (String c : conditions) out.add(codeOf(c));
+        return out;
+    }
+
     /** The standard condition names, in menu order. */
     public static List<String> names() {
         return new ArrayList<>(COLORS.keySet());
@@ -42,7 +78,8 @@ public final class ConditionStyle {
     /** Hex colour (e.g. {@code #22c55e}) for a condition, ignoring case; grey if it is not a standard one. */
     public static String colorOf(String condition) {
         if (condition == null) return UNKNOWN;
-        for (Map.Entry<String, String> e : COLORS.entrySet()) {
+        Map<String, String> palette = safeColours() ? SAFE_COLORS : COLORS;
+        for (Map.Entry<String, String> e : palette.entrySet()) {
             if (e.getKey().equalsIgnoreCase(condition.trim())) return e.getValue();
         }
         return UNKNOWN;

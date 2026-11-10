@@ -70,11 +70,11 @@ public class ProjectLauncher extends VBox {
         VBox.setVgrow(list, Priority.ALWAYS);
 
         Button export = new Button("Export backup...");
-        export.setTooltip(new Tooltip("Save the selected campaign, with its pictures and maps, as one .zip file to keep or share"));
+        export.setTooltip(IconButtons.tip("Save the selected campaign, with its pictures and maps, as one .zip file to keep or share"));
         export.setOnAction(e -> exportSelected());
         export.disableProperty().bind(list.getSelectionModel().selectedItemProperty().isNull());
         Button importZip = new Button("Import backup...");
-        importZip.setTooltip(new Tooltip("Bring in a campaign from a .zip made with Export backup. It becomes a new project; nothing is overwritten"));
+        importZip.setTooltip(IconButtons.tip("Bring in a campaign from a .zip made with Export backup. It becomes a new project; nothing is overwritten"));
         importZip.setOnAction(e -> importBackup());
         HBox backup = new HBox(8, export, importZip);
         backup.setAlignment(Pos.CENTER);

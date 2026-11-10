@@ -47,8 +47,13 @@ final class IconButtons {
         return t;
     }
 
+    /** How long the pointer must rest before a tooltip shows, from the settings (milliseconds; 150 is fast, 1000 is the usual). */
+    static int tooltipDelayMs() {
+        return Math.max(0, Math.min(5000, AppSettings.getInt("ui.tooltipDelay", 150)));
+    }
+
     static void speedUp(Tooltip t) {
-        t.setShowDelay(javafx.util.Duration.millis(150));
+        t.setShowDelay(javafx.util.Duration.millis(tooltipDelayMs()));
         t.setShowDuration(javafx.util.Duration.seconds(30));
         t.setWrapText(true);
         t.setMaxWidth(380);

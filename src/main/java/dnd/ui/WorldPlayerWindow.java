@@ -122,7 +122,10 @@ public final class WorldPlayerWindow {
         PauseTransition wait = new PauseTransition(Duration.seconds(7));
         FadeTransition fade = new FadeTransition(Duration.seconds(1.5), hint);
         fade.setToValue(0);
-        wait.setOnFinished(e -> fade.play());
+        wait.setOnFinished(e -> {
+            if (AppSettings.getBoolean("ui.reduceMotion", false)) hint.setVisible(false); // no fading
+            else fade.play();
+        });
         wait.play();
     }
 

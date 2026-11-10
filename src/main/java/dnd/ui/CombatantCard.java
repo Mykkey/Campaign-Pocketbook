@@ -157,7 +157,7 @@ final class CombatantCard extends VBox {
         TextField box = new TextField();
         box.setPromptText(big ? "-7   +5   -5 -7 -3" : "-7 / +5");
         box.setPrefWidth(big ? 150 : 90);
-        box.setTooltip(new Tooltip("Type damage as -7, healing as +5, or a plain number to set HP.\nSeveral hits at once: -5 -7 -3"));
+        box.setTooltip(IconButtons.tip("Type damage as -7, healing as +5, or a plain number to set HP.\nSeveral hits at once: -5 -7 -3"));
         box.setOnAction(e -> {
             boolean concentrating = CombatStatus.isConcentrating(c);
             int before = c.hpCurrent + c.tempHp;
@@ -212,7 +212,7 @@ final class CombatantCard extends VBox {
             row.setAlignment(Pos.CENTER_LEFT);
             if (dying) {
                 Button roll = new Button("Roll death save");
-                roll.setTooltip(new Tooltip("Rolls a d20: 10 or more is a success, 9 or less a failure; 1 is two failures, 20 brings it back with 1 hit point"));
+                roll.setTooltip(IconButtons.tip("Rolls a d20: 10 or more is a success, 9 or less a failure; 1 is two failures, 20 brings it back with 1 hit point"));
                 roll.setOnAction(e -> {
                     CombatStatus.deathSave(b, c, new java.util.Random().nextInt(20) + 1);
                     ctx.changed();
@@ -228,7 +228,7 @@ final class CombatantCard extends VBox {
                     ctx.changed();
                 });
                 Button stab = new Button("Stabilise");
-                stab.setTooltip(new Tooltip("Stable: it stops dying, stays at 0 hit points and takes no turns until healed (for example a Medicine check or Spare the Dying)"));
+                stab.setTooltip(IconButtons.tip("Stable: it stops dying, stays at 0 hit points and takes no turns until healed (for example a Medicine check or Spare the Dying)"));
                 stab.setOnAction(e -> {
                     CombatStatus.stabilize(b, c);
                     ctx.changed();
@@ -250,7 +250,7 @@ final class CombatantCard extends VBox {
             Label l = new Label("Concentrating" + (c.concentratingOn == null || c.concentratingOn.isBlank() ? "" : " on " + c.concentratingOn));
             l.setStyle("-fx-font-weight: bold; -fx-text-fill: #1d4ed8;");
             Button drop = new Button("Drop");
-            drop.setTooltip(new Tooltip("End the concentration spell"));
+            drop.setTooltip(IconButtons.tip("End the concentration spell"));
             drop.setOnAction(e -> {
                 CombatStatus.dropConcentration(b, c);
                 ctx.changed();
@@ -263,7 +263,7 @@ final class CombatantCard extends VBox {
         misc.setAlignment(Pos.CENTER_LEFT);
         ToggleButton reaction = new ToggleButton("Reaction used");
         reaction.setSelected(c.reactionUsed);
-        reaction.setTooltip(new Tooltip("Tick when the creature has used its reaction; it comes back at the start of its next turn"));
+        reaction.setTooltip(IconButtons.tip("Tick when the creature has used its reaction; it comes back at the start of its next turn"));
         reaction.setOnAction(e -> {
             c.reactionUsed = reaction.isSelected();
             ctx.changed();
@@ -292,7 +292,7 @@ final class CombatantCard extends VBox {
             for (TimedEffect eff : new ArrayList<>(c.effects)) {
                 Label chip = new Label(eff.name + " (" + eff.turns + (eff.turns == 1 ? " turn" : " turns") + ")");
                 chip.setStyle("-fx-background-color: -t-slate; -fx-border-color: #94a3b8; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 1 7 1 7; -fx-font-size: 1.000em;");
-                chip.setTooltip(new Tooltip("Lasts this many more of the creature's own turns. Click to end it now."));
+                chip.setTooltip(IconButtons.tip("Lasts this many more of the creature's own turns. Click to end it now."));
                 chip.setCursor(javafx.scene.Cursor.HAND);
                 chip.setOnMouseClicked(ev -> {
                     c.effects.remove(eff);
@@ -369,14 +369,14 @@ final class CombatantCard extends VBox {
     private MenuButton conditionsButton(List<Combatant> targets) {
         MenuButton mb = new MenuButton("Conditions");
         mb.getItems().addAll(conditionsMenu(ctx, targets).getItems());
-        mb.setTooltip(new Tooltip("Set or clear conditions. They show as a coloured ring around the token."));
+        mb.setTooltip(IconButtons.tip("Set or clear conditions. They show as a coloured ring around the token."));
         return mb;
     }
 
     private ToggleButton downToggle(Combatant c) {
         ToggleButton down = new ToggleButton("Down");
         down.setSelected(c.defeated);
-        down.setTooltip(new Tooltip("Mark as defeated (skipped in the turn order). Healing brings a creature back up."));
+        down.setTooltip(IconButtons.tip("Mark as defeated (skipped in the turn order). Healing brings a creature back up."));
         down.setOnAction(e -> {
             c.defeated = down.isSelected();
             ctx.changed();

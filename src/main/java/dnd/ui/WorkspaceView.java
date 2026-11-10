@@ -86,7 +86,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         newSession.setTooltip(IconButtons.tip("Write up a game session: what happened, a recap for next time, and what came up"));
         newSession.setOnAction(e -> newSession(selectedFolder()));
         Button newWorld = new Button("+ World map");
-        newWorld.setTooltip(new Tooltip("Create a world map: paint land, sea and biomes, then add mountains, forests, towns and labels"));
+        newWorld.setTooltip(IconButtons.tip("Create a world map: paint land, sea and biomes, then add mountains, forests, towns and labels"));
         newWorld.setOnAction(e -> newWorldMap(selectedFolder()));
         Button newEncounter = new Button("+ Encounter");
         newEncounter.setTooltip(IconButtons.tip("Plan a fight: pick creatures and see how hard it is for your party"));

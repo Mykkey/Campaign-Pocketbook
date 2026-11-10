@@ -73,7 +73,7 @@ public final class CommonEnemiesDialog {
 
         Button add = new Button("+ New creature");
         add.setMaxWidth(Double.MAX_VALUE);
-        add.setTooltip(new Tooltip("Start a blank creature (for example a homebrew monster)"));
+        add.setTooltip(IconButtons.tip("Start a blank creature (for example a homebrew monster)"));
         add.setOnAction(e -> {
             Card c = new Card();
             c.name = "New creature";
@@ -83,7 +83,7 @@ public final class CommonEnemiesDialog {
         });
         Button fromCard = new Button("+ From a project card...");
         fromCard.setMaxWidth(Double.MAX_VALUE);
-        fromCard.setTooltip(new Tooltip("Copy a card from the open project into the library so every project can use it"));
+        fromCard.setTooltip(IconButtons.tip("Copy a card from the open project into the library so every project can use it"));
         fromCard.setOnAction(e -> pickProjectCard(stage, store).ifPresent(card -> {
             Card saved = lib.add(card);
             reload.run();
@@ -102,7 +102,7 @@ public final class CommonEnemiesDialog {
         });
         Button del = new Button("Remove");
         del.setMaxWidth(Double.MAX_VALUE);
-        del.setTooltip(new Tooltip("Take it off the dropdown. Cards already made from it in a project are kept."));
+        del.setTooltip(IconButtons.tip("Take it off the dropdown. Cards already made from it in a project are kept."));
         del.setOnAction(e -> {
             Card c = list.getSelectionModel().getSelectedItem();
             if (c == null) return;
@@ -117,7 +117,7 @@ public final class CommonEnemiesDialog {
         });
         Button restore = new Button("Restore starter creatures");
         restore.setMaxWidth(Double.MAX_VALUE);
-        restore.setTooltip(new Tooltip("Puts the bundled creatures (goblin, orc, wolf...) back to their original stats, "
+        restore.setTooltip(IconButtons.tip("Puts the bundled creatures (goblin, orc, wolf...) back to their original stats, "
                 + "re-adding any you removed. Your homebrew creatures are not touched."));
         restore.setOnAction(e -> {
             Alert a = new Alert(Alert.AlertType.CONFIRMATION, "Reset the bundled creatures to their original stats "

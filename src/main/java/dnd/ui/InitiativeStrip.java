@@ -87,9 +87,9 @@ final class InitiativeStrip extends ScrollPane {
         java.util.LinkedHashSet<String> conds = new java.util.LinkedHashSet<>();
         for (Combatant c : s.members) if (!c.defeated) conds.addAll(c.conditions);
         for (String cond : conds) {
-            Label cd = new Label("\u25CF");
+            Label cd = new Label(dnd.battle.ConditionStyle.safeColours() ? dnd.battle.ConditionStyle.codeOf(cond) : "\u25CF");
             cd.setStyle("-fx-text-fill: " + dnd.battle.ConditionStyle.colorOf(cond) + "; -fx-font-size: " + UiScale.em(current ? 16 : 12) + ";");
-            Tooltip.install(cd, new Tooltip(cond));
+            Tooltip.install(cd, IconButtons.tip(cond));
             top.getChildren().add(cd);
         }
 
@@ -97,7 +97,7 @@ final class InitiativeStrip extends ScrollPane {
             if (dnd.battle.CombatStatus.isDying(c)) {
                 Label skull = new Label("\u2620");
                 skull.setStyle("-fx-text-fill: #b91c1c; -fx-font-size: " + UiScale.em(current ? 18 : 14) + "; -fx-font-weight: bold;");
-                Tooltip.install(skull, new Tooltip(c.name + " is dying: " + c.deathSuccesses + " successes, " + c.deathFailures + " failures"));
+                Tooltip.install(skull, IconButtons.tip(c.name + " is dying: " + c.deathSuccesses + " successes, " + c.deathFailures + " failures"));
                 top.getChildren().add(skull);
             }
         }
@@ -131,7 +131,7 @@ final class InitiativeStrip extends ScrollPane {
                 + (down ? " -fx-opacity: 0.6;" : "")
                 + (current ? " -fx-effect: dropshadow(gaussian, rgba(251,191,36,0.9), 18, 0.35, 0, 0);" : ""));
         chip.setCursor(Cursor.HAND);
-        Tooltip.install(chip, new Tooltip("Click to view " + s.name() + "'s card. Right-click to set conditions."));
+        Tooltip.install(chip, IconButtons.tip("Click to view " + s.name() + "'s card. Right-click to set conditions."));
         chip.setOnMouseClicked(e -> {
             if (e.getButton() == javafx.scene.input.MouseButton.PRIMARY) ctx.inspect(s.key);
         });
@@ -158,6 +158,10 @@ final class InitiativeStrip extends ScrollPane {
         double center = currentChip.getBoundsInParent().getMinX() + currentChip.getBoundsInParent().getWidth() / 2;
         double target = Math.max(0, Math.min(1, (center - view / 2) / (content - view)));
         if (scroll != null) scroll.stop();
+        if (AppSettings.getBoolean("ui.reduceMotion", false)) { // no gliding: jump straight to the current turn
+            setHvalue(target);
+            return;
+        }
         scroll = new Timeline(new KeyFrame(Duration.millis(260), new KeyValue(hvalueProperty(), target)));
         scroll.play();
     }

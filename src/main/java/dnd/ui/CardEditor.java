@@ -188,7 +188,7 @@ public class CardEditor extends BorderPane implements ItemView {
             card.aliases = new java.util.ArrayList<>();
             for (String part : v.split(",")) if (!part.isBlank()) card.aliases.add(part.trim());
         }, "e.g. Jasper, Jas, Captain Egan");
-        aliases.setTooltip(new Tooltip("Other names this card goes by, separated by commas. On whiteboards, typing one of them "
+        aliases.setTooltip(IconButtons.tip("Other names this card goes by, separated by commas. On whiteboards, typing one of them "
                 + "(at least 2 letters) offers to link or preview this card, just like its full name."));
         VBox left = new VBox(8, labelled("Name (press Enter to apply)", name),
                 labelled("Also known as (comma separated, for name hints on whiteboards)", aliases),
@@ -398,7 +398,7 @@ public class CardEditor extends BorderPane implements ItemView {
         note.setPromptText("note (optional)");
         HBox.setHgrow(note, Priority.ALWAYS);
         Button remove = new Button("x");
-        remove.setTooltip(new Tooltip("Remove this relationship from this card"));
+        remove.setTooltip(IconButtons.tip("Remove this relationship from this card"));
         type.valueProperty().addListener((o, a, n) -> {
             if (n == null) return;
             r.type = n;

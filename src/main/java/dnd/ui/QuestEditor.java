@@ -121,7 +121,7 @@ public class QuestEditor extends BorderPane implements ItemView {
         colour.run();
         Theme.darkProperty().addListener((o, was, now) -> colour.run());
         HBox.setHgrow(linked, Priority.ALWAYS);
-        Tooltip preview = new Tooltip();
+        Tooltip preview = IconButtons.tip();
         preview.setShowDelay(javafx.util.Duration.millis(350));
         preview.setShowDuration(javafx.util.Duration.minutes(5));
         preview.setStyle("-fx-background-color: transparent; -fx-padding: 0;");
@@ -132,9 +132,9 @@ public class QuestEditor extends BorderPane implements ItemView {
         });
 
         Button choose = new Button("Choose...");
-        choose.setTooltip(new Tooltip("Pick one of your characters as the quest giver"));
+        choose.setTooltip(IconButtons.tip("Pick one of your characters as the quest giver"));
         Button clear = new Button("Clear");
-        clear.setTooltip(new Tooltip("Go back to typing a name"));
+        clear.setTooltip(IconButtons.tip("Go back to typing a name"));
         HBox row = new HBox(6, typed, linked, choose, clear);
         row.setAlignment(Pos.CENTER_LEFT);
 
@@ -185,7 +185,7 @@ public class QuestEditor extends BorderPane implements ItemView {
             });
             HBox.setHgrow(text, Priority.ALWAYS);
             Button remove = new Button("✕");
-            remove.setTooltip(new Tooltip("Remove this step"));
+            remove.setTooltip(IconButtons.tip("Remove this step"));
             remove.setOnAction(e -> {
                 quest.steps.remove(step);
                 rebuildSteps();

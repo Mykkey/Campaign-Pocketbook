@@ -62,7 +62,7 @@ public class AssetPanel extends VBox {
 
         Button importBtn = new Button("Import SVG / PNG...");
         importBtn.setMaxWidth(Double.MAX_VALUE);
-        importBtn.setTooltip(new Tooltip("Add your own pieces. They are copied into this project's assets folder"));
+        importBtn.setTooltip(IconButtons.tip("Add your own pieces. They are copied into this project's assets folder"));
         importBtn.setOnAction(e -> importFiles());
 
         Label hint = new Label("Click a piece, then click the map to place it. Esc to stop.");
@@ -143,7 +143,7 @@ public class AssetPanel extends VBox {
         boolean armed = a.id.equals(ts.armedAsset.get());
         box.setStyle("-fx-background-color: " + (armed ? "-t-blue" : "-t-cream") + ";"
                 + "-fx-border-color: " + (armed ? "#2563eb" : "-t-border") + "; -fx-border-radius: 4; -fx-background-radius: 4;");
-        Tooltip.install(box, new Tooltip(a.name + "  (" + trim(a.cellsW) + " x " + trim(a.cellsH) + " cells)"));
+        Tooltip.install(box, IconButtons.tip(a.name + "  (" + trim(a.cellsW) + " x " + trim(a.cellsH) + " cells)"));
         box.setOnMouseClicked(e -> {
             ts.armedAsset.set(a.id);
             ts.tool.set(MapTool.ASSET);

@@ -47,7 +47,7 @@ final class NewWorldMapDialog {
         grid.add(styleNote, 1, 4);
         grid.add(hint, 0, 5, 2, 1);
         CheckBox generate = new CheckBox("Generate a random world");
-        generate.setTooltip(new Tooltip("Start with continents, mountains, rivers, towns and names already made, then change anything you like"));
+        generate.setTooltip(IconButtons.tip("Start with continents, mountains, rivers, towns and names already made, then change anything you like"));
         WorldGeneratorPane gen = new WorldGeneratorPane();
         gen.visibleProperty().bind(generate.selectedProperty());
         gen.managedProperty().bind(generate.selectedProperty());

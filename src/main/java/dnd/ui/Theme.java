@@ -41,7 +41,7 @@ public final class Theme {
         b.graphicProperty().bind(Bindings.createObjectBinding(() -> Icons.of(DARK.get() ? "sun" : "moon"), DARK));
         b.getStyleClass().add("icon-button");
         b.tooltipProperty().bind(Bindings.createObjectBinding(
-                () -> new Tooltip(DARK.get() ? "Switch to light mode (remembered)" : "Switch to dark mode (remembered)"), DARK));
+                () -> IconButtons.tip(DARK.get() ? "Switch to light mode (remembered)" : "Switch to dark mode (remembered)"), DARK));
         b.setFocusTraversable(false);
         b.setOnAction(e -> setDark(!isDark()));
         return b;
@@ -56,6 +56,11 @@ public final class Theme {
             if ("theme".equals(k)) Platform.runLater(() -> setDark("dark".equals(v)));
         });
         AppSettings.addListener((k, v) -> {
+            if (k.equals("ui.highContrast")) {
+                Platform.runLater(() -> {
+                    for (Window w : Window.getWindows()) if (w.getScene() != null) apply(w.getScene());
+                });
+            }
             if (k.equals(UiScale.KEY) || k.equals("ui.font")) {
                 Platform.runLater(() -> {
                     for (Window w : Window.getWindows()) if (w.getScene() != null) apply(w.getScene());
@@ -88,8 +93,12 @@ public final class Theme {
     /** Gives a scene the stylesheet for the current mode. */
     public static void apply(Scene scene) {
         String url = Theme.class.getResource(isDark() ? "/theme-dark.css" : "/theme-light.css").toExternalForm();
-        scene.getStylesheets().removeIf(u -> u.endsWith("/theme-dark.css") || u.endsWith("/theme-light.css"));
+        scene.getStylesheets().removeIf(u -> u.endsWith("/theme-dark.css") || u.endsWith("/theme-light.css")
+                || u.endsWith("/theme-contrast-dark.css") || u.endsWith("/theme-contrast-light.css"));
         scene.getStylesheets().add(url);
+        if (AppSettings.getBoolean("ui.highContrast", false)) {
+            scene.getStylesheets().add(Theme.class.getResource(isDark() ? "/theme-contrast-dark.css" : "/theme-contrast-light.css").toExternalForm());
+        }
         UiScale.applyTo(scene);
     }
 

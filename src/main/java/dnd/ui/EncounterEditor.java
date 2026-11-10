@@ -53,7 +53,7 @@ public class EncounterEditor extends BorderPane implements ItemView {
         common.setPromptText("Add a common enemy...");
         common.setPrefWidth(220);
         common.setVisibleRowCount(14);
-        common.setTooltip(new Tooltip("Goblins, orcs, wolves and your own homebrew creatures. They work in any project without making a card first."));
+        common.setTooltip(IconButtons.tip("Goblins, orcs, wolves and your own homebrew creatures. They work in any project without making a card first."));
         common.setConverter(new javafx.util.StringConverter<>() {
             @Override public String toString(Card c) { return c == null ? "" : c.name; }
 
@@ -74,11 +74,11 @@ public class EncounterEditor extends BorderPane implements ItemView {
             javafx.application.Platform.runLater(() -> common.setValue(null));
         });
         Button manage = new Button("Edit common enemies...");
-        manage.setTooltip(new Tooltip("Change their stats, remove ones you never use, or add your own homebrew creatures"));
+        manage.setTooltip(IconButtons.tip("Change their stats, remove ones you never use, or add your own homebrew creatures"));
         manage.setOnAction(e -> CommonEnemiesDialog.show(getScene() == null ? null : getScene().getWindow(), store, null));
 
         Button add = new Button("+ From my cards...");
-        add.setTooltip(new Tooltip("Pick a card from this project (player characters, NPCs, custom monsters)"));
+        add.setTooltip(IconButtons.tip("Pick a card from this project (player characters, NPCs, custom monsters)"));
         add.setOnAction(e -> addCreature());
         HBox addBar = new HBox(8, common, add, manage);
         addBar.setAlignment(Pos.CENTER_LEFT);
@@ -99,12 +99,12 @@ public class EncounterEditor extends BorderPane implements ItemView {
         // ---- treasure for this fight
         ComboBox<dnd.loot.LootGenerator.Kind> lootKind = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(dnd.loot.LootGenerator.Kind.values()));
         lootKind.setValue(dnd.loot.LootGenerator.Kind.INDIVIDUAL);
-        lootKind.setTooltip(new Tooltip("A creature's pockets: every enemy carries some coin at its own level. A hoard: one stash at the level of the strongest enemy."));
+        lootKind.setTooltip(IconButtons.tip("A creature's pockets: every enemy carries some coin at its own level. A hoard: one stash at the level of the strongest enemy."));
         Button rollLoot = new Button("Roll treasure");
-        rollLoot.setTooltip(new Tooltip("Rolls treasure from the enemies' challenge ratings. Roll again for something different; you can edit the text."));
+        rollLoot.setTooltip(IconButtons.tip("Rolls treasure from the enemies' challenge ratings. Roll again for something different; you can edit the text."));
         Button copyLoot = new Button("Copy");
         Button toSession = new Button("Add to a session...");
-        toSession.setTooltip(new Tooltip("Adds this treasure to the notes of one of your sessions"));
+        toSession.setTooltip(IconButtons.tip("Adds this treasure to the notes of one of your sessions"));
         TextArea lootText = new TextArea(enc.loot == null ? "" : enc.loot);
         lootText.setPromptText("Treasure the enemies carry or guard. Press Roll treasure, or write your own.");
         lootText.setWrapText(true);
@@ -230,7 +230,7 @@ public class EncounterEditor extends BorderPane implements ItemView {
 
         ComboBox<Side> side = new ComboBox<>(FXCollections.observableArrayList(Side.values()));
         side.setValue(en.side);
-        side.setTooltip(new Tooltip("Enemies count towards the difficulty. Allies and players do not."));
+        side.setTooltip(IconButtons.tip("Enemies count towards the difficulty. Allies and players do not."));
         side.valueProperty().addListener((o, a, n) -> {
             if (n == null) return;
             en.side = n;
@@ -239,7 +239,7 @@ public class EncounterEditor extends BorderPane implements ItemView {
 
         CheckBox group = new CheckBox("Group");
         group.setSelected(en.group);
-        group.setTooltip(new Tooltip("They share one initiative and take their turn together"));
+        group.setTooltip(IconButtons.tip("They share one initiative and take their turn together"));
         group.selectedProperty().addListener((o, a, n) -> {
             en.group = n;
             store.markEncounterDirty(enc);
@@ -253,7 +253,7 @@ public class EncounterEditor extends BorderPane implements ItemView {
         });
 
         Button remove = new Button("x");
-        remove.setTooltip(new Tooltip("Remove from this encounter"));
+        remove.setTooltip(IconButtons.tip("Remove from this encounter"));
         remove.setOnAction(e -> {
             enc.entries.remove(en);
             store.markEncounterDirty(enc);

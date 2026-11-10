@@ -126,7 +126,7 @@ public final class NpcDialog {
         roll.setMaxWidth(Double.MAX_VALUE);
         Button edit = new Button("Edit professions...");
         edit.setMaxWidth(Double.MAX_VALUE);
-        edit.setTooltip(new Tooltip("Add your own professions (and what such a person knows) to the list"));
+        edit.setTooltip(IconButtons.tip("Add your own professions (and what such a person knows) to the list"));
         Label hint = new Label("Anything left on Random is rolled. Pins are kept when you re-roll one detail.");
         hint.setWrapText(true);
         hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
@@ -144,9 +144,9 @@ public final class NpcDialog {
         scroll.setFitToWidth(true);
 
         Button saveCard = new Button("Save as NPC card");
-        saveCard.setTooltip(new Tooltip("Makes a card in the project (in an \"NPCs\" folder) with stats to suit the job and this description in its notes"));
+        saveCard.setTooltip(IconButtons.tip("Makes a card in the project (in an \"NPCs\" folder) with stats to suit the job and this description in its notes"));
         Button addBoard = new Button("Add to board");
-        addBoard.setTooltip(new Tooltip("Puts the description on the open whiteboard as a text note"));
+        addBoard.setTooltip(IconButtons.tip("Puts the description on the open whiteboard as a text note"));
         Button copy = new Button("Copy");
         saveCard.setDisable(true);
         addBoard.setDisable(true);
@@ -257,7 +257,7 @@ public final class NpcDialog {
 
     private static Button reroll(String tip, Runnable action, VBox rows) {
         Button b = new Button("↻");
-        b.setTooltip(new Tooltip(tip));
+        b.setTooltip(IconButtons.tip(tip));
         b.setFocusTraversable(false);
         b.setOnAction(e -> {
             action.run();

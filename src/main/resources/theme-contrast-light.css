@@ -1,0 +1,47 @@
+/* High contrast on top of the light theme: black on white, heavy outlines, a strong focus ring. */
+.root {
+    -t-text: #000000;
+    -t-text2: #000000;
+    -t-text3: #1a1a1a;
+    -t-surface: #ffffff;
+    -t-cream: #ffffff;
+    -t-slate: #ffffff;
+    -t-surface2: #e6e6e6;
+    -t-border: #000000;
+    -t-paperbg: #ffffff;
+    -t-amber: #fff7c2;
+    -t-red: #ffe0e0;
+    -t-blue: #cfe4ff;
+    -t-blue2: #ffffff;
+    -t-blue-border: #00208a;
+    -t-heading: #5a0000;
+    -t-blue-text: #00104f;
+    -t-danger: #a00000;
+    -t-ok: #005a00;
+
+    -fx-focus-color: #0000e0;
+    -fx-faint-focus-color: transparent;
+    -fx-text-fill: #000000;
+    -fx-text-base-color: #000000;
+    -fx-selection-bar: #0000e0;
+    -fx-selection-bar-text: #ffffff;
+}
+.button, .toggle-button, .combo-box-base, .text-field, .text-area, .spinner, .choice-box {
+    -fx-border-color: #000000;
+    -fx-border-width: 2;
+    -fx-border-radius: 3;
+}
+.button:focused, .toggle-button:focused, .combo-box-base:focused, .text-field:focused, .text-area:focused, .spinner:focused, .hyperlink:focused, .check-box:focused > .box {
+    -fx-border-color: #0000e0;
+    -fx-border-width: 3;
+    -fx-background-insets: 0;
+}
+.toggle-button:selected { -fx-background-color: #000000; -fx-text-fill: #ffffff; }
+.icon-button { -fx-border-color: #000000; -fx-border-width: 1; }
+.icon-button:hover { -fx-background-color: #ffe14a; }
+.toggle-button.icon-button:selected { -fx-background-color: #cfe4ff; -fx-border-color: #00208a; -fx-border-width: 3; }
+.hyperlink { -fx-text-fill: #0000b8; -fx-underline: true; }
+.tooltip { -fx-background-color: #000000; -fx-text-fill: #ffffff; -fx-font-size: 1.1em; }
+.tab:selected { -fx-border-color: #000000; -fx-border-width: 2; }
+.tree-cell:filled:selected, .list-cell:filled:selected { -fx-background-color: #0000e0; -fx-text-fill: #ffffff; }
+.tree-cell:filled:selected .label, .list-cell:filled:selected .label { -fx-text-fill: #ffffff; }

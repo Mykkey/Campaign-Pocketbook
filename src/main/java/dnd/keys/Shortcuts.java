@@ -176,6 +176,28 @@ public final class Shortcuts {
         }
     }
 
+    /**
+     * The key combination a key press stands for (used to let the user press the keys they want), or null if it is only a
+     * modifier key such as Ctrl or Shift. On a Mac the Command key counts as the shortcut key, elsewhere Ctrl does.
+     */
+    public static KeyCombination fromEvent(KeyEvent e) {
+        javafx.scene.input.KeyCode code = e.getCode();
+        if (code == null || code == javafx.scene.input.KeyCode.UNDEFINED || code == javafx.scene.input.KeyCode.SHIFT
+                || code == javafx.scene.input.KeyCode.CONTROL || code == javafx.scene.input.KeyCode.ALT || code == javafx.scene.input.KeyCode.META
+                || code == javafx.scene.input.KeyCode.ALT_GRAPH || code == javafx.scene.input.KeyCode.WINDOWS
+                || code == javafx.scene.input.KeyCode.COMMAND || code == javafx.scene.input.KeyCode.SHORTCUT) {
+            return null;
+        }
+        boolean mac = System.getProperty("os.name", "").toLowerCase().contains("mac");
+        List<KeyCombination.Modifier> mods = new ArrayList<>();
+        if (mac ? e.isMetaDown() : e.isControlDown()) mods.add(KeyCombination.SHORTCUT_DOWN);
+        if (e.isShiftDown()) mods.add(KeyCombination.SHIFT_DOWN);
+        if (e.isAltDown()) mods.add(KeyCombination.ALT_DOWN);
+        if (mac && e.isControlDown()) mods.add(KeyCombination.CONTROL_DOWN);
+        if (!mac && e.isMetaDown()) mods.add(KeyCombination.META_DOWN);
+        return new javafx.scene.input.KeyCodeCombination(code, mods.toArray(new KeyCombination.Modifier[0]));
+    }
+
     public static boolean isDefault(String id) {
         return !AppSettings.has(settingKey(id));
     }

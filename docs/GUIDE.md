@@ -53,6 +53,8 @@ One rule: **Ctrl+letter acts on what you are editing, and a few Ctrl keys open t
 | N, P | Next / previous turn during a battle |
 | 1 to 9, 0 | Pick the tools in order, as described below. On world maps **B** is Bucket, **R** Reveal and **E** Elevation |
 
+**Changing the keys.** Open **Settings** (the gear in the top bar, or Ctrl+,) and go to the **Shortcuts** tab. Click the key of an action, then press the keys you want instead (Esc cancels); **+** gives an action a second key, **x** takes a key away, and **Reset** puts one back (or **Reset all shortcuts**). The same key may be used for different things in different editors, but if it is already used for something that can happen at the same time you are asked whether to take it from the other action, which is then left without a key (listed in red until you give it one). Search the list by action or key. Your choices are part of your settings, so they travel with a settings file.
+
 While you type in a text box, only the Ctrl and Alt shortcuts that open windows or move between tabs work, so typing is never stolen. Every key is shown in the tooltip of its button.
 
 ### Tool shortcuts

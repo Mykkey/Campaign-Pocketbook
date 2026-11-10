@@ -205,4 +205,21 @@ class ShortcutsTest {
         assertNull(Shortcuts.parse(""));
         assertNull(Shortcuts.parse("Hyper+Q"));
     }
+
+    @Test
+    void pressedKeysBecomeCombinationsAndModifierKeysAloneAreIgnored() {
+        KeyCombination k = Shortcuts.fromEvent(key(KeyCode.K, true, false, false));
+        assertEquals(KeyCombination.valueOf("Shortcut+K"), k);
+        assertEquals(KeyCombination.valueOf("Shortcut+Shift+N"), Shortcuts.fromEvent(key(KeyCode.N, true, true, false)));
+        assertEquals(KeyCombination.valueOf("Alt+Left"), Shortcuts.fromEvent(key(KeyCode.LEFT, false, false, true)));
+        assertEquals(KeyCombination.valueOf("F"), Shortcuts.fromEvent(key(KeyCode.F, false, false, false)));
+        assertEquals(KeyCombination.valueOf("1"), Shortcuts.fromEvent(key(KeyCode.DIGIT1, false, false, false)));
+        assertNull(Shortcuts.fromEvent(key(KeyCode.CONTROL, true, false, false)), "Ctrl on its own is not a key");
+        assertNull(Shortcuts.fromEvent(key(KeyCode.SHIFT, false, true, false)));
+        assertNull(Shortcuts.fromEvent(key(KeyCode.ALT, false, false, true)));
+        // what was pressed matches itself once saved and read back
+        KeyCombination pressed = Shortcuts.fromEvent(key(KeyCode.OPEN_BRACKET, true, false, false));
+        assertEquals(pressed, Shortcuts.parse(pressed.getName()));
+        assertTrue(pressed.match(key(KeyCode.OPEN_BRACKET, true, false, false)));
+    }
 }

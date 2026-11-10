@@ -60,6 +60,7 @@ public final class SettingsDialog {
     private static void build(Window owner) {
         List<Page> pages = new ArrayList<>();
         pages.add(appearance());
+        pages.add(new Page("Shortcuts", new ShortcutsPane(), ShortcutsPane::resetAll));
         pages.add(data());
 
         tabs = new TabPane();

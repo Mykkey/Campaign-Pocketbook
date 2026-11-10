@@ -72,4 +72,23 @@ class WorldLabelTest {
         assertEquals(2, m.stamps.size());
         assertEquals("Realm", m.stamps.stream().filter(WorldLabels::isBanner).findFirst().orElseThrow().text);
     }
+
+    @Test
+    void textIsDrawnAndPickedAboveSymbolsEvenWhenItIsFurtherUpTheMap() {
+        WorldMap m = new WorldMap("Z", 200, 150, 1000, WorldStyle.FANTASY_COLOUR);
+        WorldStamp label = new WorldStamp("label", 50, 40);
+        label.text = "The Spine";
+        WorldStamp mountain = new WorldStamp("peak-single", 50, 60);
+        mountain.size = 40;
+        WorldStamp banner = new WorldStamp("banner-scroll", 120, 20);
+        banner.text = "Realm";
+        WorldStamp tree = new WorldStamp("tree-oak", 120, 100);
+        m.stamps.addAll(List.of(mountain, label, tree, banner));
+        List<WorldStamp> order = dnd.map.world.WorldStampRenderer.inOrder(m);
+        assertEquals(List.of(mountain, tree), order.subList(0, 2).stream().sorted(java.util.Comparator.comparingDouble(s -> s.y)).toList());
+        assertSame(banner, order.get(2), "text comes after every symbol, though it is higher up the map");
+        assertSame(label, order.get(3));
+        // the label sits on the mountain's picture, and a click there picks the label first
+        assertSame(label, dnd.map.world.WorldStampRenderer.hit(m, 50, 38, true));
+    }
 }

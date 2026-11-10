@@ -52,10 +52,14 @@ public final class WorldStampRenderer {
         return f != null && f.centered() ? -h / 2 : -h;
     }
 
-    /** Symbols in drawing order: those further up the map first, so nearer ones overlap them. */
+    /**
+     * Symbols in drawing order: those further up the map first, so nearer ones overlap them. Text (labels and banners) comes
+     * last of all, so a name is never hidden behind a mountain or a tree; clicking picks it first for the same reason.
+     */
     public static List<WorldStamp> inOrder(WorldMap map) {
         List<WorldStamp> list = new ArrayList<>(map.stamps);
-        list.sort(Comparator.comparingDouble((WorldStamp s) -> s.y).thenComparing(s -> s.id));
+        list.sort(Comparator.comparingInt((WorldStamp s) -> WorldLabels.isLabel(s) || WorldLabels.isBanner(s) ? 1 : 0)
+                .thenComparingDouble((WorldStamp s) -> s.y).thenComparing(s -> s.id));
         return list;
     }
 

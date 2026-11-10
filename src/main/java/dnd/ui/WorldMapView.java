@@ -12,6 +12,7 @@ import dnd.map.world.WorldPalette;
 import dnd.map.world.WorldPathGeometry;
 import dnd.map.world.WorldPathRenderer;
 import dnd.map.world.WorldResize;
+import dnd.map.world.WorldSnap;
 import dnd.map.world.WorldStampRenderer;
 import dnd.map.world.WorldTerrainCache;
 import dnd.model.PaintLayer;
@@ -87,6 +88,9 @@ final class WorldMapView extends Pane {
     private boolean spaceDown;
     private double lastSX, lastSY, mouseSX = -1, mouseSY = -1;
     private double lastWX, lastWY, mqX0, mqY0, mqX1, mqY1;
+    // moving symbols: where they and the pointer started, and the snap guide lines being shown
+    private final java.util.Map<String, double[]> moveStart = new java.util.HashMap<>();
+    private double moveX0, moveY0, guideX = Double.NaN, guideY = Double.NaN;
     private boolean moved;
     /** Everything placed on the map as it was when a gesture began, for undo. */
     private String stampsBefore;
@@ -283,12 +287,36 @@ final class WorldMapView extends Pane {
             case SCATTER -> continueScatter(px, py);
             case REVEAL -> continueReveal(px, py);
             case MOVE -> {
-                double dx = px - lastWX, dy = py - lastWY;
-                if (dx != 0 || dy != 0) {
+                double dx = px - moveX0, dy = py - moveY0;
+                if (Math.hypot(px - lastWX, py - lastWY) > 0) {
                     moved = true;
-                    for (WorldStamp s : selectedStamps()) {
-                        s.x += dx;
-                        s.y += dy;
+                    List<WorldStamp> moving = selectedStamps();
+                    for (WorldStamp s : moving) {
+                        double[] st = moveStart.get(s.id);
+                        if (st != null) {
+                            s.x = st[0] + dx;
+                            s.y = st[1] + dy;
+                        }
+                    }
+                    guideX = Double.NaN;
+                    guideY = Double.NaN;
+                    if (ts.snap.get() && !e.isAltDown() && !moving.isEmpty()) {
+                        double minX = Double.MAX_VALUE, maxX = -Double.MAX_VALUE, minY = Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
+                        for (WorldStamp s : moving) {
+                            for (double[] c : WorldStampRenderer.corners(s, map.style)) {
+                                minX = Math.min(minX, c[0]);
+                                maxX = Math.max(maxX, c[0]);
+                                minY = Math.min(minY, c[1]);
+                                maxY = Math.max(maxY, c[1]);
+                            }
+                        }
+                        WorldSnap.Result r = WorldSnap.snap(minX, maxX, minY, maxY, map.cols, map.rows, 8 / zoom());
+                        for (WorldStamp s : moving) {
+                            s.x += r.dx();
+                            s.y += r.dy();
+                        }
+                        guideX = r.guideX();
+                        guideY = r.guideY();
                     }
                 }
             }
@@ -361,6 +389,8 @@ final class WorldMapView extends Pane {
         }
         mode = Mode.NONE;
         moved = false;
+        guideX = Double.NaN;
+        guideY = Double.NaN;
         refreshCursor();
         redraw();
     }
@@ -911,6 +941,10 @@ final class WorldMapView extends Pane {
             }
             mode = Mode.MOVE;
             stampsBefore = WorldObjects.capture(map);
+            moveStart.clear();
+            for (WorldStamp s : selectedStamps()) moveStart.put(s.id, new double[]{s.x, s.y});
+            moveX0 = px;
+            moveY0 = py;
             return;
         }
         double[] lb = WorldLegend.bounds(map);
@@ -1556,6 +1590,15 @@ final class WorldMapView extends Pane {
         g.setLineWidth(1.5 / zoom());
         g.strokeRect(0, 0, map.cols, map.rows);
 
+        // snap guides while a symbol is held against the map's edge or middle
+        if (!Double.isNaN(guideX) || !Double.isNaN(guideY)) {
+            g.setStroke(Color.web("#e11d48"));
+            g.setLineWidth(1.2 / zoom());
+            g.setLineDashes(5 / zoom(), 4 / zoom());
+            if (!Double.isNaN(guideX)) g.strokeLine(guideX, 0, guideX, map.rows);
+            if (!Double.isNaN(guideY)) g.strokeLine(0, guideY, map.cols, guideY);
+            g.setLineDashes((double[]) null);
+        }
         // selection outlines and the resize handle
         g.setStroke(Color.web("#2563eb"));
         g.setLineWidth(1.5 / zoom());

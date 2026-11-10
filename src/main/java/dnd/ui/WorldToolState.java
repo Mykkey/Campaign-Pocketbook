@@ -33,6 +33,8 @@ final class WorldToolState {
     final javafx.beans.property.DoubleProperty labelBend = new javafx.beans.property.SimpleDoubleProperty(0);
     /** What the bucket fills: the biome layer (true) or land and sea (false). */
     final javafx.beans.property.BooleanProperty fillBiome = new javafx.beans.property.SimpleBooleanProperty(false);
+    /** Whether moving symbols and labels snaps them to the map's edges and middle. Remembered between runs. */
+    final javafx.beans.property.BooleanProperty snap = new javafx.beans.property.SimpleBooleanProperty(AppSettings.getBoolean("worldSnap", true));
     /** Whether the reveal tool covers the map again (true) instead of uncovering it. */
     final javafx.beans.property.BooleanProperty covering = new javafx.beans.property.SimpleBooleanProperty(false);
     /** Whether hovering something with a note or a link shows them. Remembered between runs (shared with the whiteboards). */

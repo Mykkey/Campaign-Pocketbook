@@ -352,6 +352,9 @@ public class WorldMapEditor extends BorderPane implements ItemView {
             biomes.setCellFactory(lv -> biomeCell());
         });
         bar.getChildren().add(style);
+        ToggleButton snapBtn = IconButtons.switchToggle("snap", "Snap: while you move symbols and labels they snap to the map's edges and middle (left, centre, right, top, bottom). Hold Alt to move freely", ts.snap);
+        ts.snap.addListener((o, a, n) -> AppSettings.setBoolean("worldSnap", n));
+        bar.getChildren().add(snapBtn);
 
         bar.getChildren().addAll(
                 iconButton("fit", "Fit: zoom to show the whole map", this::fit),

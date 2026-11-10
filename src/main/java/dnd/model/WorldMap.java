@@ -1,0 +1,95 @@
+package dnd.model;
+
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonSetter;
+
+/**
+ * A world map: a large freehand-painted picture of a continent or a whole world. The land and sea (base layer) and
+ * what covers the land (biome layer) are painted cell by cell and drawn smoothly, in one of several art styles.
+ * One map cell is one map unit; {@link #milesPerCell} says how far that is in the game world.
+ */
+public class WorldMap extends ProjectEntry {
+    public static final int SMALL_COLS = 512, SMALL_ROWS = 384;
+    public static final int MEDIUM_COLS = 1024, MEDIUM_ROWS = 768;
+    public static final int LARGE_COLS = 2048, LARGE_ROWS = 1536;
+
+    public int cols = MEDIUM_COLS;
+    public int rows = MEDIUM_ROWS;
+    /** How many miles one cell is across. */
+    public double milesPerCell = 2;
+    public WorldStyle style = WorldStyle.FANTASY_COLOUR;
+    public double offsetX = 40, offsetY = 40, zoom = 1;
+
+    /** Bumped whenever the content changes (not the camera), so cached pictures know to redraw. Not saved. */
+    @JsonIgnore
+    public transient int revision;
+
+    @JsonIgnore
+    private PaintLayer base, biome;
+    private String loadedBase, loadedBiome;
+
+    public WorldMap() { }
+
+    public WorldMap(String name, int cols, int rows, double milesAcross, WorldStyle style) {
+        this.name = name;
+        this.cols = cols;
+        this.rows = rows;
+        this.milesPerCell = Math.max(0.01, milesAcross / cols);
+        this.style = style;
+    }
+
+    /** The land-and-sea layer (values are {@link WorldTerrain} codes). */
+    public PaintLayer base() {
+        if (base == null) base = PaintLayer.decode(cols, rows, loadedBase);
+        return base;
+    }
+
+    /** The biome layer (values are {@link WorldBiome} codes). */
+    public PaintLayer biome() {
+        if (biome == null) biome = PaintLayer.decode(cols, rows, loadedBiome);
+        return biome;
+    }
+
+    @JsonGetter("baseData")
+    private String baseDataOut() {
+        return base().isEmpty() ? null : base().encode();
+    }
+
+    @JsonSetter("baseData")
+    private void baseDataIn(String data) {
+        loadedBase = data;
+        base = null;
+    }
+
+    @JsonGetter("biomeData")
+    private String biomeDataOut() {
+        return biome().isEmpty() ? null : biome().encode();
+    }
+
+    @JsonSetter("biomeData")
+    private void biomeDataIn(String data) {
+        loadedBiome = data;
+        biome = null;
+    }
+
+    public double milesAcross() {
+        return cols * milesPerCell;
+    }
+
+    public double milesDown() {
+        return rows * milesPerCell;
+    }
+
+    public WorldMap copy() {
+        WorldMap m = new WorldMap(name, cols, rows, milesAcross(), style);
+        m.id = id;
+        m.milesPerCell = milesPerCell;
+        m.offsetX = offsetX;
+        m.offsetY = offsetY;
+        m.zoom = zoom;
+        m.base = base().copy();
+        m.biome = biome().copy();
+        return m;
+    }
+}

@@ -97,6 +97,15 @@ final class ItemPreview {
         } else if (node.isMagicItem()) {
             dnd.model.MagicItem mi = store.magicItem(id);
             if (mi != null) return new MagicItemCardView(mi);
+        } else if (node.isWorldMap()) {
+            dnd.model.WorldMap wm = store.worldMap(id);
+            if (wm != null) {
+                ImageView iv = new ImageView(dnd.map.world.WorldTerrainCache.of(wm).fullImage());
+                iv.setPreserveRatio(true);
+                iv.setFitWidth(360);
+                iv.setSmooth(true);
+                return plainWithGraphic(wm.name, "World map  -  about " + Math.round(wm.milesAcross()) + " miles across", iv);
+            }
         } else if (node.isSession()) {
             dnd.model.Session se = store.session(id);
             if (se != null) return new SessionCardView(store, se);

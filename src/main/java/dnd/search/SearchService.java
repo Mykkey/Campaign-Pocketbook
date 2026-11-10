@@ -140,6 +140,16 @@ public final class SearchService {
             }
         }
 
+        // world maps: by name
+        List<TreeNode> worldMaps = new ArrayList<>();
+        store.project.root.collectKind(TreeNode.KIND_WORLDMAP, worldMaps);
+        for (TreeNode n : worldMaps) {
+            if (n.name.toLowerCase(Locale.ROOT).contains(q)) {
+                out.add(new Result(n.id, n.name, null, "World map"));
+                if (out.size() >= limit) return out;
+            }
+        }
+
         // encounters: by name and notes
         List<TreeNode> encounters = new ArrayList<>();
         store.project.root.collectEncounters(encounters);

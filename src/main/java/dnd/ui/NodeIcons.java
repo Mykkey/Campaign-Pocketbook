@@ -56,6 +56,9 @@ public final class NodeIcons {
                     fill("M1.5 3.5 A1 1 0 0 1 2.5 2.5 H13.5 A1 1 0 0 1 14.5 3.5 V5.6 H1.5 Z", c.darker()),
                     fill("M3.6 7.4 H5.6 V9.2 H3.6 Z M7 7.4 H9 V9.2 H7 Z M10.4 7.4 H12.4 V9.2 H10.4 Z M3.6 10.6 H5.6 V12.4 H3.6 Z M7 10.6 H9 V12.4 H7 Z",
                             Color.web("#ffffff", 0.85)));
+        } else if (n.isWorldMap()) { // a globe
+            p.getChildren().addAll(fill("M8 1.5 A6.5 6.5 0 1 1 7.99 1.5 Z", c),
+                    line("M1.5 8 H14.5 M8 1.5 C5 4.5 5 11.5 8 14.5 M8 1.5 C11 4.5 11 11.5 8 14.5", Color.web("#ffffff", 0.8), 1));
         } else if (n.isEncounter()) {
             p.getChildren().addAll(line("M3.2 3.2 L12.8 12.8 M12.8 3.2 L3.2 12.8", c, 2),
                     line("M9.2 13 L13 9.2 M2.9 9.2 L6.8 13", c, 1.6));

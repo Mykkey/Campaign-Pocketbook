@@ -85,10 +85,13 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Button newSession = new Button("+ Session");
         newSession.setTooltip(IconButtons.tip("Write up a game session: what happened, a recap for next time, and what came up"));
         newSession.setOnAction(e -> newSession(selectedFolder()));
+        Button newWorld = new Button("+ World map");
+        newWorld.setTooltip(new Tooltip("Create a world map: paint land, sea and biomes, then add mountains, forests, towns and labels"));
+        newWorld.setOnAction(e -> newWorldMap(selectedFolder()));
         Button newEncounter = new Button("+ Encounter");
         newEncounter.setTooltip(IconButtons.tip("Plan a fight: pick creatures and see how hard it is for your party"));
         newEncounter.setOnAction(e -> newEncounter(selectedFolder()));
-        FlowPane treeButtons = new FlowPane(6, 6, newBoard, newMap, newCard, newSpell, newItem, newQuest, newSession, newEncounter, newFolder);
+        FlowPane treeButtons = new FlowPane(6, 6, newBoard, newMap, newCard, newSpell, newItem, newQuest, newSession, newWorld, newEncounter, newFolder);
         tree.setCellFactory(v -> createTreeCell(true));
         tree.setOnMouseClicked(e -> {
             if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2) {
@@ -399,6 +402,13 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
                     return;
                 }
                 view = new SessionEditor(se, store, newName -> renameFromEditor(id, newName), this::openItem, () -> pickBoard("Add to the session..."));
+            } else if (store.isWorldMap(id)) {
+                dnd.model.WorldMap wm = store.worldMap(id);
+                if (wm == null) {
+                    couldNotOpen(id, "That world map could not be found.");
+                    return;
+                }
+                view = new WorldMapEditor(wm, store);
             } else if (store.isEncounter(id)) {
                 dnd.model.Encounter en = store.encounter(id);
                 if (en == null) {
@@ -798,6 +808,8 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         nq.setOnAction(e -> newQuest(selectedFolder()));
         MenuItem nse = new MenuItem("New session...");
         nse.setOnAction(e -> newSession(selectedFolder()));
+        MenuItem nw = new MenuItem("New world map...");
+        nw.setOnAction(e -> newWorldMap(selectedFolder()));
         MenuItem ne = new MenuItem("New encounter...");
         ne.setOnAction(e -> newEncounter(selectedFolder()));
         MenuItem dup = new MenuItem("Duplicate");
@@ -819,11 +831,11 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         colour.getItems().addAll(new SeparatorMenuItem(), defaultColour);
         MenuItem del = new MenuItem("Delete");
         del.setOnAction(e -> deleteSelected());
-        ContextMenu m = new ContextMenu(nb, nm, nc, nsp, nmi, nq, nse, ne, nf, new SeparatorMenuItem(), dup, rn, colour, del);
+        ContextMenu m = new ContextMenu(nb, nm, nc, nsp, nmi, nq, nse, nw, ne, nf, new SeparatorMenuItem(), dup, rn, colour, del);
         m.setOnShowing(e -> {
             TreeItem<TreeNode> it = tree.getSelectionModel().getSelectedItem();
             boolean isRoot = it == null || it.getValue() == store.project.root;
-            dup.setDisable(it == null || !(it.getValue().isCard() || it.getValue().isEncounter() || it.getValue().isSpell() || it.getValue().isMagicItem()));
+            dup.setDisable(it == null || !(it.getValue().isCard() || it.getValue().isEncounter() || it.getValue().isSpell() || it.getValue().isMagicItem() || it.getValue().isWorldMap()));
             rn.setDisable(it == null);
             colour.setDisable(it == null);
             del.setDisable(isRoot);
@@ -915,6 +927,14 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         });
     }
 
+    private void newWorldMap(TreeNode parent) {
+        NewWorldMapDialog.show(getScene().getWindow()).ifPresent(map -> {
+            store.createWorldMap(parent, map);
+            refreshTree();
+            openItem(map.id);
+        });
+    }
+
     private void newEncounter(TreeNode parent) {
         ask("New encounter", "Encounter name:", "New Encounter").ifPresent(name -> {
             dnd.model.Encounter e = store.createEncounter(parent, name);
@@ -938,6 +958,9 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             newId = copy == null ? null : copy.id;
         } else if (it.getValue().isMagicItem()) {
             dnd.model.MagicItem copy = store.duplicateMagicItem(it.getValue());
+            newId = copy == null ? null : copy.id;
+        } else if (it.getValue().isWorldMap()) {
+            dnd.model.WorldMap copy = store.duplicateWorldMap(it.getValue());
             newId = copy == null ? null : copy.id;
         } else {
             return;
@@ -1003,7 +1026,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Alert a = new Alert(Alert.AlertType.CONFIRMATION,
                 "Delete \"" + n.name + "\"" + (n.folder ? " and everything inside it" : "") + "? This cannot be undone.",
                 ButtonType.OK, ButtonType.CANCEL);
-        a.setHeaderText("Delete " + (n.folder ? "folder" : n.isBattleMap() ? "battlemap" : n.isCard() ? "card" : n.isEncounter() ? "encounter" : n.isSpell() ? "spell" : n.isMagicItem() ? "magic item" : n.isQuest() ? "quest" : n.isSession() ? "session" : "whiteboard"));
+        a.setHeaderText("Delete " + (n.folder ? "folder" : n.isBattleMap() ? "battlemap" : n.isCard() ? "card" : n.isEncounter() ? "encounter" : n.isSpell() ? "spell" : n.isMagicItem() ? "magic item" : n.isQuest() ? "quest" : n.isSession() ? "session" : n.isWorldMap() ? "world map" : "whiteboard"));
         Optional<ButtonType> r = a.showAndWait();
         if (r.isEmpty() || r.get() != ButtonType.OK) return;
         dnd.storage.ProjectBackups.beforeDelete(store); // a way back if it was a mistake

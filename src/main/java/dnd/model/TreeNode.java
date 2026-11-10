@@ -18,6 +18,7 @@ public class TreeNode {
     public static final String KIND_ITEM = "item";
     public static final String KIND_QUEST = "quest";
     public static final String KIND_SESSION = "session";
+    public static final String KIND_WORLDMAP = "worldmap";
 
     public String id = UUID.randomUUID().toString();
     public String name = "";
@@ -71,9 +72,15 @@ public class TreeNode {
     }
 
     @JsonIgnore
+    public boolean isWorldMap() {
+        return !folder && KIND_WORLDMAP.equals(kind);
+    }
+
+    @JsonIgnore
     public boolean isBoard() {
         return !folder && !KIND_BATTLEMAP.equals(kind) && !KIND_CARD.equals(kind) && !KIND_ENCOUNTER.equals(kind)
-                && !KIND_SPELL.equals(kind) && !KIND_ITEM.equals(kind) && !KIND_QUEST.equals(kind) && !KIND_SESSION.equals(kind);
+                && !KIND_SPELL.equals(kind) && !KIND_ITEM.equals(kind) && !KIND_QUEST.equals(kind) && !KIND_SESSION.equals(kind)
+                && !KIND_WORLDMAP.equals(kind);
     }
 
     /** Appends every item of one kind (KIND_ITEM, KIND_QUEST...) at or below this node. */

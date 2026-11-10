@@ -25,6 +25,7 @@ public final class NodeColors {
     public static final String MAGIC_ITEM = "#d6568f";
     public static final String QUEST = "#e2823a";
     public static final String SESSION = "#6b7fd6";
+    public static final String WORLD_MAP = "#2f9e8f";
 
     /** The colour a node has unless the DM picked one. */
     public static String defaultFor(TreeNode n) {
@@ -36,6 +37,7 @@ public final class NodeColors {
         if (n.isMagicItem()) return MAGIC_ITEM;
         if (n.isQuest()) return QUEST;
         if (n.isSession()) return SESSION;
+        if (n.isWorldMap()) return WORLD_MAP;
         return BOARD;
     }
 

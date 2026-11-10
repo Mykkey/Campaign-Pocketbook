@@ -7,6 +7,7 @@ import dnd.model.MagicItem;
 import dnd.model.ProjectEntry;
 import dnd.model.Quest;
 import dnd.model.Session;
+import dnd.model.WorldMap;
 import dnd.model.Encounter;
 import dnd.model.Spell;
 import dnd.model.Project;
@@ -33,6 +34,7 @@ import java.util.stream.Stream;
  *   items/&lt;id&gt;.item          one file per magic item card
  *   quests/&lt;id&gt;.quest        one file per quest
  *   sessions/&lt;id&gt;.session    one file per session log
+ *   worldmaps/&lt;id&gt;.worldmap  one file per world map
  *   assets/&lt;file&gt;        imported SVG/PNG pieces for battlemaps
  *   images/&lt;file&gt;        imported pictures
  * </pre>
@@ -66,6 +68,7 @@ public final class ProjectStore {
     private final Kind<dnd.model.MagicItem> magicItems = register(new Kind<>("items", "item", TreeNode.KIND_ITEM, dnd.model.MagicItem.class));
     private final Kind<Quest> quests = register(new Kind<>("quests", "quest", TreeNode.KIND_QUEST, Quest.class));
     private final Kind<Session> sessions = register(new Kind<>("sessions", "session", TreeNode.KIND_SESSION, Session.class));
+    private final Kind<WorldMap> worldMaps = register(new Kind<>("worldmaps", "worldmap", TreeNode.KIND_WORLDMAP, WorldMap.class));
 
     private ProjectStore(Path dir, Project project) {
         this.dir = dir;
@@ -125,6 +128,7 @@ public final class ProjectStore {
         Files.createDirectories(dir.resolve("items"));
         Files.createDirectories(dir.resolve("quests"));
         Files.createDirectories(dir.resolve("sessions"));
+        Files.createDirectories(dir.resolve("worldmaps"));
         Files.createDirectories(dir.resolve("images"));
         Files.createDirectories(dir.resolve("assets"));
     }
@@ -633,6 +637,42 @@ public final class ProjectStore {
         sessions.markDirty(session);
     }
 
+    public boolean isWorldMap(String id) {
+        return worldMaps.is(id);
+    }
+
+    /** Loads (and caches) a world map; null if it doesn't exist or can't be read. */
+    public WorldMap worldMap(String id) {
+        return worldMaps.get(id);
+    }
+
+    public WorldMap createWorldMap(TreeNode parent, WorldMap map) {
+        return worldMaps.create(parent, map);
+    }
+
+    /** Copies a world map next to the original (name + " (copy)"). */
+    public WorldMap duplicateWorldMap(TreeNode node) {
+        WorldMap original = worldMap(node.id);
+        if (original == null) return null;
+        WorldMap copy = original.copy();
+        copy.name = original.name + " (copy)";
+        TreeNode parent = project.root.parentOf(node.id);
+        return createWorldMap(parent == null ? project.root : parent, copy);
+    }
+
+    public List<String> allWorldMapIds() {
+        return worldMaps.ids();
+    }
+
+    /**
+     * Saves a world map soon. Pass {@code content = true} when the painted map or what is on it changed (cached
+     * pictures are then redrawn); false for a camera move, which only needs saving.
+     */
+    public void markWorldMapDirty(WorldMap map, boolean content) {
+        if (content) map.revision++;
+        worldMaps.markDirty(map);
+    }
+
     // ---------------------------------------------------------------- battlemaps
 
     private Path mapPath(String id) {
@@ -706,6 +746,7 @@ public final class ProjectStore {
             else if (isMagicItem(id)) magicItem(id);
             else if (isQuest(id)) quest(id);
             else if (isSession(id)) session(id);
+            else if (isWorldMap(id)) worldMap(id);
             else if (boardExists(id)) board(id);
         }
         assets();

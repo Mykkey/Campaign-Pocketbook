@@ -89,7 +89,7 @@ public class UpdateBanner extends HBox {
 
     private void onUpdate() {
         if (!isGitCopy()) {
-            hostServices.showDocument(UpdateChecker.REPO_URL);
+            hostServices.showDocument(UpdateChecker.REPO_URL + "/releases/latest");
             return;
         }
         update.setDisable(true);

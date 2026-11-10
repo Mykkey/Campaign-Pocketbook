@@ -62,7 +62,9 @@ How to install Java, step by step:
 2. Unzip it anywhere.
 3. Start it: on **Windows** double-click **`CampaignPocketbook.bat`** (for a desktop icon with the app's picture, double-click **`make-shortcut.bat`** once: a `.bat` file cannot have an icon of its own, so it makes a shortcut that has one); on **macOS / Linux** run `./CampaignPocketbook.sh` in a terminal.
 
-To update, download the newer zip and unzip it over (or next to) the old folder. Your campaigns live in `~/CampaignPocketbook/`, outside the app folder, so they are never touched. The app also shows a banner when a newer version is published.
+To update, download the newer zip and unzip it **over the old folder** (in Windows "Extract All", choose the folder that *contains* your `CampaignPocketbook` folder, not the suggested `CampaignPocketbook-<version>-windows` folder, and click Replace). Your campaigns live in `~/CampaignPocketbook/`, outside the app folder, so they are never touched.
+
+**Desktop shortcut stopped working after an update?** The shortcut points at the exact folder it was made from, so it breaks if the new version was unzipped somewhere else. Open the new folder and double-click **`make-shortcut.bat`** again: it replaces the old shortcut with one that points at the new folder. Then you can delete the old folder. The app also shows a banner when a newer version is published.
 
 ### Or run it from the source code
 This needs [Git](https://git-scm.com/), a Java JDK 21+ ([Adoptium](https://adoptium.net/)) and [Apache Maven](https://maven.apache.org/download.cgi) 3.9+ (JavaFX is downloaded automatically by Maven). On an Intel Mac this is the way to run it.

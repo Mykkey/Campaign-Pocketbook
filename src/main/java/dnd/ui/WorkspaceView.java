@@ -1023,8 +1023,13 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
     }
 
     private void newWorldMap(TreeNode parent) {
-        NewWorldMapDialog.show(getScene().getWindow()).ifPresent(map -> {
+        NewWorldMapDialog.show(getScene().getWindow()).ifPresent(made -> {
+            dnd.model.WorldMap map = made.map();
             store.createWorldMap(parent, map);
+            if (made.generate() != null) {
+                dnd.map.world.WorldGenerator.generate(map, made.generate());
+                store.markWorldMapDirty(map, true);
+            }
             refreshTree();
             openItem(map.id);
         });

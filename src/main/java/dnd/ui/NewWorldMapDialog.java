@@ -16,7 +16,10 @@ final class NewWorldMapDialog {
 
     private static final String[] SIZES = {"Small (512 x 384 cells)", "Medium (1024 x 768 cells)", "Large (2048 x 1536 cells)"};
 
-    static Optional<WorldMap> show(Window owner) {
+    /** The new map, and the settings for generating a random world on it (null to start with a blank map). */
+    record Result(WorldMap map, dnd.map.world.WorldGenerator.Options generate) { }
+
+    static Optional<Result> show(Window owner) {
         TextField name = new TextField("New World");
         ComboBox<String> size = new ComboBox<>(FXCollections.observableArrayList(SIZES));
         size.setValue(SIZES[1]);
@@ -43,9 +46,19 @@ final class NewWorldMapDialog {
         grid.addRow(3, new Label("Art style"), style);
         grid.add(styleNote, 1, 4);
         grid.add(hint, 0, 5, 2, 1);
+        CheckBox generate = new CheckBox("Generate a random world");
+        generate.setTooltip(new Tooltip("Start with continents, mountains, rivers, towns and names already made, then change anything you like"));
+        WorldGeneratorPane gen = new WorldGeneratorPane();
+        gen.visibleProperty().bind(generate.selectedProperty());
+        gen.managedProperty().bind(generate.selectedProperty());
+        generate.selectedProperty().addListener((o, a, n) -> {
+            if (grid.getScene() != null && grid.getScene().getWindow() != null) grid.getScene().getWindow().sizeToScene();
+        });
+        grid.add(generate, 0, 6, 2, 1);
+        grid.add(gen, 0, 7, 2, 1);
         grid.setPrefWidth(430);
 
-        Dialog<WorldMap> d = new Dialog<>();
+        Dialog<Result> d = new Dialog<>();
         d.setTitle("New world map");
         d.setHeaderText("Create a world map");
         if (owner != null) d.initOwner(owner);
@@ -58,7 +71,8 @@ final class NewWorldMapDialog {
             int cols = s == 0 ? WorldMap.SMALL_COLS : s == 2 ? WorldMap.LARGE_COLS : WorldMap.MEDIUM_COLS;
             int rows = s == 0 ? WorldMap.SMALL_ROWS : s == 2 ? WorldMap.LARGE_ROWS : WorldMap.MEDIUM_ROWS;
             double across = miles.getValue() == null ? 2000 : miles.getValue();
-            return new WorldMap(n, cols, rows, across, style.getValue() == null ? WorldStyle.FANTASY_COLOUR : style.getValue());
+            WorldMap map = new WorldMap(n, cols, rows, across, style.getValue() == null ? WorldStyle.FANTASY_COLOUR : style.getValue());
+            return new Result(map, generate.isSelected() ? gen.options() : null);
         });
         return d.showAndWait();
     }

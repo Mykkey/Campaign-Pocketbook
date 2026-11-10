@@ -409,6 +409,8 @@ public class WorldMapEditor extends BorderPane implements ItemView {
 
         bar.getChildren().addAll(
                 iconButton("fit", "Fit: zoom to show the whole map", this::fit),
+                iconButton("dice", "Generate a random world: continents, mountains, rivers, towns and names, from a seed. Replaces what is on the map; can be undone", () ->
+                        WorldGenerateDialog.show(getScene() == null ? null : getScene().getWindow(), map, view::resizeMap)),
                 iconButton("resize", "Map size: made the map too big (or too small)? Scale the whole map, crop or extend its canvas, or change how many miles across it is. Can be undone", () ->
                         WorldResizeDialog.show(getScene() == null ? null : getScene().getWindow(), map, view::resizeMap)),
                 iconButton("undo", "Undo (Ctrl+Z)", view::undo),

@@ -94,6 +94,15 @@ final class InitiativeStrip extends ScrollPane {
             top.getChildren().add(cd);
         }
 
+        for (Combatant c : s.members) {
+            if (dnd.battle.CombatStatus.isDying(c)) {
+                Label skull = new Label("\u2620");
+                skull.setStyle("-fx-text-fill: #b91c1c; -fx-font-size: " + (current ? 18 : 14) + "px; -fx-font-weight: bold;");
+                Tooltip.install(skull, new Tooltip(c.name + " is dying: " + c.deathSuccesses + " successes, " + c.deathFailures + " failures"));
+                top.getChildren().add(skull);
+            }
+        }
+
         int hp = 0, max = 0;
         for (Combatant c : s.members) {
             if (c.defeated) continue;
@@ -105,7 +114,10 @@ final class InitiativeStrip extends ScrollPane {
         bar.setPrefWidth(current ? 190 : 120);
         bar.setPrefHeight(current ? 12 : 8);
         bar.setStyle("-fx-accent: " + (ratio > 0.5 ? "#16a34a" : ratio > 0.25 ? "#f59e0b" : "#dc2626") + ";");
-        Label sub = new Label(down ? "down" : s.members.size() > 1
+        Combatant only = s.members.size() == 1 ? first : null;
+        String downText = only != null && dnd.battle.CombatStatus.isDead(only) ? "dead" : only != null && dnd.battle.CombatStatus.isStable(only) ? "stable" : "down";
+        boolean dyingNow = only != null && dnd.battle.CombatStatus.isDying(only);
+        Label sub = new Label(dyingNow ? "dying: " + only.deathSuccesses + " saved, " + only.deathFailures + " failed" : down ? downText : s.members.size() > 1
                 ? s.aliveCount() + " of " + s.members.size() + " up  |  " + hp + "/" + max + " HP"
                 : hp + "/" + max + " HP  |  AC " + first.ac);
         sub.setStyle("-fx-font-size: " + (current ? 13 : 11) + "px; -fx-text-fill: " + (current ? "#334155" : "-t-text2") + ";");

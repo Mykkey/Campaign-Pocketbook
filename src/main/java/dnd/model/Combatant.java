@@ -34,6 +34,19 @@ public class Combatant {
     /** Combatants with the same non-null group id share an initiative and take their turn together. */
     public String group;
     public String notes = "";
+    /** Whether the creature makes death saving throws at 0 hit points; null means the default (player characters do, monsters do not). */
+    public Boolean deathSaves;
+    public int deathSuccesses, deathFailures;
+    /** At 0 hit points and no longer dying (three successes, or stabilised). */
+    public boolean stable;
+    /** The spell being concentrated on (the "Concentrating" condition is what marks concentration), or null. */
+    public String concentratingOn;
+    /** Whether the creature has used its reaction since its last turn began. */
+    public boolean reactionUsed;
+    /** Legendary actions per round (0 = none) and how many are spent this round. */
+    public int legendaryMax, legendaryUsed;
+    /** Effects that last a number of this creature's turns. */
+    public List<TimedEffect> effects = new ArrayList<>();
 
     public Combatant() { }
 }

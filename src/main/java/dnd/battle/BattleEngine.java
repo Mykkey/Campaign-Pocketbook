@@ -191,6 +191,9 @@ public final class BattleEngine {
         int n = slots.size();
         int i = cur;
         int guard = 0;
+        if (dir > 0 && cur >= 0 && b.active) {
+            for (Combatant c : slots.get(cur).members) CombatStatus.tickEffects(b, c); // its turn is over
+        }
         do {
             i += dir;
             if (i >= n) {
@@ -205,6 +208,7 @@ public final class BattleEngine {
         } while (slots.get(i).defeated() && guard <= n + 1);
         if (slots.get(i).defeated()) return false;
         b.turnId = slots.get(i).key;
+        if (dir > 0) for (Combatant c : slots.get(i).members) CombatStatus.startTurn(c);
         return true;
     }
 
@@ -230,6 +234,7 @@ public final class BattleEngine {
             c.hpCurrent = c.hpMax;
             c.ac = card.ac;
             c.initiativeBonus = card.initiative();
+            c.legendaryMax = card.legendary.isEmpty() ? 0 : 3;
             c.group = groupId;
             c.order = baseOrder + i;
             added.add(c);
@@ -334,11 +339,31 @@ public final class BattleEngine {
             c.tempHp -= soak;
             rest -= soak;
         }
+        int before = c.hpCurrent;
+        boolean saver = CombatStatus.makesDeathSaves(c);
         c.hpCurrent = Math.max(0, c.hpCurrent - rest);
         String msg = c.name + " takes " + amount + " damage (" + c.hpCurrent + "/" + c.hpMax + ")";
-        if (c.hpCurrent == 0 && !c.defeated) {
-            c.defeated = true;
-            msg += " and is down";
+        if (saver && before == 0) {
+            // already at 0 hit points: each hit is a death save failure (nothing if the temporary hit points soaked it up)
+            if (rest > 0) {
+                log(b, msg + ".");
+                return msg + (CombatStatus.hitWhileDown(b, c, 1).isEmpty() ? "" : "; " + c.name + " fails a death save");
+            }
+        } else if (c.hpCurrent == 0 && !c.defeated) {
+            if (saver) {
+                if (rest - before >= c.hpMax) { // what is left over after reaching 0 is at least the maximum: dead at once
+                    log(b, msg + ".");
+                    return msg + "; " + CombatStatus.die(b, c) + " outright";
+                }
+                CombatStatus.goDown(b, c);
+                msg += " and is dying";
+            } else {
+                c.defeated = true;
+                CombatStatus.dropConcentration(b, c);
+                msg += " and is down";
+            }
+        } else if (rest > 0 && CombatStatus.isConcentrating(c)) {
+            msg += "; " + c.name + " must make a DC " + CombatStatus.concentrationDc(rest) + " Constitution save to keep concentrating";
         }
         log(b, msg + ".");
         return msg;
@@ -347,8 +372,14 @@ public final class BattleEngine {
     /** Heals (never above max). A defeated creature that gets HP back is up again. */
     public static String heal(Battle b, Combatant c, int amount) {
         if (amount <= 0) return "";
+        boolean wasDown = c.hpCurrent == 0;
         c.hpCurrent = Math.min(c.hpMax, c.hpCurrent + amount);
         String msg = c.name + " heals " + amount + " (" + c.hpCurrent + "/" + c.hpMax + ")";
+        if (wasDown && c.hpCurrent > 0 && CombatStatus.makesDeathSaves(c)) {
+            CombatStatus.clearDeathState(c);
+            CombatStatus.removeCondition(c, CombatStatus.UNCONSCIOUS);
+            if (!c.defeated) msg += " and is conscious again";
+        }
         if (c.defeated && c.hpCurrent > 0) {
             c.defeated = false;
             msg += " and is back up";

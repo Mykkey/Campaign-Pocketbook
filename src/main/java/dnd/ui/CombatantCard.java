@@ -1,6 +1,8 @@
 package dnd.ui;
 
 import dnd.battle.BattleEngine;
+import dnd.battle.CombatStatus;
+import dnd.model.TimedEffect;
 import dnd.model.Attack;
 import dnd.model.Battle;
 import dnd.model.Card;
@@ -78,6 +80,7 @@ final class CombatantCard extends VBox {
         // ---- hit points
         if (!group) {
             getChildren().add(hpRow(first, true));
+            getChildren().add(statusRows(first));
             if (!first.conditions.isEmpty()) getChildren().add(conditionChips(first));
             if (first.notes != null && !first.notes.isBlank()) {
                 Label n = new Label(first.notes);
@@ -156,8 +159,15 @@ final class CombatantCard extends VBox {
         box.setPrefWidth(big ? 150 : 90);
         box.setTooltip(new Tooltip("Type damage as -7, healing as +5, or a plain number to set HP.\nSeveral hits at once: -5 -7 -3"));
         box.setOnAction(e -> {
-            if (BattleEngine.applyHpInput(b, c, box.getText())) ctx.changed();
-            else box.setStyle("-fx-border-color: #dc2626;");
+            boolean concentrating = CombatStatus.isConcentrating(c);
+            int before = c.hpCurrent + c.tempHp;
+            if (BattleEngine.applyHpInput(b, c, box.getText())) {
+                int lost = before - (c.hpCurrent + c.tempHp);
+                ctx.changed();
+                if (concentrating && lost > 0 && CombatStatus.isConcentrating(c)) concentrationCheck(c, lost);
+            } else {
+                box.setStyle("-fx-border-color: #dc2626;");
+            }
         });
         box.textProperty().addListener((o, a, n) -> box.setStyle(""));
         Label ac = new Label("AC " + c.ac);
@@ -166,6 +176,139 @@ final class CombatantCard extends VBox {
         HBox row = new HBox(8, bar, hp, box, ac);
         row.setAlignment(Pos.CENTER_LEFT);
         return row;
+    }
+
+    /** Asks whether a concentrating creature kept its concentration after damage, and ends it if not. */
+    private void concentrationCheck(Combatant c, int damage) {
+        int dc = CombatStatus.concentrationDc(damage);
+        String what = c.concentratingOn == null || c.concentratingOn.isBlank() ? "its spell" : c.concentratingOn;
+        ButtonType kept = new ButtonType("Passed: keeps concentrating", ButtonBar.ButtonData.YES);
+        ButtonType lost = new ButtonType("Failed: concentration ends", ButtonBar.ButtonData.NO);
+        Alert a = new Alert(Alert.AlertType.NONE, c.name + " took " + damage + " damage while concentrating on " + what
+                + ".\n\nIt must make a DC " + dc + " Constitution saving throw. Did it pass?", kept, lost);
+        a.setTitle("Concentration check");
+        if (getScene() != null) a.initOwner(getScene().getWindow());
+        if (a.showAndWait().orElse(kept) == lost) {
+            CombatStatus.dropConcentration(ctx.battle(), c);
+            ctx.changed();
+        }
+    }
+
+    /** Death saves, concentration, reaction, legendary actions and timed effects of one creature. */
+    private VBox statusRows(Combatant c) {
+        Battle b = ctx.battle();
+        VBox box = new VBox(5);
+        boolean dying = CombatStatus.isDying(c), stable = CombatStatus.isStable(c), dead = CombatStatus.isDead(c);
+        if (dying || stable || dead) {
+            String state = dead ? "DEAD" : stable ? "STABLE" : "DYING";
+            Label head = new Label(state);
+            head.setStyle("-fx-font-weight: bold; -fx-text-fill: white; -fx-padding: 1 8 1 8; -fx-background-radius: 8; -fx-background-color: "
+                    + (dead ? "#7f1d1d" : stable ? "#0369a1" : "#dc2626") + ";");
+            Label ok = new Label("Successes " + pips(c.deathSuccesses, "\u25CF", "\u25CB"));
+            ok.setStyle("-fx-text-fill: #15803d; -fx-font-weight: bold;");
+            Label bad = new Label("Failures " + pips(c.deathFailures, "\u2715", "\u25CB"));
+            bad.setStyle("-fx-text-fill: #b91c1c; -fx-font-weight: bold;");
+            HBox row = new HBox(10, head, ok, bad);
+            row.setAlignment(Pos.CENTER_LEFT);
+            if (dying) {
+                Button roll = new Button("Roll death save");
+                roll.setTooltip(new Tooltip("Rolls a d20: 10 or more is a success, 9 or less a failure; 1 is two failures, 20 brings it back with 1 hit point"));
+                roll.setOnAction(e -> {
+                    CombatStatus.deathSave(b, c, new java.util.Random().nextInt(20) + 1);
+                    ctx.changed();
+                });
+                Button success = new Button("+ Success");
+                success.setOnAction(e -> {
+                    CombatStatus.addSuccesses(b, c, 1);
+                    ctx.changed();
+                });
+                Button failure = new Button("+ Failure");
+                failure.setOnAction(e -> {
+                    CombatStatus.addFailures(b, c, 1);
+                    ctx.changed();
+                });
+                Button stab = new Button("Stabilise");
+                stab.setTooltip(new Tooltip("Stable: it stops dying, stays at 0 hit points and takes no turns until healed (for example a Medicine check or Spare the Dying)"));
+                stab.setOnAction(e -> {
+                    CombatStatus.stabilize(b, c);
+                    ctx.changed();
+                });
+                row.getChildren().addAll(roll, success, failure, stab);
+            }
+            box.getChildren().add(row);
+            for (int i = b.log.size() - 1, shown = 0; i >= 0 && shown < 2; i--) {
+                String line = b.log.get(i);
+                if (line.startsWith(c.name + " ")) {
+                    Label l = new Label(line);
+                    l.setStyle("-fx-text-fill: -t-text2; -fx-font-size: 12px;");
+                    box.getChildren().add(1, l);
+                    shown++;
+                }
+            }
+        }
+        if (CombatStatus.isConcentrating(c)) {
+            Label l = new Label("Concentrating" + (c.concentratingOn == null || c.concentratingOn.isBlank() ? "" : " on " + c.concentratingOn));
+            l.setStyle("-fx-font-weight: bold; -fx-text-fill: #1d4ed8;");
+            Button drop = new Button("Drop");
+            drop.setTooltip(new Tooltip("End the concentration spell"));
+            drop.setOnAction(e -> {
+                CombatStatus.dropConcentration(b, c);
+                ctx.changed();
+            });
+            HBox row = new HBox(8, l, drop);
+            row.setAlignment(Pos.CENTER_LEFT);
+            box.getChildren().add(row);
+        }
+        HBox misc = new HBox(10);
+        misc.setAlignment(Pos.CENTER_LEFT);
+        ToggleButton reaction = new ToggleButton("Reaction used");
+        reaction.setSelected(c.reactionUsed);
+        reaction.setTooltip(new Tooltip("Tick when the creature has used its reaction; it comes back at the start of its next turn"));
+        reaction.setOnAction(e -> {
+            c.reactionUsed = reaction.isSelected();
+            ctx.changed();
+        });
+        misc.getChildren().add(reaction);
+        if (c.legendaryMax > 0) {
+            Label leg = new Label("Legendary actions " + (c.legendaryMax - c.legendaryUsed) + " / " + c.legendaryMax);
+            leg.setStyle("-fx-font-weight: bold;");
+            Button use = new Button("Use one");
+            use.setDisable(c.legendaryUsed >= c.legendaryMax);
+            use.setOnAction(e -> {
+                c.legendaryUsed++;
+                ctx.changed();
+            });
+            Button back = new Button("Undo");
+            back.setDisable(c.legendaryUsed <= 0);
+            back.setOnAction(e -> {
+                c.legendaryUsed--;
+                ctx.changed();
+            });
+            misc.getChildren().addAll(leg, use, back);
+        }
+        box.getChildren().add(misc);
+        if (!c.effects.isEmpty()) {
+            FlowPane chips = new FlowPane(4, 4);
+            for (TimedEffect eff : new ArrayList<>(c.effects)) {
+                Label chip = new Label(eff.name + " (" + eff.turns + (eff.turns == 1 ? " turn" : " turns") + ")");
+                chip.setStyle("-fx-background-color: -t-slate; -fx-border-color: #94a3b8; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 1 7 1 7; -fx-font-size: 12px;");
+                chip.setTooltip(new Tooltip("Lasts this many more of the creature's own turns. Click to end it now."));
+                chip.setCursor(javafx.scene.Cursor.HAND);
+                chip.setOnMouseClicked(ev -> {
+                    c.effects.remove(eff);
+                    ctx.changed();
+                });
+                chips.getChildren().add(chip);
+            }
+            box.getChildren().add(chips);
+        }
+        return box;
+    }
+
+    private static String pips(int n, String on, String off) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 3; i++) sb.append(i < n ? on : off).append(' ');
+        return sb.toString().trim();
     }
 
     private Node memberRow(Combatant c) {
@@ -266,6 +409,32 @@ final class CombatantCard extends VBox {
             ctx.changed();
         }));
         Menu conds = conditionsMenu(ctx, List.of(c));
+        CheckMenuItem saves = new CheckMenuItem("Makes death saves at 0 HP");
+        saves.setSelected(CombatStatus.makesDeathSaves(c));
+        saves.setOnAction(e -> {
+            c.deathSaves = saves.isSelected();
+            ctx.changed();
+        });
+        MenuItem conc = new MenuItem(CombatStatus.isConcentrating(c) ? "Change concentration spell..." : "Concentrating on...");
+        conc.setOnAction(e -> {
+            String spell = askAllowEmpty("Concentration", "The spell (leave empty if you do not need a name):", c.concentratingOn == null ? "" : c.concentratingOn);
+            if (spell != null) {
+                CombatStatus.setConcentration(c, spell);
+                ctx.changed();
+            }
+        });
+        MenuItem effect = new MenuItem("Add effect that lasts some turns...");
+        effect.setOnAction(e -> ask("Effect", "What is it (for example Hunter's Mark, Slowed)?", "").ifPresent(name ->
+                askInt("Effect", "How many of " + c.name + "'s own turns does it last?", 10).ifPresent(turns -> {
+                    CombatStatus.addEffect(c, name, turns);
+                    ctx.changed();
+                })));
+        MenuItem legendary = new MenuItem("Legendary actions per round...");
+        legendary.setOnAction(e -> askInt("Legendary actions", "How many per round (0 for none)?", c.legendaryMax).ifPresent(v -> {
+            c.legendaryMax = Math.max(0, Math.min(9, v));
+            c.legendaryUsed = Math.min(c.legendaryUsed, c.legendaryMax);
+            ctx.changed();
+        }));
         MenuItem notes = new MenuItem("Notes...");
         notes.setOnAction(e -> ask("Notes", "Notes for " + c.name + ":", c.notes == null ? "" : c.notes).ifPresent(v -> {
             c.notes = v;
@@ -279,7 +448,7 @@ final class CombatantCard extends VBox {
         place.setOnAction(e -> ctx.placeToken(c));
         MenuItem remove = new MenuItem("Remove from battle");
         remove.setOnAction(e -> ctx.remove(c));
-        mb.getItems().addAll(rename, maxHp, temp, acItem, conds, notes, new SeparatorMenuItem(), find, place,
+        mb.getItems().addAll(rename, maxHp, temp, acItem, conds, saves, conc, effect, legendary, notes, new SeparatorMenuItem(), find, place,
                 new SeparatorMenuItem(), remove);
         return mb;
     }
@@ -298,6 +467,15 @@ final class CombatantCard extends VBox {
         d.setHeaderText(header);
         if (getScene() != null) d.initOwner(getScene().getWindow());
         return d.showAndWait().map(String::trim).filter(s -> !s.isEmpty());
+    }
+
+    /** Like {@link #ask} but an empty answer is allowed; null means the dialog was cancelled. */
+    private String askAllowEmpty(String title, String header, String initial) {
+        TextInputDialog d = new TextInputDialog(initial);
+        d.setTitle(title);
+        d.setHeaderText(header);
+        if (getScene() != null) d.initOwner(getScene().getWindow());
+        return d.showAndWait().map(String::trim).orElse(null);
     }
 
     private Optional<Integer> askInt(String title, String header, int initial) {

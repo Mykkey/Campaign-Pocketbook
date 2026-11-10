@@ -14,9 +14,33 @@
 - **Everything is connected:** link any item to any other, hover to preview, see what links to what, and search the whole project.
 - **Yours to keep:** plain files in a folder you can copy, automatic safety copies, backup of a whole campaign to one file, dark mode.
 
+The same kind of world map in two of the five art styles:
+
 | Classic ink | Dark fantasy |
 |---|---|
 | ![Classic ink style](docs/images/world-map-classic.png) | ![Dark fantasy style](docs/images/world-map-dark.png) |
+
+## A tour
+
+**Battlemaps:** square or hex grids, terrain painting, over 150 drawn pieces, tokens, fog of war and lighting, and a battle tracker for running the fight.
+
+![A battlemap of a village with tokens](docs/images/battlemap.png)
+
+**Whiteboards:** free-form notes with rich text, sticky notes, arrows and images, where any words can link to a card, map or another board.
+
+![A whiteboard with sticky notes and arrows](docs/images/whiteboard.png)
+
+**Cards:** characters and monsters as 5e-style stat blocks, next to the stat block as it will be read at the table.
+
+![A creature card editor and its stat block](docs/images/card.png)
+
+**Encounters:** pick creatures (or your own cards) and see how hard the fight is for your party, then load it straight into a battle.
+
+![An encounter with its difficulty rating](docs/images/encounter.png)
+
+**Relationships:** a family tree and a web of who knows, serves or hates whom, built from the links between your cards.
+
+![A web of relationships between characters](docs/images/relationships.png)
 
 Built with Java 21 and JavaFX. Runs on Windows, macOS and Linux; you need [Java 21 or newer](https://adoptium.net/) installed. About 26,000 lines of Java with over 300 automated tests and continuous integration.
 

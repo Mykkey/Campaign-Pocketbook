@@ -857,7 +857,8 @@ final class WorldMapView extends Pane {
                 return;
             }
             if (clicks >= 2 && shape instanceof WorldRegion region && region.contains(px, py)) {
-                renameRegion(region);
+                if (region.link != null && store.itemExists(region.link)) openItem.accept(region.link); // a linked region opens its link; rename is in the right-click menu
+                else renameRegion(region);
                 return;
             }
         }
@@ -1000,6 +1001,11 @@ final class WorldMapView extends Pane {
             MenuItem open = new MenuItem("Open linked item");
             open.setOnAction(ev -> openItem.accept(link));
             menu.getItems().add(open);
+        }
+        if (o instanceof WorldRegion rg) {
+            MenuItem rename = new MenuItem("Rename...");
+            rename.setOnAction(ev -> renameRegion(rg));
+            menu.getItems().add(rename);
         }
         if (o instanceof WorldStamp s && WorldLabels.hasText(s)) {
             MenuItem text = new MenuItem("Edit text...");
@@ -1308,8 +1314,10 @@ final class WorldMapView extends Pane {
     }
 
     private void renameRegion(WorldRegion r) {
+        String name = askText("Region", "Name this region (leave empty for none)", r.name == null ? "" : r.name);
+        if (name == null) return; // cancelled or clicked away: keep the name as it is
         String before = WorldObjects.capture(map);
-        r.name = askRegionName(r.name == null ? "" : r.name);
+        r.name = name;
         stampEdit(before);
         redraw();
     }

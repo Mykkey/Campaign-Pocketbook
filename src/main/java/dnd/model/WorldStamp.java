@@ -18,6 +18,8 @@ public class WorldStamp {
     public boolean flipX;
     /** Hidden from the players. */
     public boolean hidden;
+    /** The years this exists (either may be null: no limit). Only has an effect while the map shows a chosen year. */
+    public Integer fromYear, toYear;
     /** Id of a project item this symbol links to, or null. */
     public String link;
     /** The DM's own note shown on hover, or null. */
@@ -44,6 +46,8 @@ public class WorldStamp {
         s.rotation = rotation;
         s.flipX = flipX;
         s.hidden = hidden;
+        s.fromYear = fromYear;
+        s.toYear = toYear;
         s.link = link;
         s.note = note;
         s.text = text;

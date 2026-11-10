@@ -4,6 +4,7 @@ import dnd.map.AssetLibrary;
 import dnd.map.world.ScatterPlanner;
 import dnd.map.world.WorldAssets;
 import dnd.map.world.WorldComposer;
+import dnd.map.world.WorldEra;
 import dnd.map.world.WorldGrid;
 import dnd.map.world.WorldLabels;
 import dnd.map.world.WorldLegend;
@@ -385,7 +386,7 @@ final class WorldMapView extends Pane {
             }
             case MARQUEE -> {
                 double x0 = Math.min(mqX0, mqX1), x1 = Math.max(mqX0, mqX1), y0 = Math.min(mqY0, mqY1), y1 = Math.max(mqY0, mqY1);
-                for (WorldStamp s : map.stamps) if (s.x >= x0 && s.x <= x1 && s.y >= y0 && s.y <= y1) selected.add(s.id);
+                for (WorldStamp s : map.stamps) if (WorldEra.visible(s, map) && s.x >= x0 && s.x <= x1 && s.y >= y0 && s.y <= y1) selected.add(s.id);
             }
             default -> { }
         }
@@ -909,6 +910,86 @@ final class WorldMapView extends Pane {
         redraw();
     }
 
+    // ---- eras
+
+    private static Integer fromOf(Object o) {
+        return o instanceof WorldStamp s ? s.fromYear : o instanceof WorldPath p ? p.fromYear : o instanceof WorldRegion r ? r.fromYear : null;
+    }
+
+    private static Integer toOf(Object o) {
+        return o instanceof WorldStamp s ? s.toYear : o instanceof WorldPath p ? p.toYear : o instanceof WorldRegion r ? r.toYear : null;
+    }
+
+    private static void setYears(Object o, Integer from, Integer to) {
+        if (o instanceof WorldStamp s) {
+            s.fromYear = from;
+            s.toYear = to;
+        } else if (o instanceof WorldPath p) {
+            p.fromYear = from;
+            p.toYear = to;
+        } else if (o instanceof WorldRegion r) {
+            r.fromYear = from;
+            r.toYear = to;
+        }
+    }
+
+    /** Lets a test answer the years question: {from, to}, either may be null. */
+    static java.util.function.Supplier<Integer[]> yearsAnswer;
+
+    /** Asks in which years the selected things exist (blank = no limit) and applies it to all of them. */
+    void editYears() {
+        List<Object> things = selectedThings();
+        if (things.isEmpty()) return;
+        Integer[] answer;
+        if (yearsAnswer != null) {
+            answer = yearsAnswer.get();
+        } else {
+            javafx.scene.control.TextField from = new javafx.scene.control.TextField(fromOf(things.get(0)) == null ? "" : String.valueOf(fromOf(things.get(0))));
+            javafx.scene.control.TextField to = new javafx.scene.control.TextField(toOf(things.get(0)) == null ? "" : String.valueOf(toOf(things.get(0))));
+            from.setPromptText("no limit");
+            to.setPromptText("no limit");
+            javafx.scene.layout.GridPane grid = new javafx.scene.layout.GridPane();
+            grid.setHgap(8);
+            grid.setVgap(8);
+            grid.addRow(0, new javafx.scene.control.Label("Exists from year"), from);
+            grid.addRow(1, new javafx.scene.control.Label("Until year"), to);
+            javafx.scene.control.Label note = new javafx.scene.control.Label("Leave a box empty for no limit. When the map is shown as a year, only things that exist then are drawn.");
+            note.setWrapText(true);
+            note.setMaxWidth(320);
+            grid.add(note, 0, 2, 2, 1);
+            javafx.scene.control.Dialog<javafx.scene.control.ButtonType> d = new javafx.scene.control.Dialog<>();
+            d.setTitle("Years it exists");
+            d.setHeaderText(things.size() == 1 ? nameOf(things.get(0)) : things.size() + " things");
+            if (getScene() != null) d.initOwner(getScene().getWindow());
+            d.getDialogPane().setContent(grid);
+            d.getDialogPane().getButtonTypes().addAll(javafx.scene.control.ButtonType.OK, javafx.scene.control.ButtonType.CANCEL);
+            if (d.showAndWait().orElse(javafx.scene.control.ButtonType.CANCEL) != javafx.scene.control.ButtonType.OK) return;
+            answer = new Integer[]{parseYear(from.getText()), parseYear(to.getText())};
+        }
+        if (answer == null) return;
+        String before = WorldObjects.capture(map);
+        for (Object o : things) setYears(o, answer[0], answer[1]);
+        stampEdit(before);
+        redraw();
+    }
+
+    private static Integer parseYear(String text) {
+        try {
+            return text == null || text.isBlank() ? null : Integer.valueOf(text.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /** The season or the year the map is shown as changed. */
+    void eraChanged() {
+        selected.clear();
+        selShape = null;
+        WorldTerrainCache.of(map).invalidateAll();
+        store.markWorldMapDirty(map, true);
+        redraw();
+    }
+
     // ---- selecting and editing
 
     private List<WorldStamp> selectedStamps() {
@@ -1128,6 +1209,9 @@ final class WorldMapView extends Pane {
         MenuItem hide = new MenuItem(isHidden(o) ? "Show to players" : "Hide from players");
         hide.setOnAction(ev -> toggleHiddenSelection());
         menu.getItems().add(hide);
+        MenuItem years = new MenuItem("Years it exists...");
+        years.setOnAction(ev -> editYears());
+        menu.getItems().add(years);
         menu.getItems().add(new SeparatorMenuItem());
         MenuItem del = new MenuItem("Delete");
         del.setOnAction(ev -> deleteSelection());
@@ -1211,13 +1295,13 @@ final class WorldMapView extends Pane {
         if (t != WorldTool.SELECT && t != WorldTool.HAND) return;
         double r = 4.5 / zoom();
         for (WorldStamp s : map.stamps) {
-            if (!hasLinkOrNote(s)) continue;
+            if (!hasLinkOrNote(s) || !WorldEra.visible(s, map)) continue;
             double[][] c = WorldStampRenderer.corners(s, map.style);
             badge(g, c[1][0], c[1][1], r, s.link != null);
         }
-        for (WorldPath p : map.paths) if (hasLinkOrNote(p) && p.count() > 0) badge(g, p.x(0), p.y(0), r, p.link != null);
+        for (WorldPath p : map.paths) if (hasLinkOrNote(p) && p.count() > 0 && WorldEra.visible(p, map)) badge(g, p.x(0), p.y(0), r, p.link != null);
         for (WorldRegion rg : map.regions) {
-            if (!hasLinkOrNote(rg)) continue;
+            if (!hasLinkOrNote(rg) || !WorldEra.visible(rg, map)) continue;
             double[] at = rg.labelAt();
             badge(g, at[0], at[1] - 3 / zoom(), r, rg.link != null);
         }

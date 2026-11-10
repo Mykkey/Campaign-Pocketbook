@@ -13,6 +13,8 @@ public class WorldRegion {
     /** "#RRGGBB", or null for the style's border colour. */
     public String tint;
     public boolean hidden;
+    /** The years this exists (either may be null: no limit). Only has an effect while the map shows a chosen year. */
+    public Integer fromYear, toYear;
     /** Where the name is written, or null for the middle of the outline. */
     public Double labelX, labelY;
     public String link;
@@ -78,6 +80,8 @@ public class WorldRegion {
         r.points = new ArrayList<>(points);
         r.tint = tint;
         r.hidden = hidden;
+        r.fromYear = fromYear;
+        r.toYear = toYear;
         r.labelX = labelX;
         r.labelY = labelY;
         r.link = link;

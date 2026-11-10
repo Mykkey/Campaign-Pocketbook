@@ -34,6 +34,8 @@ public class WorldPath {
     public WorldStyle style;
     public String name;
     public boolean hidden;
+    /** The years this exists (either may be null: no limit). Only has an effect while the map shows a chosen year. */
+    public Integer fromYear, toYear;
     public String link;
     public String note;
 
@@ -81,6 +83,8 @@ public class WorldPath {
         p.style = style;
         p.name = name;
         p.hidden = hidden;
+        p.fromYear = fromYear;
+        p.toYear = toYear;
         p.link = link;
         p.note = note;
         return p;

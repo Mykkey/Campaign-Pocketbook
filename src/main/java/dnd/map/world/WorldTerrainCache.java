@@ -42,6 +42,7 @@ public final class WorldTerrainCache {
     private final WritableImage image;
     private final boolean[] built;
     private WorldStyle builtStyle;
+    private dnd.model.WorldSeason builtSeason;
 
     private WorldTerrainCache(WorldMap map) {
         this.map = map;
@@ -61,9 +62,10 @@ public final class WorldTerrainCache {
 
     /** The picture, with every tile that touches the given area (in cells) up to date. */
     public Image image(double vx0, double vy0, double vx1, double vy1) {
-        if (builtStyle != map.style) {
+        if (builtStyle != map.style || builtSeason != map.season) {
             invalidateAll();
             builtStyle = map.style;
+            builtSeason = map.season;
         }
         int tx0 = clamp((int) Math.floor(vx0 / TILE), tilesX), tx1 = clamp((int) Math.floor(vx1 / TILE), tilesX);
         int ty0 = clamp((int) Math.floor(vy0 / TILE), tilesY), ty1 = clamp((int) Math.floor(vy1 / TILE), tilesY);
@@ -108,7 +110,7 @@ public final class WorldTerrainCache {
 
     /** Works out the colour of single points of one tile. */
     private final class Sampler {
-        private final WorldPalette pal = WorldPalette.of(map.style);
+        private final WorldPalette pal = WorldPalette.of(map.style, map.season);
         private final WorldStyle style = map.style;
         private final PaintLayer base = map.base(), bio = map.biome(), elev = map.elevation();
         private final double[] bw = new double[6], mw = new double[16];

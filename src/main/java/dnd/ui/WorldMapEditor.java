@@ -403,6 +403,34 @@ public class WorldMapEditor extends BorderPane implements ItemView {
             biomes.setCellFactory(lv -> biomeCell());
         });
         bar.getChildren().add(style);
+        // ---- the season and the year the map is shown as
+        ComboBox<dnd.model.WorldSeason> season = new ComboBox<>(FXCollections.observableArrayList(dnd.model.WorldSeason.values()));
+        season.setValue(map.season == null ? dnd.model.WorldSeason.NONE : map.season);
+        season.setFocusTraversable(false);
+        season.setTooltip(IconButtons.tip("Season: show the same map in spring, summer, autumn or winter (the land and water change colour)"));
+        season.valueProperty().addListener((o, a, n) -> {
+            if (n == null) return;
+            map.season = n;
+            view.eraChanged();
+        });
+        CheckBox showYear = new CheckBox("Year");
+        showYear.setSelected(map.year != null);
+        showYear.setTooltip(IconButtons.tip("Show the map as it was in one year: only the things that exist in that year are drawn. Give things their years with right-click > Years it exists..."));
+        Spinner<Integer> year = new Spinner<>(-999999, 999999, map.year == null ? 0 : map.year, 10);
+        year.setEditable(true);
+        year.setPrefWidth(96);
+        year.setDisable(map.year == null);
+        year.setTooltip(IconButtons.tip("The year the map is shown as"));
+        Runnable yearChanged = () -> {
+            map.year = showYear.isSelected() && year.getValue() != null ? year.getValue() : null;
+            year.setDisable(!showYear.isSelected());
+            view.eraChanged();
+        };
+        showYear.setOnAction(e -> yearChanged.run());
+        year.valueProperty().addListener((o, a, n) -> {
+            if (showYear.isSelected()) yearChanged.run();
+        });
+        bar.getChildren().addAll(season, showYear, year);
         ToggleButton snapBtn = IconButtons.switchToggle("snap", "Snap: while you move symbols and labels they snap to the map's edges and middle (left, centre, right, top, bottom). Hold Alt to move freely", ts.snap);
         ts.snap.addListener((o, a, n) -> AppSettings.setBoolean("worldSnap", n));
         bar.getChildren().add(snapBtn);

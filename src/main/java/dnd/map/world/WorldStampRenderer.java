@@ -69,6 +69,7 @@ public final class WorldStampRenderer {
                             boolean showHidden) {
         for (WorldStamp s : inOrder(map)) {
             if (s.hidden && !showHidden) continue;
+            if (!WorldEra.visible(s, map)) continue;
             boolean label = WorldLabels.isLabel(s);
             WorldAssets.Feature f = label ? null : WorldAssets.get(s.feature);
             if (f == null && !label) continue;
@@ -156,6 +157,7 @@ public final class WorldStampRenderer {
         for (int i = list.size() - 1; i >= 0; i--) {
             WorldStamp s = list.get(i);
             if (s.hidden && !includeHidden) continue;
+            if (!WorldEra.visible(s, map)) continue;
             if (contains(s, map.style, px, py)) return s;
         }
         return null;

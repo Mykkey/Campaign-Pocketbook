@@ -39,6 +39,10 @@ public class WorldMap extends ProjectEntry {
     /** Miles per day for each way of travelling, used by the ruler. */
     public java.util.Map<String, Double> paces = dnd.map.world.WorldTravel.defaultPaces();
 
+    /** The season the map is shown in (colours only), and the year it is shown as (null: every year at once; see WorldEra). */
+    public WorldSeason season = WorldSeason.NONE;
+    public Integer year;
+
     /** Whether the height of the land is shown as relief shading (only has an effect once some elevation has been painted), and how strongly. */
     public boolean relief = true;
     public double reliefStrength = 1.0;
@@ -187,6 +191,8 @@ public class WorldMap extends ProjectEntry {
         m.reveal = reveal().copy();
         m.elevation = elevation().copy();
         m.relief = relief;
+        m.season = season;
+        m.year = year;
         m.reliefStrength = reliefStrength;
         m.paces = new java.util.LinkedHashMap<>(paces);
         m.base = base().copy();

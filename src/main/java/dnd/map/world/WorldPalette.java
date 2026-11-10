@@ -32,6 +32,49 @@ public final class WorldPalette {
         return CACHE.computeIfAbsent(style, WorldPalette::build);
     }
 
+    private static final Map<String, WorldPalette> SEASONAL = new java.util.HashMap<>();
+
+    /** The palette of a style as it looks in a season (the plain style palette for {@code NONE}). */
+    public static synchronized WorldPalette of(WorldStyle style, dnd.model.WorldSeason season) {
+        if (season == null || season == dnd.model.WorldSeason.NONE) return of(style);
+        return SEASONAL.computeIfAbsent(style + "/" + season, k -> seasonal(of(style), style, season));
+    }
+
+    private static final java.util.Set<Integer> GREEN = java.util.Set.of(0, 1, 2, 3, 4, 5, 6, 13, 14);
+
+    private static WorldPalette seasonal(WorldPalette p, WorldStyle style, dnd.model.WorldSeason season) {
+        java.util.function.IntUnaryOperator fin = style == WorldStyle.RETRO_PIXEL ? c -> posterize(c, 7) : c -> c;
+        int deep = p.oceanDeep, shallow = p.oceanShallow, lake = p.lake;
+        if (season == dnd.model.WorldSeason.SUMMER) {
+            shallow = mix(shallow, rgb("9be4e0"), 0.15);
+            lake = mix(lake, rgb("8fd4f0"), 0.12);
+        } else if (season == dnd.model.WorldSeason.WINTER) {
+            lake = mix(lake, p.ice, 0.6);
+            shallow = mix(shallow, p.ice, 0.25);
+            deep = scale(desat(deep, 0.15), 0.95);
+        }
+        WorldPalette q = new WorldPalette(p.parchment, fin.applyAsInt(deep), fin.applyAsInt(shallow), fin.applyAsInt(lake),
+                fin.applyAsInt(seasonalGround(p.land, 0, season)), p.lavaHot, p.lavaCool, p.ice, p.ink);
+        for (int i = 0; i < p.biome.length; i++) q.biome[i] = fin.applyAsInt(seasonalGround(p.biome[i], i, season));
+        q.road = p.road;
+        q.border = p.border;
+        return q;
+    }
+
+    /** The colour of one kind of ground (biome code 0 is plain land) in a season. */
+    private static int seasonalGround(int c, int biome, dnd.model.WorldSeason season) {
+        boolean green = GREEN.contains(biome);
+        return switch (season) {
+            case SPRING -> green ? scale(mix(c, rgb("9fe06a"), 0.22), 1.04) : c;
+            case SUMMER -> green ? mix(c, rgb("d8cf5a"), 0.10) : c;
+            case AUTUMN -> biome == 4 ? mix(c, rgb("9a3a1c"), 0.5) : biome == 5 ? mix(c, rgb("9a6a1c"), 0.12) : biome == 13 ? mix(c, rgb("8a5a2a"), 0.25)
+                    : green ? mix(c, rgb("c8742a"), 0.45) : biome == 7 || biome == 8 || biome == 9 ? c : mix(c, rgb("c8742a"), 0.08);
+            case WINTER -> green ? mix(c, rgb("f2f7fb"), 0.72) : biome == 12 ? mix(c, rgb("f2f7fb"), 0.5) : biome == 10 ? mix(c, rgb("f2f7fb"), 0.45)
+                    : biome == 7 || biome == 8 || biome == 9 ? mix(c, rgb("f2f7fb"), 0.35) : c;
+            default -> c;
+        };
+    }
+
     public int biomeColor(WorldBiome b) {
         return biome[b == null ? 0 : b.code];
     }

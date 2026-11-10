@@ -41,6 +41,7 @@ public final class WorldLegend {
     public static List<Entry> entries(WorldMap map, boolean forPlayers) {
         TreeSet<String> used = new TreeSet<>();
         for (WorldStamp s : map.stamps) {
+            if (!WorldEra.visible(s, map)) continue;
             if (forPlayers && (s.hidden || !map.isRevealed(s.x, s.y))) continue;
             if (WorldLabels.isLabel(s) || WorldLabels.isBanner(s) || s.feature == null) continue;
             WorldAssets.Feature f = WorldAssets.get(s.feature);
@@ -56,6 +57,7 @@ public final class WorldLegend {
         byCat.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(e -> out.addAll(e.getValue()));
         TreeSet<WorldPath.Type> lines = new TreeSet<>();
         for (WorldPath p : map.paths) {
+            if (!WorldEra.visible(p, map)) continue;
             if (forPlayers && (p.hidden || !pathSeen(map, p))) continue;
             lines.add(p.type);
         }

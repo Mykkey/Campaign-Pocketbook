@@ -28,12 +28,14 @@ public final class WorldPathRenderer {
     public static void draw(GraphicsContext g, WorldMap map, double zoom, double x0, double y0, double x1, double y1, boolean showHidden) {
         for (WorldRegion r : map.regions) {
             if (r.hidden && !showHidden) continue;
+            if (!WorldEra.visible(r, map)) continue;
             drawRegion(g, map, r, zoom, r.hidden);
         }
         List<WorldPath> list = new ArrayList<>(map.paths);
         list.sort(Comparator.comparingInt(p -> order(p.type)));
         for (WorldPath p : list) {
             if (p.hidden && !showHidden) continue;
+            if (!WorldEra.visible(p, map)) continue;
             if (p.count() < 2) continue;
             drawPath(g, map, p, zoom, p.hidden);
         }
@@ -190,7 +192,7 @@ public final class WorldPathRenderer {
         list.sort(Comparator.comparingInt(p -> order(p.type)));
         for (int i = list.size() - 1; i >= 0; i--) {
             WorldPath p = list.get(i);
-            if (p.count() < 2 || (p.hidden && !includeHidden)) continue;
+            if (p.count() < 2 || (p.hidden && !includeHidden) || !WorldEra.visible(p, map)) continue;
             if (WorldPathGeometry.distance(WorldPathGeometry.smooth(p, 8), px, py) <= tol + p.drawnWidth() / 2) return p;
         }
         return null;
@@ -200,7 +202,7 @@ public final class WorldPathRenderer {
     public static WorldRegion hitRegion(WorldMap map, double px, double py, boolean includeHidden) {
         WorldRegion best = null;
         for (WorldRegion r : map.regions) {
-            if (r.count() < 3 || (r.hidden && !includeHidden) || !r.contains(px, py)) continue;
+            if (r.count() < 3 || (r.hidden && !includeHidden) || !WorldEra.visible(r, map) || !r.contains(px, py)) continue;
             if (best == null || r.area() < best.area()) best = r;
         }
         return best;

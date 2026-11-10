@@ -39,13 +39,20 @@ public class WorldMap extends ProjectEntry {
     /** Miles per day for each way of travelling, used by the ruler. */
     public java.util.Map<String, Double> paces = dnd.map.world.WorldTravel.defaultPaces();
 
+    /** True when the players only see the parts of the map the DM has revealed (the rest shows as unexplored parchment). */
+    public boolean hideUnexplored;
+
+    /** Bumped whenever the revealed area changes, so the cover picture knows to redraw. Not saved. */
+    @JsonIgnore
+    public transient int revealVersion;
+
     /** Bumped whenever the content changes (not the camera), so cached pictures know to redraw. Not saved. */
     @JsonIgnore
     public transient int revision;
 
     @JsonIgnore
-    private PaintLayer base, biome;
-    private String loadedBase, loadedBiome;
+    private PaintLayer base, biome, reveal;
+    private String loadedBase, loadedBiome, loadedReveal;
 
     public WorldMap() { }
 
@@ -67,6 +74,40 @@ public class WorldMap extends ProjectEntry {
     public PaintLayer biome() {
         if (biome == null) biome = PaintLayer.decode(cols, rows, loadedBiome);
         return biome;
+    }
+
+    /** How many map cells one cell of the reveal layer covers across (the reveal layer is coarse, to stay small). */
+    public static final int REVEAL_STEP = 4;
+
+    public int revealCols() {
+        return (cols + REVEAL_STEP - 1) / REVEAL_STEP;
+    }
+
+    public int revealRows() {
+        return (rows + REVEAL_STEP - 1) / REVEAL_STEP;
+    }
+
+    /** The area the players may see, at a quarter of the map's resolution: 1 = revealed, 0 = still unexplored. */
+    public PaintLayer reveal() {
+        if (reveal == null) reveal = PaintLayer.decode(revealCols(), revealRows(), loadedReveal);
+        return reveal;
+    }
+
+    /** True if the point (in map cells) is in the revealed area, or if nothing is being hidden from the players. */
+    public boolean isRevealed(double x, double y) {
+        if (!hideUnexplored) return true;
+        return reveal().get((int) Math.floor(x / REVEAL_STEP), (int) Math.floor(y / REVEAL_STEP)) != 0;
+    }
+
+    @JsonGetter("revealData")
+    private String revealDataOut() {
+        return reveal().isEmpty() ? null : reveal().encode();
+    }
+
+    @JsonSetter("revealData")
+    private void revealDataIn(String data) {
+        loadedReveal = data;
+        reveal = null;
     }
 
     @JsonGetter("baseData")
@@ -113,6 +154,8 @@ public class WorldMap extends ProjectEntry {
         m.showLegend = showLegend;
         m.legendX = legendX;
         m.legendY = legendY;
+        m.hideUnexplored = hideUnexplored;
+        m.reveal = reveal().copy();
         m.paces = new java.util.LinkedHashMap<>(paces);
         m.base = base().copy();
         m.biome = biome().copy();

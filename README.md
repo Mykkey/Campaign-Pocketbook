@@ -6,7 +6,7 @@
 
 ## What it does
 
-- **World maps:** paint land, sea, lava and ice, then biomes (grass, sand, snow, swamp...); add mountains, forests, towns, ships and sea monsters from a library of about 100 symbols, each in **five art styles** (classic ink, watercolour, fantasy colour, retro pixel, dark fantasy). Draw rivers, roads and borders, write labels that follow a curve, lay a hex or square grid over the map, measure journeys in travel days, and link any place to your notes.
+- **World maps:** paint land, sea, lava and ice, then biomes (grass, sand, snow, swamp...); add mountains, forests, towns, ships and sea monsters from a library of about 100 symbols, each in **five art styles** (classic ink, watercolour, fantasy colour, retro pixel, dark fantasy). Draw rivers, roads and borders, write labels that follow a curve, lay a hex or square grid over the map, measure journeys in travel days, and link any place to your notes. Hide secrets from your players, reveal the map as they explore it in a separate player window, and export the map as a PNG picture.
 - **Whiteboards:** text, sticky notes, drawings, curved arrows and images, with links and hover previews.
 - **Battlemaps:** square or hex grids, fog of war, dynamic lighting, tokens and a battle tracker.
 - **Cards and rules:** characters and monsters as 5e-style stat blocks, spells, magic items, quests, session logs, encounters with difficulty, a family tree and relationship web, and an SRD monster and spell library.

@@ -3,6 +3,7 @@ package dnd.ui;
 import dnd.map.AssetLibrary;
 import dnd.map.world.ScatterPlanner;
 import dnd.map.world.WorldAssets;
+import dnd.map.world.WorldComposer;
 import dnd.map.world.WorldGrid;
 import dnd.map.world.WorldLabels;
 import dnd.map.world.WorldLegend;
@@ -59,7 +60,7 @@ final class WorldMapView extends Pane {
     /** One undoable step. */
     private record Entry(Runnable undo, Runnable redo) { }
 
-    private enum Mode { NONE, PAN, PAINT, SCATTER, MOVE, MARQUEE, RESIZE, DRAWPATH, DRAGPOINT, LEGEND }
+    private enum Mode { NONE, PAN, PAINT, SCATTER, MOVE, MARQUEE, RESIZE, DRAWPATH, DRAGPOINT, LEGEND, REVEAL }
 
     private final WorldMap map;
     private final ProjectStore store;
@@ -105,6 +106,10 @@ final class WorldMapView extends Pane {
     private byte[] layerBefore;
     private int minX, minY, maxX, maxY;
     private double lastCx, lastCy;
+    // the reveal stroke being drawn (the reveal layer is coarser than the map)
+    private byte[] revealBefore;
+    private byte revealValue;
+    private int rMinX, rMinY, rMaxX, rMaxY;
 
     WorldMapView(WorldMap map, ProjectStore store, WorldToolState ts, Consumer<String> status) {
         this.map = map;
@@ -249,6 +254,14 @@ final class WorldMapView extends Pane {
             case REGION -> regionPressed(px, py, e.getClickCount());
             case LABEL -> placeLabel(px, py);
             case FILL -> bucket(px, py);
+            case REVEAL -> {
+                if (!map.hideUnexplored) {
+                    status.accept("Players can see the whole map. Turn on \"Hide unexplored from players\" (the crossed eye in the toolbar) to cover it, then reveal what they have found");
+                    return;
+                }
+                mode = Mode.REVEAL;
+                beginReveal(px, py, e.isAltDown() == ts.covering.get());
+            }
             case RULER -> rulerPressed(px, py, e.getClickCount());
             default -> { }
         }
@@ -267,6 +280,7 @@ final class WorldMapView extends Pane {
             }
             case PAINT -> continueStroke(px, py);
             case SCATTER -> continueScatter(px, py);
+            case REVEAL -> continueReveal(px, py);
             case MOVE -> {
                 double dx = px - lastWX, dy = py - lastWY;
                 if (dx != 0 || dy != 0) {
@@ -322,6 +336,7 @@ final class WorldMapView extends Pane {
     private void onReleased(MouseEvent e) {
         switch (mode) {
             case PAINT -> endStroke();
+            case REVEAL -> endReveal();
             case SCATTER -> finishStampEdit();
             case MOVE, RESIZE, DRAGPOINT -> {
                 if (moved) finishStampEdit();
@@ -367,6 +382,9 @@ final class WorldMapView extends Pane {
             e.consume();
         } else if (e.getCode() == KeyCode.F && !e.isShortcutDown()) {
             flipSelection();
+            e.consume();
+        } else if (e.getCode() == KeyCode.H && !e.isShortcutDown() && hasSelection()) {
+            toggleHiddenSelection();
             e.consume();
         }
     }
@@ -653,6 +671,135 @@ final class WorldMapView extends Pane {
         }
     }
 
+    // ---- the area the players have explored
+
+    private void beginReveal(double cx, double cy, boolean reveal) {
+        revealBefore = map.reveal().cells.clone();
+        revealValue = (byte) (reveal ? 1 : 0);
+        rMinX = Integer.MAX_VALUE;
+        rMinY = Integer.MAX_VALUE;
+        rMaxX = Integer.MIN_VALUE;
+        rMaxY = Integer.MIN_VALUE;
+        lastCx = cx;
+        lastCy = cy;
+        revealDab(cx, cy);
+    }
+
+    private void continueReveal(double cx, double cy) {
+        if (revealBefore == null) return;
+        double dist = Math.hypot(cx - lastCx, cy - lastCy);
+        double step = Math.max(1, ts.brush.get() / 4.0);
+        int n = (int) Math.ceil(dist / step);
+        for (int i = 1; i <= n; i++) {
+            double t = (double) i / n;
+            revealDab(lastCx + (cx - lastCx) * t, lastCy + (cy - lastCy) * t);
+        }
+        lastCx = cx;
+        lastCy = cy;
+    }
+
+    /** Uncovers (or covers) the coarse cells under one round dab of the brush. */
+    private void revealDab(double cx, double cy) {
+        PaintLayer rv = map.reveal();
+        int step = WorldMap.REVEAL_STEP;
+        double r = Math.max(0.5, ts.brush.get() / 2.0) + step / 2.0; // a coarse cell counts if the brush reaches near its middle
+        int x0 = Math.max(0, (int) Math.floor((cx - r) / step)), x1 = Math.min(rv.w - 1, (int) Math.floor((cx + r) / step));
+        int y0 = Math.max(0, (int) Math.floor((cy - r) / step)), y1 = Math.min(rv.h - 1, (int) Math.floor((cy + r) / step));
+        boolean changed = false;
+        for (int y = y0; y <= y1; y++) {
+            for (int x = x0; x <= x1; x++) {
+                double dx = (x + 0.5) * step - cx, dy = (y + 0.5) * step - cy;
+                if (dx * dx + dy * dy > r * r) continue;
+                if (rv.set(x, y, revealValue)) {
+                    changed = true;
+                    rMinX = Math.min(rMinX, x);
+                    rMaxX = Math.max(rMaxX, x);
+                    rMinY = Math.min(rMinY, y);
+                    rMaxY = Math.max(rMaxY, y);
+                }
+            }
+        }
+        if (changed) map.revealVersion++;
+    }
+
+    private void endReveal() {
+        if (revealBefore == null) return;
+        byte[] whole = revealBefore;
+        revealBefore = null;
+        if (rMinX > rMaxX) return; // nothing changed
+        PaintLayer rv = map.reveal();
+        int w = rMaxX - rMinX + 1, h = rMaxY - rMinY + 1;
+        byte[] before = new byte[w * h], after = rv.copyRect(rMinX, rMinY, w, h);
+        for (int j = 0; j < h; j++) System.arraycopy(whole, (rMinY + j) * rv.w + rMinX, before, j * w, w);
+        int x = rMinX, y = rMinY;
+        push(new Entry(() -> applyRevealPatch(x, y, w, h, before), () -> applyRevealPatch(x, y, w, h, after)));
+        store.markWorldMapDirty(map, true);
+    }
+
+    private void applyRevealPatch(int x, int y, int w, int h, byte[] data) {
+        map.reveal().putRect(x, y, w, h, data);
+        map.revealVersion++;
+        store.markWorldMapDirty(map, true);
+        redraw();
+    }
+
+    /** Uncovers the whole map for the players, or covers all of it again. */
+    void revealAll(boolean reveal) {
+        PaintLayer rv = map.reveal();
+        byte[] before = rv.cells.clone();
+        byte[] after = new byte[before.length];
+        java.util.Arrays.fill(after, (byte) (reveal ? 1 : 0));
+        if (java.util.Arrays.equals(before, after)) return;
+        applyRevealPatch(0, 0, rv.w, rv.h, after);
+        push(new Entry(() -> applyRevealPatch(0, 0, rv.w, rv.h, before), () -> applyRevealPatch(0, 0, rv.w, rv.h, after)));
+    }
+
+    /** Turns "hide what the players have not explored" on or off. */
+    void setHideUnexplored(boolean on) {
+        if (map.hideUnexplored == on) return;
+        map.hideUnexplored = on;
+        map.revealVersion++;
+        store.markWorldMapDirty(map, true);
+        redraw();
+    }
+
+    // ---- hiding things from the players
+
+    /** Everything selected: the symbols, or the one line or region. */
+    private List<Object> selectedThings() {
+        List<Object> out = new ArrayList<>(selectedStamps());
+        Object shape = shapeById(selShape);
+        if (shape != null) out.add(shape);
+        return out;
+    }
+
+    private static boolean isHidden(Object o) {
+        return o instanceof WorldStamp s ? s.hidden : o instanceof WorldPath p ? p.hidden : o instanceof WorldRegion r && r.hidden;
+    }
+
+    private static void setHidden(Object o, boolean hidden) {
+        if (o instanceof WorldStamp s) s.hidden = hidden;
+        else if (o instanceof WorldPath p) p.hidden = hidden;
+        else if (o instanceof WorldRegion r) r.hidden = hidden;
+    }
+
+    /** True if everything selected is already hidden from the players. */
+    boolean selectionHidden() {
+        List<Object> things = selectedThings();
+        return !things.isEmpty() && things.stream().allMatch(WorldMapView::isHidden);
+    }
+
+    /** Hides the selection from the players, or shows it to them again if all of it was hidden. */
+    void toggleHiddenSelection() {
+        List<Object> things = selectedThings();
+        if (things.isEmpty()) return;
+        boolean hide = !selectionHidden();
+        String before = WorldObjects.capture(map);
+        for (Object o : things) setHidden(o, hide);
+        stampEdit(before);
+        redraw();
+    }
+
     // ---- selecting and editing
 
     private List<WorldStamp> selectedStamps() {
@@ -859,6 +1006,9 @@ final class WorldMapView extends Pane {
             text.setOnAction(ev -> editText(s));
             menu.getItems().add(text);
         }
+        MenuItem hide = new MenuItem(isHidden(o) ? "Show to players" : "Hide from players");
+        hide.setOnAction(ev -> toggleHiddenSelection());
+        menu.getItems().add(hide);
         menu.getItems().add(new SeparatorMenuItem());
         MenuItem del = new MenuItem("Delete");
         del.setOnAction(ev -> deleteSelection());
@@ -1358,6 +1508,7 @@ final class WorldMapView extends Pane {
         WorldPathRenderer.draw(g, map, zoom(), vx0, vy0, vx1, vy1, true);
         WorldGrid.draw(g, map, zoom(), vx0, vy0, vx1, vy1);
         WorldStampRenderer.draw(g, map, lib, zoom(), vx0, vy0, vx1, vy1, true);
+        WorldComposer.drawCover(g, map, 0.6); // the DM sees through what the players have not explored
         WorldLegend.draw(g, map, lib, zoom());
         drawShapeOverlays(g);
         drawBadges(g);
@@ -1394,7 +1545,7 @@ final class WorldMapView extends Pane {
         // the brush
         g.setTransform(1, 0, 0, 1, 0, 0);
         WorldTool tool = ts.tool.get();
-        if (mouseSX >= 0 && (tool == WorldTool.BASE || tool == WorldTool.BIOME || tool == WorldTool.SCATTER) && !spaceDown) {
+        if (mouseSX >= 0 && (tool == WorldTool.BASE || tool == WorldTool.BIOME || tool == WorldTool.SCATTER || tool == WorldTool.REVEAL) && !spaceDown) {
             double r = ts.brush.get() / 2.0 * zoom();
             g.setStroke(Color.web("#ffffff", 0.95));
             g.setLineWidth(1.4);

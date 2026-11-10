@@ -31,8 +31,17 @@ public final class WorldLegend {
 
     /** The symbols and lines the map uses, in the library's order. */
     public static List<Entry> entries(WorldMap map) {
+        return entries(map, false);
+    }
+
+    /**
+     * The symbols and lines the map uses. For the players, things hidden from them, and things in parts of the map they have
+     * not explored, are left out, so the key never gives away what is not on their map.
+     */
+    public static List<Entry> entries(WorldMap map, boolean forPlayers) {
         TreeSet<String> used = new TreeSet<>();
         for (WorldStamp s : map.stamps) {
+            if (forPlayers && (s.hidden || !map.isRevealed(s.x, s.y))) continue;
             if (WorldLabels.isLabel(s) || WorldLabels.isBanner(s) || s.feature == null) continue;
             WorldAssets.Feature f = WorldAssets.get(s.feature);
             if (f != null && !"Decorations".equals(f.category())) used.add(f.id());
@@ -46,9 +55,18 @@ public final class WorldLegend {
         }
         byCat.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(e -> out.addAll(e.getValue()));
         TreeSet<WorldPath.Type> lines = new TreeSet<>();
-        for (WorldPath p : map.paths) lines.add(p.type);
+        for (WorldPath p : map.paths) {
+            if (forPlayers && (p.hidden || !pathSeen(map, p))) continue;
+            lines.add(p.type);
+        }
         for (WorldPath.Type t : lines) out.add(new Entry(null, t, t.label));
         return out;
+    }
+
+    private static boolean pathSeen(WorldMap map, WorldPath p) {
+        if (!map.hideUnexplored) return true;
+        for (int i = 0; i < p.count(); i++) if (map.isRevealed(p.x(i), p.y(i))) return true;
+        return false;
     }
 
     private record Layout(double x, double y, double w, double h, int perColumn, int columns, double rowH, double colW) { }
@@ -69,8 +87,12 @@ public final class WorldLegend {
 
     /** The legend's box {x, y, width, height} in map cells, or null if it is not shown or there is nothing to show. */
     public static double[] bounds(WorldMap map) {
+        return bounds(map, false);
+    }
+
+    public static double[] bounds(WorldMap map, boolean forPlayers) {
         if (!map.showLegend) return null;
-        List<Entry> entries = entries(map);
+        List<Entry> entries = entries(map, forPlayers);
         if (entries.isEmpty()) return null;
         Layout l = layout(map, entries);
         return new double[]{l.x, l.y, l.w, l.h};
@@ -93,8 +115,13 @@ public final class WorldLegend {
 
     /** Draws the scale bar and, if turned on, the legend. The transform must be map cells. */
     public static void draw(GraphicsContext g, WorldMap map, AssetLibrary lib, double zoom) {
+        draw(g, map, lib, zoom, false);
+    }
+
+    /** As {@link #draw(GraphicsContext, WorldMap, AssetLibrary, double)}; for the players the key leaves out what they must not know about. */
+    public static void draw(GraphicsContext g, WorldMap map, AssetLibrary lib, double zoom, boolean forPlayers) {
         if (map.showScale) drawScale(g, map);
-        if (map.showLegend) drawLegend(g, map, lib, zoom);
+        if (map.showLegend) drawLegend(g, map, lib, zoom, forPlayers);
     }
 
     private static void drawScale(GraphicsContext g, WorldMap map) {
@@ -122,8 +149,8 @@ public final class WorldLegend {
         g.restore();
     }
 
-    private static void drawLegend(GraphicsContext g, WorldMap map, AssetLibrary lib, double zoom) {
-        List<Entry> entries = entries(map);
+    private static void drawLegend(GraphicsContext g, WorldMap map, AssetLibrary lib, double zoom, boolean forPlayers) {
+        List<Entry> entries = entries(map, forPlayers);
         if (entries.isEmpty()) return;
         Layout l = layout(map, entries);
         double u = unit(map);

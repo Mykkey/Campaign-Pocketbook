@@ -316,6 +316,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
     public void shutdown() {
         saver.stop();
         PlayerWindow.closeAll();
+        WorldPlayerWindow.closeAll();
         BoardView v = currentView();
         if (v != null) v.requestFocus(); // forces any in-place text edit to commit
         store.onDirty = () -> { };
@@ -1125,6 +1126,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         for (TreeNode b : boards) {
             closeTab(b.id);
             PlayerWindow.close(b.id); // a deleted map must not stay up on the table screen
+            WorldPlayerWindow.close(b.id);
             history.forget(b.id);
         }
         store.deleteNode(n);

@@ -113,6 +113,7 @@ public final class Icons {
         def("add", "s:M8 3 V13 M3 8 H13");
         def("stop", "fr:M3.5 3.5 H12.5 V12.5 H3.5 Z");
         def("sliders", "s:M2.5 5 H13.5 M2.5 11 H13.5 M6 3 V7 M10 9 V13");
+        def("fog", "s:M4.5 12.5 A3 3 0 0 1 4.2 6.6 A4 4 0 0 1 11.6 5.6 A3.4 3.4 0 0 1 11.8 12.5 Z M5.5 14.5 H10.5");
         def("monitor", "s:M2.5 3 H13.5 V10.5 H2.5 Z M6 13.5 H10 M8 10.5 V13.5");
         def("exit", "s:M6.5 2.5 H3 V13.5 H6.5 M7 8 H13.5 M11 5.5 L13.5 8 L11 10.5");
         def("target", "s:M8 2.5 A5.5 5.5 0 1 1 7.99 2.5 Z M8 5.5 A2.5 2.5 0 1 1 7.99 5.5 Z");

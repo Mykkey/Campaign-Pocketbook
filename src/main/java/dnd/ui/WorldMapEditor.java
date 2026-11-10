@@ -133,7 +133,7 @@ public class WorldMapEditor extends BorderPane implements ItemView {
         });
         HBox brushBox = new HBox(4, new Label("Brush"), brush);
         brushBox.setAlignment(Pos.CENTER_LEFT);
-        brushBox.visibleProperty().bind(ts.tool.isEqualTo(WorldTool.BASE).or(ts.tool.isEqualTo(WorldTool.BIOME)).or(ts.tool.isEqualTo(WorldTool.SCATTER)));
+        brushBox.visibleProperty().bind(ts.tool.isEqualTo(WorldTool.BASE).or(ts.tool.isEqualTo(WorldTool.BIOME)).or(ts.tool.isEqualTo(WorldTool.SCATTER)).or(ts.tool.isEqualTo(WorldTool.REVEAL)));
         brushBox.managedProperty().bind(brushBox.visibleProperty());
         bar.getChildren().add(brushBox);
 
@@ -290,6 +290,53 @@ public class WorldMapEditor extends BorderPane implements ItemView {
         linkBtn.managedProperty().bind(linkBtn.visibleProperty());
         javafx.scene.control.ToggleButton previewBtn = IconButtons.switchToggle("previews", "Link previews: show the note and a preview of the linked item when you hover over something on the map", ts.linkPreviews);
         bar.getChildren().addAll(linkBtn, previewBtn, new Separator(Orientation.VERTICAL));
+
+        // ---- the players: what they may see, a window for the table screen, and saving a picture
+        Button hideSel = iconButton("eye-off", "Hide from players: the selected symbols, line or region are left out of the players' view and of their picture (H, or right-click it). Press again to show it", view::toggleHiddenSelection);
+        hideSel.visibleProperty().bind(ts.tool.isEqualTo(WorldTool.SELECT));
+        hideSel.managedProperty().bind(hideSel.visibleProperty());
+        ToggleButton fogBtn = IconButtons.decorate(new ToggleButton(), "fog", "Hide unexplored from players: the players only see the parts of the map you reveal with the Reveal tool; the rest is blank parchment. You still see everything, faintly covered");
+        fogBtn.setSelected(map.hideUnexplored);
+        fogBtn.setOnAction(e -> {
+            view.setHideUnexplored(fogBtn.isSelected());
+            view.requestFocus();
+        });
+        ToggleButton uncover = new ToggleButton("Reveal");
+        ToggleButton cover = new ToggleButton("Cover");
+        ToggleGroup revealMode = new ToggleGroup();
+        uncover.setToggleGroup(revealMode);
+        cover.setToggleGroup(revealMode);
+        uncover.setSelected(!ts.covering.get());
+        cover.setSelected(ts.covering.get());
+        uncover.setOnAction(e -> {
+            ts.covering.set(false);
+            uncover.setSelected(true);
+        });
+        cover.setOnAction(e -> {
+            ts.covering.set(true);
+            cover.setSelected(true);
+        });
+        uncover.setTooltip(IconButtons.tip("Drag over the map to uncover it for the players (hold Alt to cover instead)"));
+        cover.setTooltip(IconButtons.tip("Drag over the map to cover it again (hold Alt to uncover instead)"));
+        Button revealAll = new Button("Reveal all");
+        revealAll.setOnAction(e -> {
+            view.revealAll(true);
+            view.requestFocus();
+        });
+        Button coverAll = new Button("Cover all");
+        coverAll.setOnAction(e -> {
+            view.revealAll(false);
+            view.requestFocus();
+        });
+        HBox revealBox = new HBox(4, uncover, cover, revealAll, coverAll);
+        revealBox.setAlignment(Pos.CENTER_LEFT);
+        revealBox.visibleProperty().bind(ts.tool.isEqualTo(WorldTool.REVEAL));
+        revealBox.managedProperty().bind(revealBox.visibleProperty());
+        Button playerBtn = iconButton("monitor", "Player view: open a window for the players' screen. It shows only what you have not hidden, and only the parts you have revealed", () ->
+                WorldPlayerWindow.open(getScene() == null ? null : getScene().getWindow(), map, store));
+        Button exportBtn = iconButton("image", "Export image: save the map as a PNG picture, the DM's version or the players' version", () ->
+                WorldExportDialog.show(getScene() == null ? null : getScene().getWindow(), map, store));
+        bar.getChildren().addAll(hideSel, fogBtn, revealBox, playerBtn, exportBtn, new Separator(Orientation.VERTICAL));
 
         // ---- the art style of the whole map
         ComboBox<WorldStyle> style = new ComboBox<>(FXCollections.observableArrayList(WorldStyle.values()));

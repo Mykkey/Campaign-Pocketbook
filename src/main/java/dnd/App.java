@@ -27,8 +27,13 @@ public class App extends Application {
         } catch (java.io.IOException ignored) {
             // the app works fine without an icon
         }
-        stage.setWidth(1400);
-        stage.setHeight(850);
+        double[] box = dnd.ui.WindowFit.fit(1400, 850, javafx.stage.Screen.getPrimary().getVisualBounds());
+        stage.setX(box[0]);
+        stage.setY(box[1]);
+        stage.setWidth(box[2]);
+        stage.setHeight(box[3]);
+        stage.setMinWidth(Math.min(700, box[2]));
+        stage.setMinHeight(Math.min(480, box[3]));
         stage.setOnCloseRequest(e -> {
             if (workspace != null) workspace.shutdown();
         });

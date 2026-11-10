@@ -6,7 +6,7 @@
 
     <groupId>dnd</groupId>
     <artifactId>dnd-campaign-notes</artifactId>
-    <version>1.32.0</version>
+    <version>1.33.0</version>
     <packaging>jar</packaging>
     <name>Campaign Pocketbook</name>
 

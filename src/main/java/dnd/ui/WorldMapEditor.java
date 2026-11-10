@@ -23,15 +23,18 @@ import java.util.Map;
 /** A tab for editing one world map: a toolbar of painting tools above the map itself. */
 public class WorldMapEditor extends BorderPane implements ItemView {
     private static final String ERASE_BIOME = "Erase biome";
+    private static final String SAME_STYLE = "Same style as map";
 
     private final WorldMap map;
     private final WorldToolState ts = new WorldToolState();
     private final WorldMapView view;
     private final Label statusLabel = new Label();
+    private final WorldAssetPanel panel;
 
     public WorldMapEditor(WorldMap map, ProjectStore store) {
         this.map = map;
         this.view = new WorldMapView(map, store, ts, statusLabel::setText);
+        this.panel = new WorldAssetPanel(store, map, ts);
 
         FlowPane bar = new FlowPane(4, 4);
         bar.setPadding(new Insets(6));
@@ -116,9 +119,44 @@ public class WorldMapEditor extends BorderPane implements ItemView {
         });
         HBox brushBox = new HBox(4, new Label("Brush"), brush);
         brushBox.setAlignment(Pos.CENTER_LEFT);
-        brushBox.visibleProperty().bind(ts.tool.isEqualTo(WorldTool.BASE).or(ts.tool.isEqualTo(WorldTool.BIOME)));
+        brushBox.visibleProperty().bind(ts.tool.isEqualTo(WorldTool.BASE).or(ts.tool.isEqualTo(WorldTool.BIOME)).or(ts.tool.isEqualTo(WorldTool.SCATTER)));
         brushBox.managedProperty().bind(brushBox.visibleProperty());
-        bar.getChildren().addAll(brushBox, new Separator(Orientation.VERTICAL));
+        bar.getChildren().add(brushBox);
+
+        // ---- symbols: how big, how thick, and in which art style
+        Spinner<Integer> stampSize = new Spinner<>(0, 200, ts.stampSize.get());
+        stampSize.setPrefWidth(76);
+        stampSize.setEditable(true);
+        stampSize.setTooltip(IconButtons.tip("Symbol width in map cells. 0 uses each symbol's own size"));
+        stampSize.valueProperty().addListener((o, a, n) -> {
+            if (n != null) ts.stampSize.set(n);
+        });
+        Spinner<Integer> density = new Spinner<>(1, 10, ts.density.get());
+        density.setPrefWidth(66);
+        density.setTooltip(IconButtons.tip("Scatter density: 1 is sparse, 10 is a dense forest"));
+        density.valueProperty().addListener((o, a, n) -> {
+            if (n != null) ts.density.set(n);
+        });
+        ComboBox<Object> stampStyle = new ComboBox<>();
+        stampStyle.getItems().add(SAME_STYLE);
+        stampStyle.getItems().addAll(WorldStyle.values());
+        stampStyle.setValue(SAME_STYLE);
+        stampStyle.setFocusTraversable(false);
+        stampStyle.setTooltip(IconButtons.tip("Symbol style: new symbols, and the selected ones, can use a different art style from the map"));
+        stampStyle.valueProperty().addListener((o, a, n) -> {
+            WorldStyle chosen = n instanceof WorldStyle w ? w : null;
+            ts.stampStyle.set(chosen);
+            if (view.hasSelection()) view.styleSelection(chosen);
+        });
+        HBox symbolBox = new HBox(4, new Label("Size"), stampSize, stampStyle);
+        symbolBox.setAlignment(Pos.CENTER_LEFT);
+        symbolBox.visibleProperty().bind(ts.tool.isEqualTo(WorldTool.STAMP).or(ts.tool.isEqualTo(WorldTool.SCATTER)).or(ts.tool.isEqualTo(WorldTool.SELECT)));
+        symbolBox.managedProperty().bind(symbolBox.visibleProperty());
+        HBox densityBox = new HBox(4, new Label("Density"), density);
+        densityBox.setAlignment(Pos.CENTER_LEFT);
+        densityBox.visibleProperty().bind(ts.tool.isEqualTo(WorldTool.SCATTER));
+        densityBox.managedProperty().bind(densityBox.visibleProperty());
+        bar.getChildren().addAll(symbolBox, densityBox, new Separator(Orientation.VERTICAL));
 
         // ---- the art style of the whole map
         ComboBox<WorldStyle> style = new ComboBox<>(FXCollections.observableArrayList(WorldStyle.values()));
@@ -129,6 +167,7 @@ public class WorldMapEditor extends BorderPane implements ItemView {
             if (n == null) return;
             map.style = n;
             view.styleChanged();
+            panel.restyle();
             biomes.setButtonCell(biomeCell()); // swatches follow the style
             biomes.setCellFactory(lv -> biomeCell());
         });
@@ -141,6 +180,7 @@ public class WorldMapEditor extends BorderPane implements ItemView {
 
         statusLabel.setStyle("-fx-text-fill: -t-text3; -fx-padding: 2 8 2 8;");
         setTop(bar);
+        setLeft(panel);
         setCenter(view);
         setBottom(statusLabel);
     }
@@ -199,6 +239,30 @@ public class WorldMapEditor extends BorderPane implements ItemView {
     public void activated() {
         view.redraw();
         view.requestFocus();
+    }
+
+    /** True while something on the map is selected. */
+    boolean hasSelectionForTest() {
+        return view.hasSelection();
+    }
+
+    @Override
+    public boolean deleteSelection() {
+        return view.deleteSelection();
+    }
+
+    @Override
+    public boolean escape() {
+        return view.escape();
+    }
+
+    @Override
+    public boolean shortcut(javafx.scene.input.KeyEvent e) {
+        if (e.isShortcutDown() && e.getCode() == javafx.scene.input.KeyCode.D) {
+            view.duplicateSelection();
+            return true;
+        }
+        return false;
     }
 
     @Override

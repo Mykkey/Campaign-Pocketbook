@@ -21,6 +21,9 @@ public class WorldMap extends ProjectEntry {
     public WorldStyle style = WorldStyle.FANTASY_COLOUR;
     public double offsetX = 40, offsetY = 40, zoom = 1;
 
+    /** The symbols placed on the map (mountains, trees, towns...). */
+    public java.util.List<WorldStamp> stamps = new java.util.ArrayList<>();
+
     /** Bumped whenever the content changes (not the camera), so cached pictures know to redraw. Not saved. */
     @JsonIgnore
     public transient int revision;
@@ -90,6 +93,7 @@ public class WorldMap extends ProjectEntry {
         m.zoom = zoom;
         m.base = base().copy();
         m.biome = biome().copy();
+        for (WorldStamp s : stamps) m.stamps.add(s.copy());
         return m;
     }
 }

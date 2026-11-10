@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+<ellipse cx="50.0" cy="86.0" rx="42.0" ry="6.0" fill="#000000" fill-opacity="0.22"/>
+<polygon points="12.0,86.0 41.0,34.0 50.0,42.0 50.0,86.0" fill="#6b6764" fill-opacity="1.00" stroke="#2b2118" stroke-width="1.10" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="50.0,42.0 59.0,34.0 88.0,86.0 50.0,86.0" fill="#383532" fill-opacity="1.00" stroke="#2b2118" stroke-width="1.10" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<ellipse cx="50.0" cy="36.0" rx="10.0" ry="4.2" fill="#34312e" fill-opacity="1.00" stroke="#2b2118" stroke-width="0.99" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<ellipse cx="50.0" cy="36.5" rx="7.0" ry="2.6" fill="#ff6a1a" fill-opacity="1.00" stroke="none"/>
+<path d="M50.0,38.0 Q40.0,64.0 36.0,80.0" fill="none" fill-opacity="1.00"  stroke="#ff6a1a" stroke-width="3.2" stroke-linecap="round"/>
+<path d="M50.0,38.0 Q58.5,64.0 62.0,80.0" fill="none" fill-opacity="1.00"  stroke="#ff6a1a" stroke-width="3.2" stroke-linecap="round"/>
+<path d="M50.0,38.0 Q50.0,64.0 50.0,80.0" fill="none" fill-opacity="1.00"  stroke="#ff6a1a" stroke-width="3.2" stroke-linecap="round"/>
+<circle cx="44.0" cy="12.0" r="3.0" fill="#ff6a1a" fill-opacity="1.00" stroke="#2b2118" stroke-width="0.66" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<circle cx="58.0" cy="8.0" r="2.5" fill="#ff6a1a" fill-opacity="1.00" stroke="#2b2118" stroke-width="0.66" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<circle cx="51.0" cy="16.0" r="2.0" fill="#ff6a1a" fill-opacity="1.00" stroke="#2b2118" stroke-width="0.66" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<circle cx="50.0" cy="26.0" r="6.0" fill="#b3b8bc" fill-opacity="0.90" stroke="#2b2118" stroke-width="0.88" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<circle cx="56.0" cy="18.0" r="7.5" fill="#b3b8bc" fill-opacity="0.90" stroke="#2b2118" stroke-width="0.88" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<circle cx="47.0" cy="10.0" r="8.5" fill="#b3b8bc" fill-opacity="0.90" stroke="#2b2118" stroke-width="0.88" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<circle cx="55.0" cy="3.0" r="7.0" fill="#b3b8bc" fill-opacity="0.90" stroke="#2b2118" stroke-width="0.88" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+</svg>

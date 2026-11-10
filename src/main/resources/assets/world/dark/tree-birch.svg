@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="70" viewBox="0 0 100 70">
+<ellipse cx="50.0" cy="64.0" rx="20.0" ry="5.0" fill="#000000" fill-opacity="0.30"/>
+<rect x="46.0" y="36.0" width="8.0" height="28.0" rx="0.0" fill="#85827a" stroke="#0b0b0d" stroke-width="0.80" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<line x1="46.5" y1="42.0" x2="51.0" y2="42.0" stroke="#0b0b0d" stroke-width="0.90" stroke-opacity="1.00" stroke-linecap="round"/>
+<line x1="46.5" y1="50.0" x2="51.0" y2="50.0" stroke="#0b0b0d" stroke-width="0.90" stroke-opacity="1.00" stroke-linecap="round"/>
+<line x1="46.5" y1="58.0" x2="51.0" y2="58.0" stroke="#0b0b0d" stroke-width="0.90" stroke-opacity="1.00" stroke-linecap="round"/>
+<circle cx="50.0" cy="28.0" r="20.0" fill="#465a36" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<circle cx="45.6" cy="23.6" r="13.6" fill="#728564" fill-opacity="1.00" stroke="none"/>
+<circle cx="50.0" cy="28.0" r="20.0" fill="none" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+</svg>

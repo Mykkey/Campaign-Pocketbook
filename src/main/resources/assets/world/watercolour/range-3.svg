@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="80" viewBox="0 0 100 80">
+<ellipse cx="50.0" cy="72.0" rx="46.0" ry="6.0" fill="#000000" fill-opacity="0.14"/>
+<polygon points="58.0,72.0 80.0,36.0 80.4,72.0" fill="#c1bdb8" fill-opacity="1.00" stroke="#5b4a52" stroke-width="0.60" stroke-opacity="0.55" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="80.0,36.0 98.0,72.0 80.4,72.0" fill="#ada9a4" fill-opacity="1.00" stroke="#5b4a52" stroke-width="0.60" stroke-opacity="0.55" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="2.0,72.0 21.0,30.0 26.6,72.0" fill="#c1bdb8" fill-opacity="1.00" stroke="#5b4a52" stroke-width="0.60" stroke-opacity="0.55" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="21.0,30.0 46.0,72.0 26.6,72.0" fill="#ada9a4" fill-opacity="1.00" stroke="#5b4a52" stroke-width="0.60" stroke-opacity="0.55" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="24.0,74.0 53.0,18.0 53.1,74.0" fill="#c1bdb8" fill-opacity="1.00" stroke="#5b4a52" stroke-width="0.60" stroke-opacity="0.55" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="53.0,18.0 76.0,74.0 53.1,74.0" fill="#ada9a4" fill-opacity="1.00" stroke="#5b4a52" stroke-width="0.60" stroke-opacity="0.55" stroke-linejoin="round" stroke-linecap="round" />
+</svg>

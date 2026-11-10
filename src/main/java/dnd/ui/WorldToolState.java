@@ -16,4 +16,12 @@ final class WorldToolState {
     final ObjectProperty<WorldBiome> biome = new SimpleObjectProperty<>(WorldBiome.GRASS);
     /** Brush width in map cells. */
     final IntegerProperty brush = new SimpleIntegerProperty(14);
+    /** The symbol (library id) the stamp and scatter tools place, or null. */
+    final ObjectProperty<String> armed = new SimpleObjectProperty<>();
+    /** Width of placed symbols in map cells; 0 means each symbol's own default width. */
+    final IntegerProperty stampSize = new SimpleIntegerProperty(0);
+    /** How thickly the scatter tool plants, 1 (sparse) to 10 (dense). */
+    final IntegerProperty density = new SimpleIntegerProperty(5);
+    /** The art style given to new symbols, or null to follow the map's style. */
+    final ObjectProperty<dnd.model.WorldStyle> stampStyle = new SimpleObjectProperty<>();
 }

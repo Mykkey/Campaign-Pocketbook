@@ -48,6 +48,14 @@ public final class Json {
         }
     }
 
+    public static List<dnd.model.WorldStamp> readStamps(String json) {
+        try {
+            return MAPPER.readValue(json, new TypeReference<List<dnd.model.WorldStamp>>() { });
+        } catch (JsonProcessingException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     /** Pretty-printed, written atomically-ish (temp file then move) so a crash can't corrupt a board. */
     public static void writeFile(Path file, Object o) throws IOException {
         Path tmp = file.resolveSibling(file.getFileName() + ".tmp");

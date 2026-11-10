@@ -100,7 +100,7 @@ final class ItemPreview {
         } else if (node.isWorldMap()) {
             dnd.model.WorldMap wm = store.worldMap(id);
             if (wm != null) {
-                ImageView iv = new ImageView(dnd.map.world.WorldTerrainCache.of(wm).fullImage());
+                ImageView iv = new ImageView(dnd.map.world.WorldThumbnail.of(wm, store.assets(), 360));
                 iv.setPreserveRatio(true);
                 iv.setFitWidth(360);
                 iv.setSmooth(true);

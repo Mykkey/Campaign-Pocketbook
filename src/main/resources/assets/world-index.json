@@ -1,0 +1,613 @@
+[
+ {
+  "id": "cliff",
+  "name": "Cliff",
+  "category": "Mountains and hills",
+  "w": 10,
+  "h": 5.0,
+  "anchor": "base",
+  "family": "rocks"
+ },
+ {
+  "id": "volcano-dormant",
+  "name": "Dormant volcano",
+  "category": "Mountains and hills",
+  "w": 11,
+  "h": 11.0,
+  "anchor": "base",
+  "family": "volcanoes"
+ },
+ {
+  "id": "volcano-erupting",
+  "name": "Erupting volcano",
+  "category": "Mountains and hills",
+  "w": 11,
+  "h": 11.0,
+  "anchor": "base",
+  "family": "volcanoes"
+ },
+ {
+  "id": "hill",
+  "name": "Hill",
+  "category": "Mountains and hills",
+  "w": 7,
+  "h": 3.5,
+  "anchor": "base",
+  "family": "hills"
+ },
+ {
+  "id": "hills-pair",
+  "name": "Hills",
+  "category": "Mountains and hills",
+  "w": 10,
+  "h": 5.0,
+  "anchor": "base",
+  "family": "hills"
+ },
+ {
+  "id": "mesa",
+  "name": "Mesa",
+  "category": "Mountains and hills",
+  "w": 9,
+  "h": 6.3,
+  "anchor": "base",
+  "family": "mountains-rock"
+ },
+ {
+  "id": "peak-single",
+  "name": "Mountain",
+  "category": "Mountains and hills",
+  "w": 8,
+  "h": 7.2,
+  "anchor": "base",
+  "family": "mountains-rock"
+ },
+ {
+  "id": "range-3",
+  "name": "Mountain range",
+  "category": "Mountains and hills",
+  "w": 16,
+  "h": 12.8,
+  "anchor": "base",
+  "family": "mountains-rock"
+ },
+ {
+  "id": "outcrop",
+  "name": "Rocky outcrop",
+  "category": "Mountains and hills",
+  "w": 5,
+  "h": 2.5,
+  "anchor": "base",
+  "family": "rocks"
+ },
+ {
+  "id": "volcano-active",
+  "name": "Smoking volcano",
+  "category": "Mountains and hills",
+  "w": 11,
+  "h": 11.0,
+  "anchor": "base",
+  "family": "volcanoes"
+ },
+ {
+  "id": "peak-snowy",
+  "name": "Snowy mountain",
+  "category": "Mountains and hills",
+  "w": 9,
+  "h": 8.1,
+  "anchor": "base",
+  "family": "mountains-snow"
+ },
+ {
+  "id": "range-snowy",
+  "name": "Snowy range",
+  "category": "Mountains and hills",
+  "w": 16,
+  "h": 12.8,
+  "anchor": "base",
+  "family": "mountains-snow"
+ },
+ {
+  "id": "peak-twin",
+  "name": "Twin peaks",
+  "category": "Mountains and hills",
+  "w": 11,
+  "h": 9.9,
+  "anchor": "base",
+  "family": "mountains-rock"
+ },
+ {
+  "id": "tree-birch",
+  "name": "Birch tree",
+  "category": "Forests",
+  "w": 3,
+  "h": 2.1,
+  "anchor": "base",
+  "family": "deciduous"
+ },
+ {
+  "id": "tree-oak-dark",
+  "name": "Dark oak",
+  "category": "Forests",
+  "w": 3,
+  "h": 2.1,
+  "anchor": "base",
+  "family": "deciduous"
+ },
+ {
+  "id": "tree-dead",
+  "name": "Dead tree",
+  "category": "Forests",
+  "w": 3,
+  "h": 2.4,
+  "anchor": "base",
+  "family": "dead"
+ },
+ {
+  "id": "tree-enchanted",
+  "name": "Enchanted tree",
+  "category": "Forests",
+  "w": 4,
+  "h": 3.2,
+  "anchor": "base",
+  "family": "enchanted"
+ },
+ {
+  "id": "forest-cluster",
+  "name": "Forest",
+  "category": "Forests",
+  "w": 8,
+  "h": 6.4,
+  "anchor": "base",
+  "family": "forest"
+ },
+ {
+  "id": "tree-mushroom",
+  "name": "Giant mushroom",
+  "category": "Forests",
+  "w": 3,
+  "h": 2.1,
+  "anchor": "base",
+  "family": "enchanted"
+ },
+ {
+  "id": "jungle-cluster",
+  "name": "Jungle",
+  "category": "Forests",
+  "w": 8,
+  "h": 6.4,
+  "anchor": "base",
+  "family": "forest"
+ },
+ {
+  "id": "tree-jungle",
+  "name": "Jungle tree",
+  "category": "Forests",
+  "w": 4,
+  "h": 3.2,
+  "anchor": "base",
+  "family": "jungle"
+ },
+ {
+  "id": "tree-mangrove",
+  "name": "Mangrove",
+  "category": "Forests",
+  "w": 4,
+  "h": 2.8,
+  "anchor": "base",
+  "family": "jungle"
+ },
+ {
+  "id": "tree-oak",
+  "name": "Oak tree",
+  "category": "Forests",
+  "w": 3,
+  "h": 2.1,
+  "anchor": "base",
+  "family": "deciduous"
+ },
+ {
+  "id": "tree-palm",
+  "name": "Palm tree",
+  "category": "Forests",
+  "w": 3,
+  "h": 2.4,
+  "anchor": "base",
+  "family": "jungle"
+ },
+ {
+  "id": "pine-cluster",
+  "name": "Pine forest",
+  "category": "Forests",
+  "w": 8,
+  "h": 8.0,
+  "anchor": "base",
+  "family": "forest"
+ },
+ {
+  "id": "tree-pine",
+  "name": "Pine tree",
+  "category": "Forests",
+  "w": 3,
+  "h": 2.7,
+  "anchor": "base",
+  "family": "conifer"
+ },
+ {
+  "id": "tree-pine-snowy",
+  "name": "Snowy pine",
+  "category": "Forests",
+  "w": 3,
+  "h": 2.7,
+  "anchor": "base",
+  "family": "conifer-snow"
+ },
+ {
+  "id": "reef",
+  "name": "Coral reef",
+  "category": "Water",
+  "w": 6,
+  "h": 3.0,
+  "anchor": "base",
+  "family": "sea"
+ },
+ {
+  "id": "iceberg",
+  "name": "Iceberg",
+  "category": "Water",
+  "w": 6,
+  "h": 4.2,
+  "anchor": "base",
+  "family": "sea"
+ },
+ {
+  "id": "islet",
+  "name": "Islet",
+  "category": "Water",
+  "w": 5,
+  "h": 3.0,
+  "anchor": "base",
+  "family": "sea"
+ },
+ {
+  "id": "lake-small",
+  "name": "Lake",
+  "category": "Water",
+  "w": 8,
+  "h": 4.8,
+  "anchor": "base",
+  "family": "lakes"
+ },
+ {
+  "id": "oasis",
+  "name": "Oasis",
+  "category": "Water",
+  "w": 6,
+  "h": 4.8,
+  "anchor": "base",
+  "family": "lakes"
+ },
+ {
+  "id": "pond",
+  "name": "Pond",
+  "category": "Water",
+  "w": 4,
+  "h": 1.6,
+  "anchor": "base",
+  "family": "lakes"
+ },
+ {
+  "id": "waterfall",
+  "name": "Waterfall",
+  "category": "Water",
+  "w": 6,
+  "h": 5.4,
+  "anchor": "base"
+ },
+ {
+  "id": "whirlpool",
+  "name": "Whirlpool",
+  "category": "Water",
+  "w": 6,
+  "h": 3.6,
+  "anchor": "base",
+  "family": "sea"
+ },
+ {
+  "id": "canyon",
+  "name": "Canyon",
+  "category": "Caves and holes",
+  "w": 10,
+  "h": 5.0,
+  "anchor": "base",
+  "family": "caves"
+ },
+ {
+  "id": "cave-mouth",
+  "name": "Cave",
+  "category": "Caves and holes",
+  "w": 6,
+  "h": 4.2,
+  "anchor": "base",
+  "family": "caves"
+ },
+ {
+  "id": "crater",
+  "name": "Crater",
+  "category": "Caves and holes",
+  "w": 6,
+  "h": 3.0,
+  "anchor": "base",
+  "family": "caves"
+ },
+ {
+  "id": "geyser",
+  "name": "Geyser",
+  "category": "Caves and holes",
+  "w": 5,
+  "h": 4.0,
+  "anchor": "base",
+  "family": "caves"
+ },
+ {
+  "id": "ice-cave",
+  "name": "Ice cave",
+  "category": "Caves and holes",
+  "w": 6,
+  "h": 4.2,
+  "anchor": "base",
+  "family": "caves"
+ },
+ {
+  "id": "lava-vent",
+  "name": "Lava vent",
+  "category": "Caves and holes",
+  "w": 5,
+  "h": 3.0,
+  "anchor": "base",
+  "family": "caves"
+ },
+ {
+  "id": "sinkhole",
+  "name": "Sinkhole",
+  "category": "Caves and holes",
+  "w": 5,
+  "h": 2.5,
+  "anchor": "base",
+  "family": "caves"
+ },
+ {
+  "id": "bog",
+  "name": "Bog",
+  "category": "Desert, arctic and swamp",
+  "w": 7,
+  "h": 3.5,
+  "anchor": "base",
+  "family": "swamp"
+ },
+ {
+  "id": "cactus-group",
+  "name": "Cacti",
+  "category": "Desert, arctic and swamp",
+  "w": 6,
+  "h": 4.2,
+  "anchor": "base",
+  "family": "cacti"
+ },
+ {
+  "id": "cactus",
+  "name": "Cactus",
+  "category": "Desert, arctic and swamp",
+  "w": 3,
+  "h": 2.1,
+  "anchor": "base",
+  "family": "cacti"
+ },
+ {
+  "id": "dunes",
+  "name": "Dune",
+  "category": "Desert, arctic and swamp",
+  "w": 7,
+  "h": 2.8,
+  "anchor": "base",
+  "family": "dunes"
+ },
+ {
+  "id": "dunes-pair",
+  "name": "Dunes",
+  "category": "Desert, arctic and swamp",
+  "w": 10,
+  "h": 5.0,
+  "anchor": "base",
+  "family": "dunes"
+ },
+ {
+  "id": "glacier",
+  "name": "Glacier",
+  "category": "Desert, arctic and swamp",
+  "w": 10,
+  "h": 6.0,
+  "anchor": "base",
+  "family": "ice"
+ },
+ {
+  "id": "grass-tuft",
+  "name": "Grass",
+  "category": "Desert, arctic and swamp",
+  "w": 3,
+  "h": 1.2,
+  "anchor": "base",
+  "family": "grass"
+ },
+ {
+  "id": "reeds",
+  "name": "Reeds",
+  "category": "Desert, arctic and swamp",
+  "w": 4,
+  "h": 2.4,
+  "anchor": "base",
+  "family": "swamp"
+ },
+ {
+  "id": "rock-arch",
+  "name": "Rock arch",
+  "category": "Desert, arctic and swamp",
+  "w": 7,
+  "h": 4.9,
+  "anchor": "base",
+  "family": "rocks"
+ },
+ {
+  "id": "snow-mound",
+  "name": "Snow drift",
+  "category": "Desert, arctic and swamp",
+  "w": 6,
+  "h": 2.4,
+  "anchor": "base",
+  "family": "hills"
+ },
+ {
+  "id": "ancient-tree",
+  "name": "Ancient tree",
+  "category": "Landmarks",
+  "w": 6,
+  "h": 6.0,
+  "anchor": "base",
+  "family": "landmarks"
+ },
+ {
+  "id": "battlefield",
+  "name": "Battlefield",
+  "category": "Landmarks",
+  "w": 6,
+  "h": 4.2,
+  "anchor": "base",
+  "family": "landmarks"
+ },
+ {
+  "id": "bridge",
+  "name": "Bridge",
+  "category": "Landmarks",
+  "w": 7,
+  "h": 3.5,
+  "anchor": "base",
+  "family": "landmarks"
+ },
+ {
+  "id": "camp",
+  "name": "Camp",
+  "category": "Landmarks",
+  "w": 5,
+  "h": 3.0,
+  "anchor": "base",
+  "family": "landmarks"
+ },
+ {
+  "id": "dungeon-entrance",
+  "name": "Dungeon entrance",
+  "category": "Landmarks",
+  "w": 5,
+  "h": 3.5,
+  "anchor": "base",
+  "family": "landmarks"
+ },
+ {
+  "id": "graveyard",
+  "name": "Graveyard",
+  "category": "Landmarks",
+  "w": 5,
+  "h": 3.0,
+  "anchor": "base",
+  "family": "landmarks"
+ },
+ {
+  "id": "lighthouse",
+  "name": "Lighthouse",
+  "category": "Landmarks",
+  "w": 4,
+  "h": 4.0,
+  "anchor": "base",
+  "family": "landmarks"
+ },
+ {
+  "id": "mine",
+  "name": "Mine",
+  "category": "Landmarks",
+  "w": 6,
+  "h": 4.2,
+  "anchor": "base",
+  "family": "landmarks"
+ },
+ {
+  "id": "obelisk",
+  "name": "Obelisk",
+  "category": "Landmarks",
+  "w": 3,
+  "h": 3.0,
+  "anchor": "base",
+  "family": "landmarks"
+ },
+ {
+  "id": "portal",
+  "name": "Portal",
+  "category": "Landmarks",
+  "w": 5,
+  "h": 4.0,
+  "anchor": "base",
+  "family": "landmarks"
+ },
+ {
+  "id": "ruins",
+  "name": "Ruins",
+  "category": "Landmarks",
+  "w": 6,
+  "h": 4.2,
+  "anchor": "base",
+  "family": "landmarks"
+ },
+ {
+  "id": "shipwreck",
+  "name": "Shipwreck",
+  "category": "Landmarks",
+  "w": 6,
+  "h": 4.2,
+  "anchor": "base",
+  "family": "landmarks"
+ },
+ {
+  "id": "standing-stones",
+  "name": "Standing stones",
+  "category": "Landmarks",
+  "w": 6,
+  "h": 3.6,
+  "anchor": "base",
+  "family": "landmarks"
+ },
+ {
+  "id": "statue",
+  "name": "Statue",
+  "category": "Landmarks",
+  "w": 3,
+  "h": 3.0,
+  "anchor": "base",
+  "family": "landmarks"
+ },
+ {
+  "id": "temple",
+  "name": "Temple",
+  "category": "Landmarks",
+  "w": 6,
+  "h": 4.8,
+  "anchor": "base",
+  "family": "landmarks"
+ },
+ {
+  "id": "tower",
+  "name": "Tower",
+  "category": "Landmarks",
+  "w": 4,
+  "h": 4.0,
+  "anchor": "base",
+  "family": "landmarks"
+ }
+]

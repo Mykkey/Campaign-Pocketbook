@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="50" viewBox="0 0 100 50">
+<path d="M88.0,26.0 C87.3,28.9 84.6,32.2 80.1,34.3 C75.6,36.5 68.0,38.2 61.1,39.0 C54.2,39.8 45.8,39.9 38.7,39.2 C31.7,38.5 23.3,36.8 18.9,34.6 C14.4,32.4 12.8,29.1 11.9,26.0 C11.0,22.9 9.3,18.5 13.4,15.9 C17.6,13.3 28.6,11.2 36.8,10.5 C44.9,9.8 54.5,10.5 62.4,11.5 C70.2,12.5 79.5,14.2 83.7,16.7 C88.0,19.1 88.6,23.1 88.0,26.0 Z" fill="#8e9b75" fill-opacity="1.00" stroke="#3b2a1a" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round"  />
+<ellipse cx="30.0" cy="24.0" rx="9.0" ry="3.4" fill="#8d9e9b" fill-opacity="0.80" stroke="none"/>
+<ellipse cx="50.0" cy="30.0" rx="9.0" ry="3.4" fill="#8d9e9b" fill-opacity="0.80" stroke="none"/>
+<ellipse cx="68.0" cy="24.0" rx="9.0" ry="3.4" fill="#8d9e9b" fill-opacity="0.80" stroke="none"/>
+<line x1="24.0" y1="22.0" x2="23.0" y2="12.0" stroke="#acb781" stroke-width="1.00" stroke-opacity="1.00" stroke-linecap="round"/>
+<line x1="46.0" y1="22.0" x2="45.0" y2="12.0" stroke="#acb781" stroke-width="1.00" stroke-opacity="1.00" stroke-linecap="round"/>
+<line x1="72.0" y1="22.0" x2="71.0" y2="12.0" stroke="#acb781" stroke-width="1.00" stroke-opacity="1.00" stroke-linecap="round"/>
+</svg>

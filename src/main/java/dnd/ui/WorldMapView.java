@@ -221,6 +221,7 @@ final class WorldMapView extends Pane {
             case PATH -> pathPressed(px, py, e.getClickCount());
             case REGION -> regionPressed(px, py, e.getClickCount());
             case LABEL -> placeLabel(px, py);
+            case FILL -> bucket(px, py);
             case RULER -> rulerPressed(px, py, e.getClickCount());
             default -> { }
         }
@@ -297,6 +298,7 @@ final class WorldMapView extends Pane {
             case SCATTER -> finishStampEdit();
             case MOVE, RESIZE, DRAGPOINT -> {
                 if (moved) finishStampEdit();
+                if (mode == Mode.RESIZE && moved) rememberSize();
             }
             case LEGEND -> {
                 Double ox0 = legendX0, oy0 = legendY0, nx = map.legendX, ny = map.legendY;
@@ -423,6 +425,70 @@ final class WorldMapView extends Pane {
         WorldTerrainCache.of(map).invalidateCells(x, y, x + w - 1, y + h - 1);
         store.markWorldMapDirty(map, true);
         redraw();
+    }
+
+    /** Fills the area around a point with what the bucket carries: the same terrain (or biome) as at the point, all connected, becomes the chosen one. */
+    private void bucket(double px, double py) {
+        int cx = (int) Math.floor(px), cy = (int) Math.floor(py);
+        if (cx < 0 || cy < 0 || cx >= map.cols || cy >= map.rows) return;
+        boolean biome = ts.fillBiome.get();
+        byte value;
+        if (biome) {
+            WorldBiome b = ts.biome.get();
+            value = b == null ? 0 : b.code;
+        } else {
+            WorldTerrain t = ts.terrain.get();
+            value = t == null ? 0 : t.code;
+        }
+        PaintLayer target = biome ? map.biome() : map.base();
+        PaintLayer base = map.base();
+        int w = map.cols, h = map.rows;
+        byte from = target.get(cx, cy);
+        if (from == value) return;
+        if (biome && !landOrIce(base, cx, cy)) return;
+        layerIsBiome = biome;
+        layer = target;
+        layerBefore = target.cells.clone();
+        minX = Integer.MAX_VALUE;
+        minY = Integer.MAX_VALUE;
+        maxX = Integer.MIN_VALUE;
+        maxY = Integer.MIN_VALUE;
+        int[] queue = new int[w * h];
+        boolean[] seen = new boolean[w * h];
+        int head = 0, tail = 0;
+        queue[tail++] = cy * w + cx;
+        seen[cy * w + cx] = true;
+        while (head < tail) {
+            int i = queue[head++], x = i % w, y = i / w;
+            target.set(x, y, value);
+            minX = Math.min(minX, x);
+            maxX = Math.max(maxX, x);
+            minY = Math.min(minY, y);
+            maxY = Math.max(maxY, y);
+            int[][] near = {{x - 1, y}, {x + 1, y}, {x, y - 1}, {x, y + 1}};
+            for (int[] n : near) {
+                if (n[0] < 0 || n[1] < 0 || n[0] >= w || n[1] >= h) continue;
+                int j = n[1] * w + n[0];
+                if (seen[j] || target.get(n[0], n[1]) != from) continue;
+                if (biome && !landOrIce(base, n[0], n[1])) continue;
+                seen[j] = true;
+                queue[tail++] = j;
+            }
+        }
+        WorldTerrainCache.of(map).invalidateCells(minX, minY, maxX, maxY);
+        endStroke();
+    }
+
+    private static boolean landOrIce(PaintLayer base, int x, int y) {
+        WorldTerrain t = WorldTerrain.of(base.get(x, y));
+        return t == WorldTerrain.LAND || t == WorldTerrain.ICE;
+    }
+
+    /** After the user resizes a symbol, new symbols come out that size too, until it is changed again. */
+    private void rememberSize() {
+        WorldStamp s = singleSelected();
+        if (s == null || WorldLabels.isLabel(s)) return;
+        ts.stampSize.set((int) Math.max(1, Math.min(200, Math.round(s.size))));
     }
 
     // ================================================================ symbols

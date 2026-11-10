@@ -101,11 +101,11 @@ public final class WorldLegend {
         double u = unit(map);
         double miles = WorldTravel.niceLength(map.milesAcross() * 0.2);
         double len = miles / map.milesPerCell;
-        double x = map.cols - u - len, y = map.rows - u * 2.2, h = u * 0.7;
+        double x = map.cols - u * 4.6 - len, y = map.rows - u * 2.2, h = u * 0.7;
         Color txt = text(map);
         g.save();
         g.setFill(paper(map, 0.7));
-        g.fillRoundRect(x - u * 1.2, y - u * 2.4, len + u * 2.4, u * 4.6, u, u);
+        g.fillRoundRect(x - u * 1.6, y - u * 2.4, len + u * 5.2, u * 4.6, u, u);
         int segments = 4;
         for (int i = 0; i < segments; i++) {
             g.setFill(i % 2 == 0 ? txt : paper(map, 1));

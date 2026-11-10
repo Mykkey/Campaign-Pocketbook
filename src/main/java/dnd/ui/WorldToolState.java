@@ -31,4 +31,6 @@ final class WorldToolState {
     /** The kind of label the label tool writes, and how much it bends. */
     final ObjectProperty<dnd.map.world.WorldLabels.Kind> labelKind = new SimpleObjectProperty<>(dnd.map.world.WorldLabels.Kind.TOWN);
     final javafx.beans.property.DoubleProperty labelBend = new javafx.beans.property.SimpleDoubleProperty(0);
+    /** What the bucket fills: the biome layer (true) or land and sea (false). */
+    final javafx.beans.property.BooleanProperty fillBiome = new javafx.beans.property.SimpleBooleanProperty(false);
 }

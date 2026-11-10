@@ -44,7 +44,7 @@ public class WorldMapEditor extends BorderPane implements ItemView {
         ToggleGroup tools = new ToggleGroup();
         Map<WorldTool, ToggleButton> toolButtons = new EnumMap<>(WorldTool.class);
         for (WorldTool t : WorldTool.values()) {
-            ToggleButton b = IconButtons.decorate(new ToggleButton(), t.icon, t.label + ": " + t.tip + " [" + (t.ordinal() + 1) % 10 + "]");
+            ToggleButton b = IconButtons.decorate(new ToggleButton(), t.icon, t.label + ": " + t.tip + (t.ordinal() < 10 ? " [" + (t.ordinal() + 1) % 10 + "]" : ""));
             b.setToggleGroup(tools);
             b.setOnAction(e -> {
                 ts.tool.set(t);
@@ -67,7 +67,8 @@ public class WorldMapEditor extends BorderPane implements ItemView {
             b.setToggleGroup(terrainGroup);
             b.setOnAction(e -> {
                 ts.terrain.set(t);
-                ts.tool.set(WorldTool.BASE);
+                ts.fillBiome.set(false);
+                if (ts.tool.get() != WorldTool.FILL) ts.tool.set(WorldTool.BASE);
                 b.setSelected(true);
             });
             terrainButtons.put(t, b);
@@ -77,7 +78,8 @@ public class WorldMapEditor extends BorderPane implements ItemView {
         eraseTerrain.setToggleGroup(terrainGroup);
         eraseTerrain.setOnAction(e -> {
             ts.terrain.set(null);
-            ts.tool.set(WorldTool.BASE);
+            ts.fillBiome.set(false);
+            if (ts.tool.get() != WorldTool.FILL) ts.tool.set(WorldTool.BASE);
             eraseTerrain.setSelected(true);
         });
         terrainNodes.add(eraseTerrain);
@@ -88,6 +90,8 @@ public class WorldMapEditor extends BorderPane implements ItemView {
         syncTerrain.run();
         ts.terrain.addListener((o, a, n) -> syncTerrain.run());
         HBox terrainGroupBox = tool(new HBox(4, terrainNodes.toArray(new javafx.scene.Node[0])), WorldTool.BASE);
+        terrainGroupBox.visibleProperty().unbind();
+        terrainGroupBox.visibleProperty().bind(ts.tool.isEqualTo(WorldTool.BASE).or(ts.tool.isEqualTo(WorldTool.FILL)));
         bar.getChildren().add(terrainGroupBox);
 
         // ---- what the biome tool paints
@@ -102,9 +106,13 @@ public class WorldMapEditor extends BorderPane implements ItemView {
         biomes.setButtonCell(biomeCell());
         biomes.valueProperty().addListener((o, a, n) -> {
             ts.biome.set(n instanceof WorldBiome b ? b : null);
-            ts.tool.set(WorldTool.BIOME);
+            if (ts.tool.get() == WorldTool.FILL) ts.fillBiome.set(true);
+            else ts.tool.set(WorldTool.BIOME);
         });
-        bar.getChildren().add(tool(new HBox(4, biomes), WorldTool.BIOME));
+        HBox biomeBox = tool(new HBox(4, biomes), WorldTool.BIOME);
+        biomeBox.visibleProperty().unbind();
+        biomeBox.visibleProperty().bind(ts.tool.isEqualTo(WorldTool.BIOME).or(ts.tool.isEqualTo(WorldTool.FILL)));
+        bar.getChildren().add(biomeBox);
 
         // ---- brush size
         Spinner<Integer> brush = new Spinner<>(1, 200, ts.brush.get());
@@ -130,6 +138,9 @@ public class WorldMapEditor extends BorderPane implements ItemView {
         stampSize.setTooltip(IconButtons.tip("Symbol width in map cells. 0 uses each symbol's own size"));
         stampSize.valueProperty().addListener((o, a, n) -> {
             if (n != null) ts.stampSize.set(n);
+        });
+        ts.stampSize.addListener((o, a, n) -> {
+            if (stampSize.getValue() == null || stampSize.getValue().intValue() != n.intValue()) stampSize.getValueFactory().setValue(n.intValue());
         });
         Spinner<Integer> density = new Spinner<>(1, 10, ts.density.get());
         density.setPrefWidth(66);

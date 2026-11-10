@@ -31,3 +31,10 @@
 .split-pane > .split-pane-divider { -fx-padding: 0 2 0 2; -fx-background-color: -t-border; }
 .split-pane:vertical > .split-pane-divider { -fx-padding: 2 0 2 0; }
 .split-pane > .split-pane-divider:hover { -fx-background-color: -t-blue; }
+
+/* colour buttons: flat like the icon buttons, with the theme's border and arrow */
+.color-picker { -fx-background-color: transparent; -fx-background-radius: 6; -fx-border-color: -t-border; -fx-border-radius: 6; -fx-padding: 2 2 2 4; }
+.color-picker:hover, .color-picker:showing { -fx-background-color: -t-surface2; }
+.color-picker > .arrow-button { -fx-background-color: transparent; -fx-padding: 0 2 0 2; }
+.color-picker > .arrow-button > .arrow { -fx-background-color: -t-text2; }
+.color-picker > .color-picker-label > .picker-color > .picker-color-rect { -fx-stroke: -t-text3; }

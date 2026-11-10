@@ -1,6 +1,6 @@
 package dnd.ui;
 
-import dnd.storage.ProjectStore;
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -11,12 +11,6 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.paint.Color;
 import javafx.stage.Window;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Properties;
 
 /**
  * Light and dark mode. The choice is remembered in {@code settings.properties} next to the projects and applied to
@@ -38,10 +32,6 @@ public final class Theme {
         return DARK.get();
     }
 
-    private static Path settingsFile() {
-        return ProjectStore.baseDir().resolve("settings.properties");
-    }
-
     /** A button that flips between light and dark mode; its text always names the mode it will switch to. */
     public static Button toggleButton() {
         Button b = new Button();
@@ -58,7 +48,10 @@ public final class Theme {
     public static void install() {
         if (installed) return;
         installed = true;
-        DARK.set(loadDark());
+        DARK.set("dark".equals(AppSettings.getString("theme", "light")));
+        AppSettings.addListener((k, v) -> {
+            if ("theme".equals(k)) Platform.runLater(() -> setDark("dark".equals(v)));
+        });
         for (Window w : Window.getWindows()) hook(w);
         Window.getWindows().addListener((ListChangeListener<Window>) c -> {
             while (c.next()) for (Window w : c.getAddedSubList()) hook(w);
@@ -76,7 +69,7 @@ public final class Theme {
     public static void setDark(boolean dark) {
         if (dark == DARK.get()) return;
         DARK.set(dark);
-        saveDark(dark);
+        AppSettings.setString("theme", dark ? "dark" : "light");
         for (Window w : Window.getWindows()) if (w.getScene() != null) apply(w.getScene());
     }
 
@@ -85,39 +78,6 @@ public final class Theme {
         String url = Theme.class.getResource(isDark() ? "/theme-dark.css" : "/theme-light.css").toExternalForm();
         scene.getStylesheets().removeIf(u -> u.endsWith("/theme-dark.css") || u.endsWith("/theme-light.css"));
         scene.getStylesheets().add(url);
-    }
-
-    private static boolean loadDark() {
-        Path f = settingsFile();
-        if (!Files.isRegularFile(f)) return false;
-        try (InputStream in = Files.newInputStream(f)) {
-            Properties p = new Properties();
-            p.load(in);
-            return "dark".equals(p.getProperty("theme"));
-        } catch (IOException e) {
-            return false;
-        }
-    }
-
-    private static void saveDark(boolean dark) {
-        Path f = settingsFile();
-        Properties p = new Properties();
-        if (Files.isRegularFile(f)) {
-            try (InputStream in = Files.newInputStream(f)) {
-                p.load(in);
-            } catch (IOException ignored) {
-                // start fresh
-            }
-        }
-        p.setProperty("theme", dark ? "dark" : "light");
-        try {
-            Files.createDirectories(f.getParent());
-            try (OutputStream out = Files.newOutputStream(f)) {
-                p.store(out, "Campaign Pocketbook settings");
-            }
-        } catch (IOException e) {
-            dnd.util.Log.error("Problem in Theme", e); // the choice just won't be remembered
-        }
     }
 
     /**

@@ -28,11 +28,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.List;
-import java.util.prefs.Preferences;
 
 /** Asks how to save a world map as a picture, then saves it band by band while showing the progress. */
 final class WorldExportDialog {
-    private static final Preferences PREFS = Preferences.userNodeForPackage(WorldExportDialog.class).node("worldExport");
     private static final String DM = "The DM's version (everything, hidden things faded)";
     private static final String PLAYERS = "The players' version (nothing hidden, unexplored areas blank)";
 
@@ -46,11 +44,11 @@ final class WorldExportDialog {
 
         ComboBox<String> who = new ComboBox<>();
         who.getItems().addAll(DM, PLAYERS);
-        who.setValue(PREFS.getBoolean("players", false) ? PLAYERS : DM);
+        who.setValue(AppSettings.getBoolean("export.world.players", false) ? PLAYERS : DM);
         List<Integer> widths = List.of(1024, 2048, 4096, 8192);
         ComboBox<Integer> size = new ComboBox<>();
         size.getItems().addAll(widths);
-        size.setValue(widths.contains(PREFS.getInt("width", 2048)) ? PREFS.getInt("width", 2048) : 2048);
+        size.setValue(widths.contains(AppSettings.getInt("export.world.width", 2048)) ? AppSettings.getInt("export.world.width", 2048) : 2048);
         size.setConverter(new javafx.util.StringConverter<>() {
             @Override
             public String toString(Integer w) {
@@ -63,10 +61,10 @@ final class WorldExportDialog {
             }
         });
         CheckBox grid = new CheckBox("Grid");
-        grid.setSelected(map.gridKind != dnd.model.WorldGridKind.NONE && PREFS.getBoolean("grid", true));
+        grid.setSelected(map.gridKind != dnd.model.WorldGridKind.NONE && AppSettings.getBoolean("export.world.grid", true));
         grid.setDisable(map.gridKind == dnd.model.WorldGridKind.NONE);
         CheckBox legend = new CheckBox("Scale bar and legend");
-        legend.setSelected((map.showScale || map.showLegend) && PREFS.getBoolean("legend", true));
+        legend.setSelected((map.showScale || map.showLegend) && AppSettings.getBoolean("export.world.legend", true));
         legend.setDisable(!map.showScale && !map.showLegend);
         Label note = new Label();
         note.setWrapText(true);
@@ -94,10 +92,10 @@ final class WorldExportDialog {
         boolean forPlayers = PLAYERS.equals(who.getValue());
         int width = size.getValue();
         try {
-            PREFS.putBoolean("players", forPlayers);
-            PREFS.putInt("width", width);
-            PREFS.putBoolean("grid", grid.isSelected() || grid.isDisabled() && PREFS.getBoolean("grid", true));
-            PREFS.putBoolean("legend", legend.isSelected() || legend.isDisabled() && PREFS.getBoolean("legend", true));
+            AppSettings.setBoolean("export.world.players", forPlayers);
+            AppSettings.setInt("export.world.width", width);
+            AppSettings.setBoolean("export.world.grid", grid.isSelected() || grid.isDisabled() && AppSettings.getBoolean("export.world.grid", true));
+            AppSettings.setBoolean("export.world.legend", legend.isSelected() || legend.isDisabled() && AppSettings.getBoolean("export.world.legend", true));
         } catch (RuntimeException ignored) {
             // remembering the choices is a convenience only
         }
@@ -107,13 +105,13 @@ final class WorldExportDialog {
         fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG picture", "*.png"));
         String safe = (map.name == null || map.name.isBlank() ? "World map" : map.name).replaceAll("[\\\\/:*?\"<>|]", "-");
         fc.setInitialFileName(safe + (forPlayers ? " (players)" : "") + ".png");
-        String lastDir = PREFS.get("dir", null);
+        String lastDir = AppSettings.getString("export.world.dir", null);
         if (lastDir != null && new File(lastDir).isDirectory()) fc.setInitialDirectory(new File(lastDir));
         File file = fc.showSaveDialog(owner);
         if (file == null) return;
         if (file.getParentFile() != null) {
             try {
-                PREFS.put("dir", file.getParentFile().getAbsolutePath());
+                AppSettings.setString("export.world.dir", file.getParentFile().getAbsolutePath());
             } catch (RuntimeException ignored) {
                 // remembering the folder is a convenience only
             }

@@ -173,6 +173,9 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Button rules = new Button("Rules...");
         rules.setTooltip(IconButtons.tip("Quick reference: conditions, cover, grappling, travel, resting and more (Ctrl+R)"));
         rules.setOnAction(e -> RulesReferenceDialog.show(getScene().getWindow()));
+        Button settings = new Button("Settings...");
+        settings.setTooltip(IconButtons.tip("Settings for the whole app: text size, colours, accessibility and keyboard shortcuts (Ctrl+,)"));
+        settings.setOnAction(e -> SettingsDialog.show(getScene().getWindow()));
         Button relations = new Button("Relations...");
         relations.setTooltip(IconButtons.tip("Family tree and relationship web of your cards"));
         relations.setOnAction(e -> RelationshipsDialog.show(getScene().getWindow(), store, this::openItem));
@@ -194,13 +197,14 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         IconButtons.decorate(npc, "person");
         IconButtons.decorate(loot, "loot");
         IconButtons.decorate(rules, "rules");
+        IconButtons.decorate(settings, "gear");
         IconButtons.decorate(relations, "relations");
         IconButtons.decorate(quests, "quest");
         IconButtons.decorate(timeline, "calendar");
         IconButtons.decorate(library, "book");
         IconButtons.decorate(recentMenu, "clock");
         IconButtons.decorate(backlinks, "link");
-        HBox nav = new HBox(4, projects, backBtn, fwdBtn, trail, spacer, names, npc, loot, rules, relations, quests, timeline, library, Theme.toggleButton(), recentMenu, backlinks, search);
+        HBox nav = new HBox(4, projects, backBtn, fwdBtn, trail, spacer, names, npc, loot, rules, relations, quests, timeline, library, Theme.toggleButton(), settings, recentMenu, backlinks, search);
         nav.setAlignment(Pos.CENTER_LEFT);
         nav.setPadding(new Insets(6, 8, 0, 8));
 
@@ -280,6 +284,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             scene.getAccelerators().put(new KeyCodeCombination(KeyCode.G, KeyCombination.SHORTCUT_DOWN), this::openNameGenerator);
             scene.getAccelerators().put(new KeyCodeCombination(KeyCode.L, KeyCombination.SHORTCUT_DOWN), this::openLootGenerator);
             scene.getAccelerators().put(new KeyCodeCombination(KeyCode.R, KeyCombination.SHORTCUT_DOWN), () -> RulesReferenceDialog.show(getScene().getWindow()));
+            scene.getAccelerators().put(new KeyCodeCombination(KeyCode.COMMA, KeyCombination.SHORTCUT_DOWN), () -> SettingsDialog.show(getScene().getWindow()));
             scene.getAccelerators().put(new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN, KeyCombination.SHIFT_DOWN), this::openNpcGenerator);
         });
 

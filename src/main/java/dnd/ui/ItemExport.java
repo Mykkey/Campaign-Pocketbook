@@ -26,11 +26,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.prefs.Preferences;
 
 /** Exporting and printing the text items of a campaign: stat blocks, spells, magic items, quests, sessions and encounters. */
 final class ItemExport {
-    private static final Preferences PREFS = Preferences.userNodeForPackage(ItemExport.class).node("itemExport");
 
     private ItemExport() { }
 
@@ -83,14 +81,14 @@ final class ItemExport {
         fc.setTitle("Export as Markdown");
         fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("Markdown", "*.md"));
         fc.setInitialFileName(MarkdownExport.fileName(n.name, ".md"));
-        String dir = PREFS.get("dir", null);
+        String dir = AppSettings.getString("export.item.dir", null);
         if (dir != null && new File(dir).isDirectory()) fc.setInitialDirectory(new File(dir));
         File f = fc.showSaveDialog(owner);
         if (f == null) return;
         if (!f.getName().toLowerCase().endsWith(".md")) f = new File(f.getParentFile(), f.getName() + ".md");
         try {
             Files.writeString(f.toPath(), md, StandardCharsets.UTF_8);
-            if (f.getParentFile() != null) PREFS.put("dir", f.getParentFile().getAbsolutePath());
+            if (f.getParentFile() != null) AppSettings.setString("export.item.dir", f.getParentFile().getAbsolutePath());
         } catch (IOException | RuntimeException ex) {
             new Alert(Alert.AlertType.ERROR, "Could not save the file: " + ex.getMessage()).show();
         }

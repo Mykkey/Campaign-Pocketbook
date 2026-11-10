@@ -20,6 +20,7 @@ public class App extends Application {
     @Override
     public void start(Stage stage) {
         this.stage = stage;
+        dnd.ui.SettingsMigration.run(dnd.ui.SettingsMigration.oldRoot());
         dnd.ui.Theme.install();
         dnd.ui.WindowFit.install();
         stage.setTitle(TITLE);
@@ -49,7 +50,10 @@ public class App extends Application {
         root.setTop(new UpdateBanner(getHostServices()));
         ProjectLauncher launcher = new ProjectLauncher(this::showWorkspace);
         root.setCenter(new StackPane(launcher, launcher.loadingOverlay()));
-        stage.setScene(new Scene(root, stage.getWidth(), stage.getHeight()));
+        Scene scene = new Scene(root, stage.getWidth(), stage.getHeight());
+        scene.getAccelerators().put(new javafx.scene.input.KeyCodeCombination(javafx.scene.input.KeyCode.COMMA, javafx.scene.input.KeyCombination.SHORTCUT_DOWN),
+                () -> dnd.ui.SettingsDialog.show(stage));
+        stage.setScene(scene);
         stage.setTitle(TITLE);
     }
 

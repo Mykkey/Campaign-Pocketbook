@@ -58,7 +58,9 @@ public class ProjectLauncher extends VBox {
         delete.setOnAction(e -> deleteSelected());
         open.disableProperty().bind(list.getSelectionModel().selectedItemProperty().isNull());
         delete.disableProperty().bind(list.getSelectionModel().selectedItemProperty().isNull());
-        HBox buttons = new HBox(8, open, create, delete, Theme.toggleButton());
+        Button settings = IconButtons.decorate(new Button(), "gear", "Settings for the whole app: text size, colours, accessibility and keyboard shortcuts (Ctrl+,)");
+        settings.setOnAction(e -> SettingsDialog.show(getScene() == null ? null : getScene().getWindow()));
+        HBox buttons = new HBox(8, open, create, delete, Theme.toggleButton(), settings);
         buttons.setAlignment(Pos.CENTER);
 
         list.setPlaceholder(new Label("No projects yet - create one!"));

@@ -22,11 +22,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.List;
-import java.util.prefs.Preferences;
 
 /** Asks how to save a battlemap as a PNG picture, then saves it strip by strip with a progress window. */
 final class BattleExportDialog {
-    private static final Preferences PREFS = Preferences.userNodeForPackage(BattleExportDialog.class).node("battleExport");
     private static final String DM = "The DM's version (everything, hidden things faded)";
     private static final String PLAYERS = "The players' version (what they can see now)";
 
@@ -40,11 +38,11 @@ final class BattleExportDialog {
 
         ComboBox<String> who = new ComboBox<>();
         who.getItems().addAll(DM, PLAYERS);
-        who.setValue(PREFS.getBoolean("players", false) ? PLAYERS : DM);
+        who.setValue(AppSettings.getBoolean("export.battle.players", false) ? PLAYERS : DM);
         List<Integer> widths = List.of(1024, 2048, 4096, 8192);
         ComboBox<Integer> size = new ComboBox<>();
         size.getItems().addAll(widths);
-        size.setValue(widths.contains(PREFS.getInt("width", 2048)) ? PREFS.getInt("width", 2048) : 2048);
+        size.setValue(widths.contains(AppSettings.getInt("export.battle.width", 2048)) ? AppSettings.getInt("export.battle.width", 2048) : 2048);
         size.setConverter(new javafx.util.StringConverter<>() {
             @Override
             public String toString(Integer w) {
@@ -77,8 +75,8 @@ final class BattleExportDialog {
         boolean forPlayers = PLAYERS.equals(who.getValue());
         int width = size.getValue();
         try {
-            PREFS.putBoolean("players", forPlayers);
-            PREFS.putInt("width", width);
+            AppSettings.setBoolean("export.battle.players", forPlayers);
+            AppSettings.setInt("export.battle.width", width);
         } catch (RuntimeException ignored) {
             // remembering the choices is a convenience only
         }
@@ -86,13 +84,13 @@ final class BattleExportDialog {
         fc.setTitle("Save the map picture");
         fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG picture", "*.png"));
         fc.setInitialFileName(MarkdownExport.fileName(map.name + (forPlayers ? " (players)" : ""), ".png"));
-        String lastDir = PREFS.get("dir", null);
+        String lastDir = AppSettings.getString("export.battle.dir", null);
         if (lastDir != null && new File(lastDir).isDirectory()) fc.setInitialDirectory(new File(lastDir));
         File file = fc.showSaveDialog(owner);
         if (file == null) return;
         if (file.getParentFile() != null) {
             try {
-                PREFS.put("dir", file.getParentFile().getAbsolutePath());
+                AppSettings.setString("export.battle.dir", file.getParentFile().getAbsolutePath());
             } catch (RuntimeException ignored) {
                 // remembering the folder is a convenience only
             }

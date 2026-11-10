@@ -19,7 +19,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
-import java.util.prefs.Preferences;
 
 /**
  * Blue "new version available" bar. One background check runs per app launch; every banner
@@ -28,7 +27,6 @@ import java.util.prefs.Preferences;
 public class UpdateBanner extends HBox {
     /** The newer version found on GitHub, or null. */
     private static final StringProperty NEWER = new SimpleStringProperty();
-    private static final Preferences PREFS = Preferences.userNodeForPackage(UpdateBanner.class);
     private static boolean started;
 
     private final HostServices hostServices;
@@ -50,7 +48,7 @@ public class UpdateBanner extends HBox {
 
         later.setOnAction(e -> {
             String v = NEWER.get();
-            if (v != null) PREFS.put("dismissedUpdate", v);
+            if (v != null) AppSettings.setString("update.dismissed", v);
             NEWER.set(null);
         });
         update.setOnAction(e -> onUpdate());
@@ -66,7 +64,7 @@ public class UpdateBanner extends HBox {
         Thread t = new Thread(() -> {
             Optional<String> newer = UpdateChecker.findNewerVersion();
             newer.ifPresent(v -> {
-                if (!v.equals(PREFS.get("dismissedUpdate", ""))) Platform.runLater(() -> NEWER.set(v));
+                if (!v.equals(AppSettings.getString("update.dismissed", ""))) Platform.runLater(() -> NEWER.set(v));
             });
         }, "update-check");
         t.setDaemon(true);

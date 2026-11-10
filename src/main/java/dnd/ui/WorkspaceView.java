@@ -101,7 +101,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         newButton(newWorld, TreeNode.KIND_WORLDMAP, "New world map: paint land, sea and biomes, then add mountains, forests, towns and labels");
         newButton(newEncounter, TreeNode.KIND_ENCOUNTER, "New encounter: pick creatures and see how hard the fight is for your party");
         newButton(newFolder, "folder", "New folder: to keep related items together");
-        FlowPane treeButtons = new FlowPane(4, 4, newBoard, newMap, newCard, newSpell, newItem, newQuest, newSession, newWorld, newEncounter, newFolder);
+        FlowPane treeButtons = new FlowPane(4, 4, newBoard, newSession, newQuest, newWorld, newMap, newEncounter, newCard, newSpell, newItem, newFolder);
         tree.setCellFactory(v -> createTreeCell(true));
         tree.setOnMouseClicked(e -> {
             if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2) {
@@ -865,7 +865,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         colour.getItems().addAll(new SeparatorMenuItem(), defaultColour);
         MenuItem del = new MenuItem("Delete");
         del.setOnAction(e -> deleteSelected());
-        ContextMenu m = new ContextMenu(nb, nm, nc, nsp, nmi, nq, nse, nw, ne, nf, new SeparatorMenuItem(), up, down, dup, rn, colour, del);
+        ContextMenu m = new ContextMenu(nb, nse, nq, nw, nm, ne, nc, nsp, nmi, nf, new SeparatorMenuItem(), up, down, dup, rn, colour, del);
         m.setOnShowing(e -> {
             TreeItem<TreeNode> it = tree.getSelectionModel().getSelectedItem();
             boolean isRoot = it == null || it.getValue() == store.project.root;

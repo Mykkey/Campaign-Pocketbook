@@ -148,6 +148,30 @@ public final class SearchService {
                 out.add(new Result(n.id, n.name, null, "World map"));
                 if (out.size() >= limit) return out;
             }
+            dnd.model.WorldMap wm = store.worldMap(n.id);
+            if (wm == null) continue;
+            for (dnd.model.WorldStamp st : wm.stamps) {
+                String text = st.text != null && st.text.toLowerCase(Locale.ROOT).contains(q) ? st.text : null;
+                String note = st.note != null && st.note.toLowerCase(Locale.ROOT).contains(q) ? st.note : null;
+                if (text != null || note != null) {
+                    out.add(new Result(n.id, n.name, st.id, text != null ? "label: " + excerpt(text, q) : "note: " + excerpt(note, q)));
+                    if (out.size() >= limit) return out;
+                }
+            }
+            for (dnd.model.WorldPath pa : wm.paths) {
+                String hit = firstMatch(q, pa.name, pa.note);
+                if (hit != null) {
+                    out.add(new Result(n.id, n.name, pa.id, pa.type.label.toLowerCase(Locale.ROOT) + ": " + excerpt(hit, q)));
+                    if (out.size() >= limit) return out;
+                }
+            }
+            for (dnd.model.WorldRegion rg : wm.regions) {
+                String hit = firstMatch(q, rg.name, rg.note);
+                if (hit != null) {
+                    out.add(new Result(n.id, n.name, rg.id, "region: " + excerpt(hit, q)));
+                    if (out.size() >= limit) return out;
+                }
+            }
         }
 
         // encounters: by name and notes
@@ -284,6 +308,12 @@ public final class SearchService {
         return s != null && s.toLowerCase(Locale.ROOT).contains(q);
     }
 
+    /** The first of the texts that contains {@code q} (already lower case), or null. */
+    private static String firstMatch(String q, String... texts) {
+        for (String t : texts) if (t != null && t.toLowerCase(Locale.ROOT).contains(q)) return t;
+        return null;
+    }
+
     /** A short piece of {@code s} around the first match of {@code q}. */
     public static String excerpt(String s, String q) {
         String flat = s.replaceAll("\\s+", " ").trim();
@@ -304,6 +334,21 @@ public final class SearchService {
                 boolean refers = targetId.equals(o.link);
                 for (dnd.model.SpanRef r : o.refs.values()) if (targetId.equals(r.link)) refers = true;
                 if (refers) out.add(new Result(id, store.boardName(id), o.id, snippet(o)));
+            }
+        }
+        // world maps: symbols, lines and regions that link here
+        for (String id : store.allWorldMapIds()) {
+            dnd.model.WorldMap wm = store.worldMap(id);
+            if (wm == null || id.equals(targetId)) continue;
+            String name = store.itemName(id);
+            for (dnd.model.WorldStamp st : wm.stamps) {
+                if (targetId.equals(st.link)) out.add(new Result(id, name, st.id, "world map: " + (st.text != null && !st.text.isBlank() ? st.text : st.feature)));
+            }
+            for (dnd.model.WorldPath pa : wm.paths) {
+                if (targetId.equals(pa.link)) out.add(new Result(id, name, pa.id, "world map: " + (pa.name != null && !pa.name.isBlank() ? pa.name : pa.type.label.toLowerCase(Locale.ROOT))));
+            }
+            for (dnd.model.WorldRegion rg : wm.regions) {
+                if (targetId.equals(rg.link)) out.add(new Result(id, name, rg.id, "world map: " + (rg.name != null && !rg.name.isBlank() ? rg.name : "region")));
             }
         }
         return out;

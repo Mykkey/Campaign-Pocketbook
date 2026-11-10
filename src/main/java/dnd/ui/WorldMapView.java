@@ -27,6 +27,9 @@ import javafx.animation.PauseTransition;
 import javafx.scene.Cursor;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
@@ -35,6 +38,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.stage.Popup;
 import javafx.util.Duration;
 
 import java.util.ArrayDeque;
@@ -67,6 +71,15 @@ final class WorldMapView extends Pane {
     private final PauseTransition cameraSaver = new PauseTransition(Duration.millis(800));
     private final Set<String> selected = new LinkedHashSet<>();
     private final Random rnd = new Random();
+
+    /** Opens another project item in a tab (set by the editor). */
+    Consumer<String> openItem = id -> { };
+    /** Lets a test answer the link-and-note dialog. */
+    static java.util.function.Supplier<LinkNoteDialog.Result> linkNoteAnswer;
+
+    private final PauseTransition hoverDelay = new PauseTransition(Duration.millis(450));
+    private final Popup tip = new Popup();
+    private String hoverKey;
 
     private Mode mode = Mode.NONE;
     private boolean spaceDown;
@@ -111,10 +124,12 @@ final class WorldMapView extends Pane {
             mouseSX = e.getX();
             mouseSY = e.getY();
             report(e.getX(), e.getY());
+            hoverCheck(e);
             redraw();
         });
         setOnMouseExited(e -> {
             mouseSX = -1;
+            hideTip();
             redraw();
         });
         setOnScroll(this::onScroll);
@@ -197,6 +212,18 @@ final class WorldMapView extends Pane {
         lastWX = px;
         lastWY = py;
         WorldTool tool = ts.tool.get();
+        hideTip();
+        if (e.getButton() == MouseButton.SECONDARY && (tool == WorldTool.SELECT || tool == WorldTool.HAND)) {
+            contextMenu(e, px, py);
+            return;
+        }
+        if (tool == WorldTool.HAND && e.getButton() == MouseButton.PRIMARY && e.getClickCount() >= 2) {
+            String link = linkOf(hitAny(px, py));
+            if (link != null && store.itemExists(link)) {
+                openItem.accept(link);
+                return;
+            }
+        }
         if (e.getButton() == MouseButton.MIDDLE || (e.getButton() == MouseButton.PRIMARY && (spaceDown || tool == WorldTool.HAND))) {
             mode = Mode.PAN;
             setCursor(Cursor.CLOSED_HAND);
@@ -688,6 +715,10 @@ final class WorldMapView extends Pane {
             }
         }
         WorldStamp hit = WorldStampRenderer.hit(map, px, py, true);
+        if (hit != null && clicks >= 2 && !WorldLabels.hasText(hit) && hit.link != null && store.itemExists(hit.link)) {
+            openItem.accept(hit.link);
+            return;
+        }
         if (hit != null && clicks >= 2 && WorldLabels.hasText(hit)) {
             selected.clear();
             selected.add(hit.id);
@@ -734,6 +765,200 @@ final class WorldMapView extends Pane {
         map.legendY = y;
         store.markWorldMapDirty(map, true);
         redraw();
+    }
+
+    // ---- links, notes and hover previews
+
+    /** The symbol, line or region at a point (symbols first), or null. */
+    private Object hitAny(double px, double py) {
+        WorldStamp s = WorldStampRenderer.hit(map, px, py, true);
+        if (s != null) return s;
+        WorldPath p = WorldPathRenderer.hitPath(map, px, py, 6 / zoom(), true);
+        if (p != null) return p;
+        return WorldPathRenderer.hitRegion(map, px, py, true);
+    }
+
+    private static String linkOf(Object o) {
+        return o instanceof WorldStamp s ? s.link : o instanceof WorldPath p ? p.link : o instanceof WorldRegion r ? r.link : null;
+    }
+
+    private static String noteOf(Object o) {
+        String n = o instanceof WorldStamp s ? s.note : o instanceof WorldPath p ? p.note : o instanceof WorldRegion r ? r.note : null;
+        return n == null || n.isBlank() ? null : n;
+    }
+
+    private static String idOf(Object o) {
+        return o instanceof WorldStamp s ? s.id : o instanceof WorldPath p ? p.id : o instanceof WorldRegion r ? r.id : null;
+    }
+
+    private static String nameOf(Object o) {
+        if (o instanceof WorldStamp s) {
+            if (WorldLabels.hasText(s) && s.text != null && !s.text.isBlank()) return s.text;
+            WorldAssets.Feature f = WorldAssets.get(s.feature);
+            return f == null ? "Symbol" : f.name();
+        }
+        if (o instanceof WorldPath p) return p.name != null && !p.name.isBlank() ? p.name : p.type.label;
+        if (o instanceof WorldRegion r) return r.name != null && !r.name.isBlank() ? r.name : "Region";
+        return "";
+    }
+
+    /** True if the symbol, line or region has a note or a link. */
+    static boolean hasLinkOrNote(Object o) {
+        return linkOf(o) != null || noteOf(o) != null;
+    }
+
+    private void hideTip() {
+        hoverDelay.stop();
+        tip.hide();
+        hoverKey = null;
+    }
+
+    private void hoverCheck(MouseEvent e) {
+        WorldTool tool = ts.tool.get();
+        if (!ts.linkPreviews.get() || mode != Mode.NONE || spaceDown || (tool != WorldTool.SELECT && tool != WorldTool.HAND)) {
+            if (hoverKey != null) hideTip();
+            return;
+        }
+        Object o = hitAny(wx(e.getX()), wy(e.getY()));
+        String link = linkOf(o);
+        if (link != null && !store.itemExists(link)) link = null;
+        String note = noteOf(o);
+        String key = note == null && link == null ? null : idOf(o);
+        if (java.util.Objects.equals(key, hoverKey)) return;
+        hideTip();
+        hoverKey = key;
+        if (key == null) return;
+        final String showNote = note, showLink = link;
+        final double sx = e.getScreenX(), sy = e.getScreenY();
+        hoverDelay.setOnFinished(ev -> {
+            javafx.scene.Node preview = ItemPreview.hover(store, showNote, showLink);
+            if (preview == null) return;
+            preview.setMouseTransparent(true);
+            tip.getContent().setAll(preview);
+            tip.show(this, sx + 18, sy + 18);
+        });
+        hoverDelay.playFromStart();
+    }
+
+    private void contextMenu(MouseEvent e, double px, double py) {
+        Object o = hitAny(px, py);
+        if (o == null) return;
+        select(o);
+        ContextMenu menu = new ContextMenu();
+        MenuItem edit = new MenuItem("Link and note...");
+        edit.setOnAction(ev -> editLinkNote(o));
+        menu.getItems().add(edit);
+        String link = linkOf(o);
+        if (link != null && store.itemExists(link)) {
+            MenuItem open = new MenuItem("Open linked item");
+            open.setOnAction(ev -> openItem.accept(link));
+            menu.getItems().add(open);
+        }
+        if (o instanceof WorldStamp s && WorldLabels.hasText(s)) {
+            MenuItem text = new MenuItem("Edit text...");
+            text.setOnAction(ev -> editText(s));
+            menu.getItems().add(text);
+        }
+        menu.getItems().add(new SeparatorMenuItem());
+        MenuItem del = new MenuItem("Delete");
+        del.setOnAction(ev -> deleteSelection());
+        menu.getItems().add(del);
+        menu.show(this, e.getScreenX(), e.getScreenY());
+        redraw();
+    }
+
+    private void select(Object o) {
+        selected.clear();
+        selShape = null;
+        if (o instanceof WorldStamp s) selected.add(s.id);
+        else if (o != null) selShape = idOf(o);
+    }
+
+    private Object selectedObject() {
+        WorldStamp s = singleSelected();
+        return s != null ? s : shapeById(selShape);
+    }
+
+    /** True if exactly one symbol, line or region is selected, so it can be given a link or a note. */
+    boolean linkable() {
+        return selectedObject() != null;
+    }
+
+    /** Opens the link-and-note dialog for the selected symbol, line or region. */
+    void editSelectedLinkNote() {
+        Object o = selectedObject();
+        if (o != null) editLinkNote(o);
+    }
+
+    private void editLinkNote(Object o) {
+        LinkNoteDialog.Result r;
+        if (linkNoteAnswer != null) r = linkNoteAnswer.get();
+        else {
+            r = LinkNoteDialog.show(getScene() == null ? null : getScene().getWindow(), store, nameOf(o), noteOf(o), linkOf(o), openItem).orElse(null);
+        }
+        if (r == null) return;
+        String before = WorldObjects.capture(map);
+        if (o instanceof WorldStamp s) {
+            s.note = r.note();
+            s.link = r.link();
+        } else if (o instanceof WorldPath p) {
+            p.note = r.note();
+            p.link = r.link();
+        } else if (o instanceof WorldRegion g) {
+            g.note = r.note();
+            g.link = r.link();
+        }
+        stampEdit(before);
+        redraw();
+    }
+
+    /** Selects an object (found by search) and brings it into view. */
+    void focusObject(String id) {
+        WorldStamp s = map.stamps.stream().filter(x -> x.id.equals(id)).findFirst().orElse(null);
+        Object o = s != null ? s : shapeById(id);
+        if (o == null) return;
+        select(o);
+        double cx, cy;
+        if (s != null) {
+            cx = s.x;
+            cy = s.y;
+        } else if (o instanceof WorldPath p) {
+            cx = p.x(p.count() / 2);
+            cy = p.y(p.count() / 2);
+        } else {
+            double[] c = ((WorldRegion) o).centre();
+            cx = c[0];
+            cy = c[1];
+        }
+        map.offsetX = getWidth() / 2 - cx * map.zoom;
+        map.offsetY = getHeight() / 2 - cy * map.zoom;
+        cameraChanged();
+        redraw();
+    }
+
+    /** Small badges on things that have a note (green) or a link (blue). */
+    private void drawBadges(GraphicsContext g) {
+        WorldTool t = ts.tool.get();
+        if (t != WorldTool.SELECT && t != WorldTool.HAND) return;
+        double r = 4.5 / zoom();
+        for (WorldStamp s : map.stamps) {
+            if (!hasLinkOrNote(s)) continue;
+            double[][] c = WorldStampRenderer.corners(s, map.style);
+            badge(g, c[1][0], c[1][1], r, s.link != null);
+        }
+        for (WorldPath p : map.paths) if (hasLinkOrNote(p) && p.count() > 0) badge(g, p.x(0), p.y(0), r, p.link != null);
+        for (WorldRegion rg : map.regions) {
+            if (!hasLinkOrNote(rg)) continue;
+            double[] at = rg.labelAt();
+            badge(g, at[0], at[1] - 3 / zoom(), r, rg.link != null);
+        }
+    }
+
+    private void badge(GraphicsContext g, double x, double y, double r, boolean link) {
+        g.setFill(Color.WHITE);
+        g.fillOval(x - r, y - r, 2 * r, 2 * r);
+        g.setFill(Color.web(link ? "#2563eb" : "#16a34a"));
+        g.fillOval(x - r * 0.65, y - r * 0.65, 1.3 * r, 1.3 * r);
     }
 
     // ---- the ruler
@@ -1135,6 +1360,7 @@ final class WorldMapView extends Pane {
         WorldStampRenderer.draw(g, map, lib, zoom(), vx0, vy0, vx1, vy1, true);
         WorldLegend.draw(g, map, lib, zoom());
         drawShapeOverlays(g);
+        drawBadges(g);
         drawRuler(g);
 
         g.setStroke(Color.web("#000000", 0.55));

@@ -409,7 +409,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
                     couldNotOpen(id, "That world map could not be found.");
                     return;
                 }
-                view = new WorldMapEditor(wm, store);
+                view = new WorldMapEditor(wm, store, this::openItem);
             } else if (store.isEncounter(id)) {
                 dnd.model.Encounter en = store.encounter(id);
                 if (en == null) {
@@ -627,6 +627,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         if (r.objectId != null) {
             BoardView v = viewFor(r.boardId);
             if (v != null) Platform.runLater(() -> v.focusObject(r.objectId));
+            else if (currentItem() instanceof WorldMapEditor wme && r.boardId.equals(wme.itemId())) Platform.runLater(() -> wme.focusObject(r.objectId));
         }
     }
 

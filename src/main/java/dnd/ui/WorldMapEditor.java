@@ -32,8 +32,14 @@ public class WorldMapEditor extends BorderPane implements ItemView {
     private final WorldAssetPanel panel;
 
     public WorldMapEditor(WorldMap map, ProjectStore store) {
+        this(map, store, id -> { });
+    }
+
+    /** @param openItem opens another project item in a tab (used by links on the map) */
+    public WorldMapEditor(WorldMap map, ProjectStore store, java.util.function.Consumer<String> openItem) {
         this.map = map;
         this.view = new WorldMapView(map, store, ts, statusLabel::setText);
+        this.view.openItem = openItem;
         this.panel = new WorldAssetPanel(store, map, ts);
 
         FlowPane bar = new FlowPane(4, 4);
@@ -279,6 +285,11 @@ public class WorldMapEditor extends BorderPane implements ItemView {
         });
         Button pacesBtn = iconButton("clock", "Travel speeds: how many miles a day each way of travelling covers (used by the Ruler)", this::editPaces);
         bar.getChildren().addAll(gridKind, gridMiles, gridNames, scaleBtn, legendBtn, pacesBtn, new Separator(Orientation.VERTICAL));
+        Button linkBtn = iconButton("link", "Link and note: give the selected symbol, line or region a note and a link to a card, whiteboard, map, quest... (Ctrl+L, or right-click it)", view::editSelectedLinkNote);
+        linkBtn.visibleProperty().bind(ts.tool.isEqualTo(WorldTool.SELECT));
+        linkBtn.managedProperty().bind(linkBtn.visibleProperty());
+        javafx.scene.control.ToggleButton previewBtn = IconButtons.switchToggle("previews", "Link previews: show the note and a preview of the linked item when you hover over something on the map", ts.linkPreviews);
+        bar.getChildren().addAll(linkBtn, previewBtn, new Separator(Orientation.VERTICAL));
 
         // ---- the art style of the whole map
         ComboBox<WorldStyle> style = new ComboBox<>(FXCollections.observableArrayList(WorldStyle.values()));
@@ -401,6 +412,11 @@ public class WorldMapEditor extends BorderPane implements ItemView {
         return view.rulerMiles();
     }
 
+    /** Selects an object (a search hit) and shows it. */
+    public void focusObject(String id) {
+        view.focusObject(id);
+    }
+
     boolean pathSelectedForTest() {
         return view.pathSelected();
     }
@@ -422,6 +438,10 @@ public class WorldMapEditor extends BorderPane implements ItemView {
 
     @Override
     public boolean shortcut(javafx.scene.input.KeyEvent e) {
+        if (e.isShortcutDown() && e.getCode() == javafx.scene.input.KeyCode.L) {
+            if (view.linkable()) view.editSelectedLinkNote();
+            return true;
+        }
         if (e.isShortcutDown() && e.getCode() == javafx.scene.input.KeyCode.D) {
             view.duplicateSelection();
             return true;

@@ -94,7 +94,7 @@ public class QuestEditor extends BorderPane implements ItemView {
         previewScroll.setStyle("-fx-background: -t-paperbg;");
 
         SplitPane split = new SplitPane(formScroll, previewScroll);
-        split.setDividerPositions(0.62);
+        Panels.remember(split, "editor.quest", 0.62);
         setCenter(split);
         preview.refresh(quest);
     }

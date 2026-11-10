@@ -229,9 +229,8 @@ public final class LibraryDialog {
         left.setPadding(new Insets(8));
         VBox.setVgrow(list, Priority.ALWAYS);
         left.setPrefWidth(320);
-        BorderPane pane = new BorderPane(right);
-        pane.setLeft(left);
-        return pane;
+        left.setMinWidth(180);
+        return Panels.sideSplit(left, right, true, "dialog.library.monsters", 0.28);
     }
 
     private static final String SRD_FOLDER = "SRD Monsters";
@@ -374,9 +373,8 @@ public final class LibraryDialog {
         left.setPadding(new Insets(8));
         VBox.setVgrow(list, Priority.ALWAYS);
         left.setPrefWidth(320);
-        BorderPane pane = new BorderPane(right);
-        pane.setLeft(left);
-        return pane;
+        left.setMinWidth(180);
+        return Panels.sideSplit(left, right, true, "dialog.library.spells", 0.28);
     }
 
     private static Node emptyNote(String message) {

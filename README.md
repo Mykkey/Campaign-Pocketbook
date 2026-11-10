@@ -11,6 +11,7 @@
 - **Battlemaps:** square or hex grids, fog of war, dynamic lighting, tokens and a battle tracker.
 - **Cards and rules:** characters and monsters as 5e-style stat blocks, spells, magic items, quests, session logs, encounters with difficulty, a family tree and relationship web, and an SRD monster and spell library.
 - **Settings:** text size, fonts, high contrast, colour-blind-safe colours, reduced motion, rebindable keyboard shortcuts, backups, defaults for new things and more, all in one Settings window (the gear button).
+- **Tidy toolbars and resizable panels:** related buttons are grouped into small icon dropdowns (each row has an icon and a label), and the edges between panels can be dragged; the sizes are remembered.
 - **Export and print:** Markdown files and printed pages for cards, spells, items, quests, sessions and encounters, and PNG pictures of maps and whiteboards.
 - **Generators and reference:** names, NPCs and loot, plus a quick rules reference (conditions, cover, grappling, travel, resting) one click away.
 - **Everything is connected:** link any item to any other, hover to preview, see what links to what, and search the whole project.

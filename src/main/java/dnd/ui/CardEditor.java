@@ -65,7 +65,7 @@ public class CardEditor extends BorderPane implements ItemView {
         previewScroll.setStyle("-fx-background: -t-paperbg;");
 
         SplitPane split = new SplitPane(formScroll, previewScroll);
-        split.setDividerPositions(0.6);
+        Panels.remember(split, "editor.card", 0.6);
         setCenter(split);
         changedQuietly();
     }

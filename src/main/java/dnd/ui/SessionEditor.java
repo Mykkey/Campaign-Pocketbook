@@ -120,7 +120,7 @@ public class SessionEditor extends BorderPane implements ItemView {
         previewScroll.setStyle("-fx-background: -t-paperbg;");
 
         SplitPane split = new SplitPane(formScroll, previewScroll);
-        split.setDividerPositions(0.64);
+        Panels.remember(split, "editor.session", 0.64);
         setCenter(split);
         preview.refresh(session);
     }

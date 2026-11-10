@@ -331,7 +331,7 @@ final class BattleScreen implements BattleContext {
             VBox box = new VBox(top, new CombatantCard(this, new ArrayList<>(seen.members), false));
             inspectScroll.setContent(box);
             cards.getItems().add(inspectScroll);
-            cards.setDividerPositions(0.55);
+            Panels.remember(cards, "battle.cards", 0.55);
         }
         right.setCenter(cards);
         Platform.runLater(() -> {

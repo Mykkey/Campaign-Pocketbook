@@ -169,10 +169,8 @@ public class WorldMapEditor extends BorderPane implements ItemView {
             map.reliefStrength = n;
             view.styleChanged();
         });
-        ToggleButton reliefBtn = IconButtons.decorate(new ToggleButton(), "relief", "Relief shading: show the height of the land as light and shadow (painted with the Elevation tool)");
-        reliefBtn.setSelected(map.relief);
-        reliefBtn.setOnAction(e -> {
-            map.relief = reliefBtn.isSelected();
+        CheckMenuItem reliefItem = IconMenu.toggle("relief", "Relief shading: the height of the land as light and shadow", map.relief, on -> {
+            map.relief = on;
             view.styleChanged();
             view.requestFocus();
         });
@@ -182,11 +180,11 @@ public class WorldMapEditor extends BorderPane implements ItemView {
             view.clearElevation();
             view.requestFocus();
         });
-        HBox elevBox = new HBox(4, elevMode, new Label("Strength"), elevStrength, new Label("Height"), elevHeight, new Label("Shading"), reliefStrength, flatAll);
+        HBox elevBox = new HBox(4, elevMode, new Label("Strength"), elevStrength, new Label("Height"), elevHeight, flatAll);
         elevBox.setAlignment(Pos.CENTER_LEFT);
         elevBox.visibleProperty().bind(ts.tool.isEqualTo(WorldTool.ELEVATION));
         elevBox.managedProperty().bind(elevBox.visibleProperty());
-        bar.getChildren().addAll(reliefBtn, elevBox);
+        bar.getChildren().add(elevBox);
 
         // ---- symbols: how big, how thick, and in which art style
         Spinner<Integer> stampSize = new Spinner<>(0, 200, ts.stampSize.get());
@@ -322,34 +320,23 @@ public class WorldMapEditor extends BorderPane implements ItemView {
         });
         gridMiles.setDisable(map.gridKind == dnd.model.WorldGridKind.NONE);
         gridNames.setDisable(map.gridKind == dnd.model.WorldGridKind.NONE);
-        ToggleButton scaleBtn = IconButtons.decorate(new ToggleButton(), "scalebar", "Scale bar: show how far a distance on the map is");
-        scaleBtn.setSelected(map.showScale);
-        scaleBtn.setOnAction(e -> {
-            map.showScale = scaleBtn.isSelected();
+        CheckMenuItem scaleItem = IconMenu.toggle("scalebar", "Scale bar: how far a distance on the map is", map.showScale, on -> {
+            map.showScale = on;
             view.overlaysChanged();
         });
-        ToggleButton legendBtn = IconButtons.decorate(new ToggleButton(), "legend", "Legend: a key to the symbols and lines used on the map. Drag it with the Select tool");
-        legendBtn.setSelected(map.showLegend);
-        legendBtn.setOnAction(e -> {
-            map.showLegend = legendBtn.isSelected();
+        CheckMenuItem legendItem = IconMenu.toggle("legend", "Legend: a key to the symbols and lines (drag it with Select)", map.showLegend, on -> {
+            map.showLegend = on;
             view.overlaysChanged();
         });
-        Button pacesBtn = iconButton("clock", "Travel speeds: how many miles a day each way of travelling covers (used by the Ruler)", this::editPaces);
-        bar.getChildren().addAll(gridKind, gridMiles, gridNames, scaleBtn, legendBtn, pacesBtn, new Separator(Orientation.VERTICAL));
-        Button linkBtn = iconButton("link", "Link and note: give the selected symbol, line or region a note and a link to a card, whiteboard, map, quest... (" + dnd.keys.Shortcuts.label("item.link") + ", or right-click it)", view::editSelectedLinkNote);
-        linkBtn.visibleProperty().bind(ts.tool.isEqualTo(WorldTool.SELECT));
-        linkBtn.managedProperty().bind(linkBtn.visibleProperty());
-        javafx.scene.control.ToggleButton previewBtn = IconButtons.switchToggle("previews", "Link previews: show the note and a preview of the linked item when you hover over something on the map", ts.linkPreviews);
-        bar.getChildren().addAll(linkBtn, previewBtn, new Separator(Orientation.VERTICAL));
+        MenuItem linkItem = IconMenu.disableWhen(menuAct("link", "Link and note for the selection", "item.link", view::editSelectedLinkNote),
+                ts.tool.isNotEqualTo(WorldTool.SELECT));
+        CheckMenuItem previewItem = IconMenu.toggle("previews", "Preview the note or linked item when hovering over the map", null, ts.linkPreviews);
 
         // ---- the players: what they may see, a window for the table screen, and saving a picture
-        Button hideSel = iconButton("eye-off", "Hide from players: the selected symbols, line or region are left out of the players' view and of their picture (" + dnd.keys.Shortcuts.label("item.hide") + ", or right-click it). Press again to show it", view::toggleHiddenSelection);
-        hideSel.visibleProperty().bind(ts.tool.isEqualTo(WorldTool.SELECT));
-        hideSel.managedProperty().bind(hideSel.visibleProperty());
-        ToggleButton fogBtn = IconButtons.decorate(new ToggleButton(), "fog", "Hide unexplored from players: the players only see the parts of the map you reveal with the Reveal tool; the rest is blank parchment. You still see everything, faintly covered");
-        fogBtn.setSelected(map.hideUnexplored);
-        fogBtn.setOnAction(e -> {
-            view.setHideUnexplored(fogBtn.isSelected());
+        MenuItem hideItem = IconMenu.disableWhen(menuAct("eye-off", "Hide the selection from players (press again to show)", "item.hide", view::toggleHiddenSelection),
+                ts.tool.isNotEqualTo(WorldTool.SELECT));
+        CheckMenuItem fogItem = IconMenu.toggle("fog", "Hide unexplored parts from players (they see what you reveal)", map.hideUnexplored, on -> {
+            view.setHideUnexplored(on);
             view.requestFocus();
         });
         ToggleButton uncover = new ToggleButton("Reveal");
@@ -383,11 +370,11 @@ public class WorldMapEditor extends BorderPane implements ItemView {
         revealBox.setAlignment(Pos.CENTER_LEFT);
         revealBox.visibleProperty().bind(ts.tool.isEqualTo(WorldTool.REVEAL));
         revealBox.managedProperty().bind(revealBox.visibleProperty());
-        Button playerBtn = iconButton("monitor", "Player view: open a window for the players' screen. It shows only what you have not hidden, and only the parts you have revealed", () ->
+        MenuItem playerItem = menuAct("monitor", "Player view: a window for the players screen", null, () ->
                 WorldPlayerWindow.open(getScene() == null ? null : getScene().getWindow(), map, store));
-        Button exportBtn = iconButton("image", "Export image: save the map as a PNG picture, the DM's version or the players' version", () ->
+        MenuItem exportItem = menuAct("image", "Export image: the DM or players version as a PNG", null, () ->
                 WorldExportDialog.show(getScene() == null ? null : getScene().getWindow(), map, store));
-        bar.getChildren().addAll(hideSel, fogBtn, revealBox, playerBtn, exportBtn, new Separator(Orientation.VERTICAL));
+        bar.getChildren().add(revealBox);
 
         // ---- the art style of the whole map
         ComboBox<WorldStyle> style = new ComboBox<>(FXCollections.observableArrayList(WorldStyle.values()));
@@ -402,7 +389,6 @@ public class WorldMapEditor extends BorderPane implements ItemView {
             biomes.setButtonCell(biomeCell()); // swatches follow the style
             biomes.setCellFactory(lv -> biomeCell());
         });
-        bar.getChildren().add(style);
         // ---- the season and the year the map is shown as
         ComboBox<dnd.model.WorldSeason> season = new ComboBox<>(FXCollections.observableArrayList(dnd.model.WorldSeason.values()));
         season.setValue(map.season == null ? dnd.model.WorldSeason.NONE : map.season);
@@ -413,7 +399,7 @@ public class WorldMapEditor extends BorderPane implements ItemView {
             map.season = n;
             view.eraChanged();
         });
-        CheckBox showYear = new CheckBox("Year");
+        CheckBox showYear = new CheckBox();
         showYear.setSelected(map.year != null);
         showYear.setTooltip(IconButtons.tip("Show the map as it was in one year: only the things that exist in that year are drawn. Give things their years with right-click > Years it exists..."));
         Spinner<Integer> year = new Spinner<>(-999999, 999999, map.year == null ? 0 : map.year, 10);
@@ -430,25 +416,52 @@ public class WorldMapEditor extends BorderPane implements ItemView {
         year.valueProperty().addListener((o, a, n) -> {
             if (showYear.isSelected()) yearChanged.run();
         });
-        bar.getChildren().addAll(season, showYear, year);
-        ToggleButton snapBtn = IconButtons.switchToggle("snap", "Snap: while you move symbols and labels they snap to the map's edges and middle (left, centre, right, top, bottom). Hold Alt to move freely", ts.snap);
         ts.snap.addListener((o, a, n) -> AppSettings.setBoolean("worldSnap", n));
-        bar.getChildren().add(snapBtn);
 
-        bar.getChildren().addAll(
-                iconButton("fit", "Fit: zoom to show the whole map", this::fit),
-                iconButton("dice", "Generate a random world: continents, mountains, rivers, towns and names, from a seed. Replaces what is on the map; can be undone", () ->
+        // ---- the dropdowns: view, links, players and the map itself
+        MenuButton viewMenu = IconMenu.create("grid", "View: grid, scale bar, legend, relief shading, snapping and fit");
+        viewMenu.getItems().addAll(
+                IconMenu.control("grid", "Grid", gridKind),
+                IconMenu.control(null, "Miles per square", gridMiles),
+                IconMenu.control(null, "Name each cell (A1, B1...)", gridNames),
+                IconMenu.separator(), scaleItem, legendItem, reliefItem,
+                IconMenu.control("relief", "Shading strength", reliefStrength),
+                IconMenu.separator(),
+                IconMenu.toggle("snap", "Snap symbols and labels to the map edges and middle (hold Alt to move freely)", null, ts.snap),
+                menuAct("fit", "Fit the whole map in the window", "item.fit", this::fit));
+        MenuButton linksMenu = IconMenu.create("link", "Links and hiding: notes, links to other items, hide parts from players");
+        linksMenu.getItems().addAll(linkItem, hideItem, IconMenu.separator(), previewItem);
+        MenuButton playersMenu = IconMenu.create("monitor", "Players: their window, a picture to share, and what they can see");
+        playersMenu.getItems().addAll(playerItem, exportItem, IconMenu.separator(), fogItem);
+        MenuButton mapMenu = IconMenu.create("world-base", "Map: art style, season and year, travel speeds, generate and resize");
+        mapMenu.getItems().addAll(
+                IconMenu.control("world-base", "Art style", style),
+                IconMenu.control(null, "Season", season),
+                IconMenu.control(null, "Show the map as of a year", showYear),
+                IconMenu.control(null, "Year", year),
+                IconMenu.separator(),
+                menuAct("clock", "Travel speeds (miles a day)", null, this::editPaces),
+                menuAct("dice", "Generate a random world (can be undone)", null, () ->
                         WorldGenerateDialog.show(getScene() == null ? null : getScene().getWindow(), map, view::resizeMap)),
-                iconButton("resize", "Map size: made the map too big (or too small)? Scale the whole map, crop or extend its canvas, or change how many miles across it is. Can be undone", () ->
-                        WorldResizeDialog.show(getScene() == null ? null : getScene().getWindow(), map, view::resizeMap)),
+                menuAct("resize", "Map size: scale, crop or extend (can be undone)", null, () ->
+                        WorldResizeDialog.show(getScene() == null ? null : getScene().getWindow(), map, view::resizeMap)));
+        bar.getChildren().addAll(new Separator(Orientation.VERTICAL), viewMenu, linksMenu, playersMenu, mapMenu, new Separator(Orientation.VERTICAL),
                 iconButton("undo", dnd.keys.Shortcuts.tip("Undo", "item.undo"), view::undo),
                 iconButton("redo", dnd.keys.Shortcuts.tip("Redo", "item.redo"), view::redo));
 
         statusLabel.setStyle("-fx-text-fill: -t-text3; -fx-padding: 2 8 2 8;");
         setTop(bar);
-        setLeft(panel);
-        setCenter(view);
+        panel.setMinWidth(140);
+        setCenter(Panels.sideSplit(panel, view, true, "world.symbols", 0.17));
         setBottom(statusLabel);
+    }
+
+    /** A dropdown row that runs the action and then puts the keyboard back on the map. */
+    private MenuItem menuAct(String icon, String label, String actionId, Runnable run) {
+        return IconMenu.action(icon, label, actionId, () -> {
+            run.run();
+            view.requestFocus();
+        });
     }
 
     private Button iconButton(String icon, String tip, Runnable run) {

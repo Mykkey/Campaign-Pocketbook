@@ -88,7 +88,7 @@ public class MagicItemEditor extends BorderPane implements ItemView {
         previewScroll.setStyle("-fx-background: -t-paperbg;");
 
         SplitPane split = new SplitPane(formScroll, previewScroll);
-        split.setDividerPositions(0.6);
+        Panels.remember(split, "editor.magicitem", 0.6);
         setCenter(split);
         preview.refresh(item);
     }

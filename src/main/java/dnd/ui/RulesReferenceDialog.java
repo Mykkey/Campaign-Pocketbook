@@ -101,7 +101,7 @@ public final class RulesReferenceDialog {
         left.setPadding(new Insets(8));
         VBox.setVgrow(list, Priority.ALWAYS);
         SplitPane split = new SplitPane(left, scroll);
-        split.setDividerPositions(0.36);
+        Panels.remember(split, "dialog.rules", 0.36);
 
         Stage stage = new Stage();
         stage.setTitle("Quick reference");

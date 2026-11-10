@@ -1,5 +1,5 @@
 /* High contrast on top of the dark theme: white on black, heavy outlines, a bright yellow focus ring. */
-.root {
+.root, .context-menu, .popup-content {
     -t-text: #ffffff;
     -t-text2: #ffffff;
     -t-text3: #e6e6e6;
@@ -57,3 +57,4 @@
 .tree-cell:filled:selected, .list-cell:filled:selected { -fx-background-color: #ffe14a; -fx-text-fill: #000000; }
 .tree-cell:filled:selected .label, .list-cell:filled:selected .label { -fx-text-fill: #000000; }
 .button:default { -fx-base: #ffe14a; -fx-text-fill: #000000; }
+.split-pane > .split-pane-divider { -fx-background-color: #ffffff; }

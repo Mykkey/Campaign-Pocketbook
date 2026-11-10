@@ -36,11 +36,11 @@ public class ToolbarPanel extends FlowPane {
         ts.tool.addListener((o, a, n) -> buttons.get(n).setSelected(true));
         getChildren().add(new Separator(Orientation.VERTICAL));
 
-        getChildren().add(action("image", "Image: add a picture (you can also drag files in, or paste with Ctrl+V)",
-                v -> v.addImageFromChooser(), current));
-        getChildren().add(action("map", "Battlemap: insert a live preview of a battlemap; double-click it to open the map",
-                v -> v.insertMapPreview(), current));
-        getChildren().add(new Separator(Orientation.VERTICAL));
+        MenuButton insert = IconMenu.create("image", "Insert: a picture or a live battlemap preview");
+        insert.getItems().addAll(
+                row("image", "Picture (or drag files in, or paste)", null, v -> v.addImageFromChooser(), current),
+                row("map", "Battlemap preview (double-click it to open the map)", null, v -> v.insertMapPreview(), current));
+        getChildren().addAll(insert, new Separator(Orientation.VERTICAL));
 
         // --- style
         ColorPicker color = new ColorPicker(ts.color.get());
@@ -51,10 +51,10 @@ public class ToolbarPanel extends FlowPane {
         fill.setTooltip(IconButtons.tip("Sticky note colour / shape fill"));
         fill.setOnAction(e -> ts.fill.set(fill.getValue()));
         fill.setStyle("-fx-color-label-visible: false;");
-        ToggleButton useFill = IconButtons.switchToggle("fill-shapes", "Fill shapes: draw rectangles and ellipses filled with the fill colour", ts.useFill);
 
         Spinner<Integer> width = new Spinner<>(1, 60, ts.width.get());
         width.setPrefWidth(70);
+        width.setEditable(true);
         width.setTooltip(IconButtons.tip("Line / pen width"));
         width.valueProperty().addListener((o, a, n) -> {
             if (n != null) ts.width.set(n);
@@ -101,22 +101,39 @@ public class ToolbarPanel extends FlowPane {
             }
         });
 
-        getChildren().addAll(color, fill, useFill, width, font, bold, italic, new Separator(Orientation.VERTICAL));
+        MenuButton lines = IconMenu.create("sliders", "Line and text size: pen width, font size and filled shapes");
+        lines.getItems().addAll(
+                IconMenu.control("pen", "Line / pen width", width),
+                IconMenu.control("text", "Font size", font),
+                IconMenu.toggle("fill-shapes", "Fill rectangles and ellipses with the fill colour", null, ts.useFill));
+        getChildren().addAll(color, fill, bold, italic, lines, new Separator(Orientation.VERTICAL));
 
         // --- links and notes
+        MenuButton links = IconMenu.create("link", "Links and notes: link words or objects to other items, add hover notes");
+        links.getItems().addAll(
+                row("link", "Link to an item (blue; hover to preview, double-click to open)", "item.link", v -> v.linkSelected(), current),
+                row("unlink", "Remove the link", null, v -> v.unlinkSelected(), current),
+                row("note", "Write a note that shows on hover (green)", null, v -> v.noteSelected(), current),
+                row("no-note", "Remove the note", null, v -> v.removeNoteSelected(), current),
+                IconMenu.separator(),
+                row("link-all", "Link all suggested names in the selection (or whole board)", null, v -> v.linkAllNames(), current),
+                IconMenu.toggle("name-hints", "Underline names of your cards and spells so you can link them", null, ts.nameHints),
+                IconMenu.toggle("previews", "Preview linked items when hovering over a link", null, ts.linkPreviews));
+        getChildren().addAll(links, new Separator(Orientation.VERTICAL));
         getChildren().addAll(
-                action("link", "Link: link the selected words (while typing) or object(s) to another item (" + dnd.keys.Shortcuts.label("item.link") + "). Blue = link: hover it to preview the item, double-click to open it", v -> v.linkSelected(), current),
-                action("unlink", "Unlink: remove the link from the selected words (while typing) or object(s)", v -> v.unlinkSelected(), current),
-                action("note", "Note: write your own note that shows when you hover over the selected words (while typing) or object(s). Green = note. Double-click a note to edit it",
-                        v -> v.noteSelected(), current),
-                action("no-note", "No note: remove the note from the selected words (while typing) or object(s)", v -> v.removeNoteSelected(), current),
-                action("link-all", "Link all names: link every suggested name (dotted underline) in the selected text, or on the whole whiteboard if nothing is selected", v -> v.linkAllNames(), current),
-                IconButtons.switchToggle("name-hints", "Name hints: underline the names of your cards and spells in text; hover one to link it", ts.nameHints),
-                IconButtons.switchToggle("previews", "Link previews: show a preview of the linked card, spell, map or whiteboard when you hover over a link", ts.linkPreviews),
-                new Separator(Orientation.VERTICAL),
                 action("undo", dnd.keys.Shortcuts.tip("Undo", "item.undo"), v -> v.undo(), current),
                 action("redo", dnd.keys.Shortcuts.tip("Redo", "item.redo"), v -> v.redo(), current),
                 action("delete", "Delete the selection", v -> v.deleteSelected(), current));
+    }
+
+    private static MenuItem row(String icon, String label, String actionId, Consumer<BoardView> run, Supplier<BoardView> current) {
+        return IconMenu.action(icon, label, actionId, () -> {
+            BoardView v = current.get();
+            if (v != null) {
+                run.accept(v);
+                if (!v.isEditingText()) v.requestFocus();
+            }
+        });
     }
 
     private static Button action(String icon, String tip, Consumer<BoardView> run, Supplier<BoardView> current) {

@@ -275,6 +275,11 @@ public final class SettingsDialog {
             AppSettings.remove("update.dismissed");
             new Alert(Alert.AlertType.INFORMATION, "The update bar will show again the next time the app starts and finds a newer version.").show();
         });
+        Button resetPanels = new Button("Reset panel sizes");
+        resetPanels.setOnAction(e -> {
+            Panels.resetAll();
+            new Alert(Alert.AlertType.INFORMATION, "Panels will be back to their usual sizes the next time they open.").show();
+        });
         VBox box = new VBox(10,
                 heading("Saving"), row("Save changes after", autosave),
                 row("Undo remembers up to", undo),
@@ -288,8 +293,11 @@ public final class SettingsDialog {
                 check("Look for a newer version of the app (needs the internet)", GeneralSettings.UPDATE_CHECK, true), showUpdate,
                 heading("Asking and hovering"),
                 check("Ask before deleting an item from the project tree (a backup is made either way)", GeneralSettings.CONFIRM_DELETE, true),
-                row("Previews of links and notes appear", hover));
+                row("Previews of links and notes appear", hover),
+                heading("Panels"), resetPanels,
+                note("Drag the edges between panels (the project tree, the piece libraries, the cards beside a battle and so on) to resize them. The sizes are remembered."));
         return new Page("General", box, () -> {
+            Panels.resetAll();
             AppSettings.resetPrefix("general.");
             AppSettings.resetPrefix("backup.");
             AppSettings.remove(GeneralSettings.UPDATE_CHECK);

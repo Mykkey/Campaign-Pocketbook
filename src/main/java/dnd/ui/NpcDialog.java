@@ -213,8 +213,8 @@ public final class NpcDialog {
             fillCategories.run();
         }));
 
-        BorderPane root = new BorderPane(scroll);
-        root.setLeft(left);
+        left.setMinWidth(180);
+        BorderPane root = new BorderPane(Panels.sideSplit(left, scroll, true, "dialog.npc", 0.31));
         root.setBottom(bottom);
 
         Stage stage = new Stage();

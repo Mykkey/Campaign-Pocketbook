@@ -40,8 +40,8 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
     private final HBox trail = new HBox(2);
     private final Button backBtn = new Button("<");
     private final Button fwdBtn = new Button(">");
-    private final MenuButton backlinks = new MenuButton("Backlinks");
-    private final MenuButton recentMenu = new MenuButton("Recent");
+    private final javafx.scene.control.Menu backlinks = new javafx.scene.control.Menu("Backlinks: whiteboards that link here");
+    private final javafx.scene.control.Menu recentMenu = new javafx.scene.control.Menu("Recent items");
     private final TextField search = new TextField();
     private final javafx.stage.Popup searchPopup = new javafx.stage.Popup();
     private final VBox searchList = new VBox();
@@ -147,8 +147,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         backBtn.setTooltip(IconButtons.tip(dnd.keys.Shortcuts.tip("Back", "global.back")));
         fwdBtn.setTooltip(IconButtons.tip(dnd.keys.Shortcuts.tip("Forward", "global.forward")));
         trail.setAlignment(Pos.CENTER_LEFT);
-        backlinks.setTooltip(IconButtons.tip("Whiteboards that link to this one"));
-        backlinks.setOnShowing(e -> rebuildBacklinks());
+        backlinks.setGraphic(Icons.of("link"));
         search.setPromptText("Search project...");
         search.setPrefWidth(220);
         searchList.setStyle("-fx-background-color: -t-surface; -fx-border-color: -t-border; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 8, 0.2, 0, 2);");
@@ -191,23 +190,30 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Button library = new Button("Library...");
         library.setTooltip(IconButtons.tip("Browse imported SRD monsters and spells"));
         library.setOnAction(e -> openLibrary());
-        recentMenu.setTooltip(IconButtons.tip("The last items you opened"));
-        recentMenu.setOnShowing(e -> rebuildRecent());
+        recentMenu.setGraphic(Icons.of("clock"));
         IconButtons.decorate(projects, "home", "Projects: back to the list of campaigns");
         IconButtons.decorate(backBtn, "back");
         IconButtons.decorate(fwdBtn, "forward");
-        IconButtons.decorate(names, "names");
-        IconButtons.decorate(npc, "person");
-        IconButtons.decorate(loot, "loot");
-        IconButtons.decorate(rules, "rules");
         IconButtons.decorate(settings, "gear");
-        IconButtons.decorate(relations, "relations");
-        IconButtons.decorate(quests, "quest");
-        IconButtons.decorate(timeline, "calendar");
-        IconButtons.decorate(library, "book");
-        IconButtons.decorate(recentMenu, "clock");
-        IconButtons.decorate(backlinks, "link");
-        HBox nav = new HBox(4, projects, backBtn, fwdBtn, trail, spacer, names, npc, loot, rules, relations, quests, timeline, library, Theme.toggleButton(), settings, recentMenu, backlinks, search);
+        // the generators, reference dialogs and history live in three icon dropdowns instead of twelve buttons
+        MenuButton generators = IconMenu.create("dice", "Generators: names, NPCs and treasure");
+        generators.getItems().addAll(
+                menuRow("names", "Character names", "global.names", names),
+                menuRow("person", "NPC generator", "global.npc", npc),
+                menuRow("loot", "Treasure and loot", "global.loot", loot));
+        MenuButton reference = IconMenu.create("book", "Reference: rules, library, relationships, quests and timeline");
+        reference.getItems().addAll(
+                menuRow("rules", "Rules quick reference", "global.rules", rules),
+                menuRow("book", "Monster and spell library", null, library),
+                IconMenu.separator(),
+                menuRow("relations", "Family tree and relationship web", null, relations),
+                menuRow("quest", "Quest board", null, quests),
+                menuRow("calendar", "Session timeline", null, timeline));
+        MenuButton historyMenu = IconMenu.create("clock", "History: recent items and what links here");
+        historyMenu.getItems().addAll(recentMenu, backlinks);
+        recentMenu.setOnShowing(e -> rebuildRecent());
+        backlinks.setOnShowing(e -> rebuildBacklinks());
+        HBox nav = new HBox(4, projects, backBtn, fwdBtn, trail, spacer, generators, reference, historyMenu, Theme.toggleButton(), settings, search);
         nav.setAlignment(Pos.CENTER_LEFT);
         nav.setPadding(new Insets(6, 8, 0, 8));
 
@@ -223,7 +229,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         StackPane center = new StackPane(hint, tabs);
 
         SplitPane split = new SplitPane(left, center);
-        split.setDividerPositions(0.17);
+        Panels.remember(split, "workspace.tree", 0.17);
         SplitPane.setResizableWithParent(left, false);
         setCenter(split);
 
@@ -599,6 +605,11 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
                 trail.getChildren().add(h);
             }
         }
+    }
+
+    /** A dropdown row that does what the matching (hidden) button does, with the button's own icon-free wording kept as its tooltip. */
+    private static javafx.scene.control.MenuItem menuRow(String icon, String label, String actionId, Button source) {
+        return IconMenu.action(icon, label, actionId, source::fire);
     }
 
     private void rebuildBacklinks() {

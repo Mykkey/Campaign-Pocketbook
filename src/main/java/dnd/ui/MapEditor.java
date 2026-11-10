@@ -57,9 +57,8 @@ public class MapEditor extends BorderPane implements ItemView {
         java.util.List<String> used = new java.util.ArrayList<>();
         for (dnd.model.MapObject o : map.objects) used.add(o.assetId);
         store.assets().warmUp(used, 256);
-        setCenter(view);
         assetPanel = new AssetPanel(store, ts);
-        setLeft(assetPanel);
+        showEditLayout();
         toolbar = buildToolbar(map, store);
         setTop(toolbar);
         // clicking a token during a battle shows that creature's card
@@ -123,16 +122,21 @@ public class MapEditor extends BorderPane implements ItemView {
             ts.tokenColor.set(tokenColor.getValue());
             view.applyTokenColor();
         });
-        ToggleButton grid = IconButtons.toggle("grid", "Grid: show the grid lines");
-        grid.setSelected(map.showGrid);
-        grid.setOnAction(e -> {
-            map.showGrid = grid.isSelected();
-            store.markMapDirty(map);
-            view.redraw();
-        });
-        ToggleButton snap = IconButtons.switchToggle("snap", "Snap: snap pieces to the grid", ts.snap);
+        MenuButton viewMenu = IconMenu.create("grid", "View: grid, snapping and fit to window");
+        viewMenu.getItems().addAll(
+                IconMenu.toggle("grid", "Show the grid lines", map.showGrid, on -> {
+                    map.showGrid = on;
+                    store.markMapDirty(map);
+                    view.redraw();
+                }),
+                IconMenu.toggle("snap", "Snap pieces to the grid", null, ts.snap),
+                IconMenu.separator(),
+                IconMenu.action("fit", "Fit the whole map in the window", "item.fit", () -> {
+                    view.fitToWindow();
+                    view.requestFocus();
+                }));
         bar.getChildren().add(toolGroup(MapTool.TOKEN, new Label("Token colour"), tokenColor));
-        bar.getChildren().addAll(grid, snap, new Separator(Orientation.VERTICAL));
+        bar.getChildren().addAll(viewMenu, new Separator(Orientation.VERTICAL));
 
         // ---- fog of war
         ToggleButton fog = IconButtons.switchToggle("fog", "Fog: hide the map from the players until you reveal it", ts.fogEnabled);
@@ -202,7 +206,6 @@ public class MapEditor extends BorderPane implements ItemView {
         bar.getChildren().addAll(
                 battleBtn,
                 popOut,
-                iconAction("fit", dnd.keys.Shortcuts.tip("Fit: zoom to show the whole map", "item.fit"), view::fitToWindow),
                 iconAction("undo", dnd.keys.Shortcuts.tip("Undo", "item.undo"), view::undo),
                 iconAction("redo", dnd.keys.Shortcuts.tip("Redo", "item.redo"), view::redo),
                 iconAction("delete", "Delete the selection", view::deleteSelected));
@@ -245,25 +248,51 @@ public class MapEditor extends BorderPane implements ItemView {
             } else {
                 battleScreen.refresh();
             }
-            setLeft(null);
             setTop(null);
             battleTop.getChildren().setAll(battleScreen.banner(), battleScreen.quickTools(), toolbar);
             toolbar.setVisible(false); // hidden until "Map tools" is pressed
             toolbar.setManaged(false);
             setTop(battleTop);
-            setRight(battleScreen.rightPane());
-            setBottom(battleScreen.strip());
+            showBattleLayout();
         } else {
             setTop(null);
             battleTop.getChildren().clear();
             toolbar.setVisible(true);
             toolbar.setManaged(true);
             setTop(toolbar);
-            setLeft(assetPanel);
-            setRight(null);
-            setBottom(null);
+            showEditLayout();
         }
     }
+    /** The map with the piece library beside it; the edge between them can be dragged and is remembered. */
+    private void showEditLayout() {
+        detachLayout();
+        SplitPane split = Panels.sideSplit(assetPanel, view, true, "map.assets", 0.2);
+        assetPanel.setMinWidth(150);
+        setCenter(split);
+    }
+
+    /** The map with the creature cards beside it and the turn order below; both edges can be dragged and are remembered. */
+    private void showBattleLayout() {
+        detachLayout();
+        SplitPane across = Panels.sideSplit(battleScreen.rightPane(), view, false, "battle.right", 0.36);
+        setCenter(Panels.bottomSplit(across, battleScreen.strip(), "battle.strip", 0.84));
+    }
+
+    /** Takes the panels out of the old layout so they can be placed in a new one. */
+    private void detachLayout() {
+        if (getCenter() instanceof SplitPane old) {
+            clearSplit(old);
+        }
+        setCenter(null);
+    }
+
+    private static void clearSplit(SplitPane sp) {
+        for (javafx.scene.Node n : new ArrayList<>(sp.getItems())) {
+            if (n instanceof SplitPane inner) clearSplit(inner);
+        }
+        sp.getItems().clear();
+    }
+
     private static ListCell<Object> terrainCell() {
         return new ListCell<>() {
             @Override

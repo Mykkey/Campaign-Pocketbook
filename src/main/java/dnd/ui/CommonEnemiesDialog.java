@@ -141,9 +141,9 @@ public final class CommonEnemiesDialog {
         VBox.setVgrow(list, Priority.ALWAYS);
         left.setPrefWidth(270);
 
+        left.setMinWidth(180);
         BorderPane root = new BorderPane();
-        root.setLeft(left);
-        root.setCenter(editorHolder);
+        root.setCenter(Panels.sideSplit(left, editorHolder, true, "dialog.commonenemies", 0.22));
         stage.setScene(new Scene(root, UiScale.px(1250), UiScale.px(760)));
         stage.show();
         if (selectId != null) selectById(list, selectId);

@@ -143,7 +143,7 @@ public class EncounterEditor extends BorderPane implements ItemView {
         rightScroll.setStyle("-fx-background: -t-slate;");
 
         SplitPane split = new SplitPane(leftScroll, rightScroll);
-        split.setDividerPositions(0.62);
+        Panels.remember(split, "editor.encounter", 0.62);
         setCenter(split);
         rebuild();
     }

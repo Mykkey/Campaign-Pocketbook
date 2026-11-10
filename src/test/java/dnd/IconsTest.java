@@ -25,6 +25,19 @@ class IconsTest {
     }
 
     @Test
+    void theGearIsAToothedWheelWithAHoleNotASun() throws Exception {
+        java.lang.reflect.Field f = Icons.class.getDeclaredField("ICONS");
+        f.setAccessible(true);
+        @SuppressWarnings("unchecked") java.util.Map<String, String[]> all = (java.util.Map<String, String[]>) f.get(null);
+        String[] gear = all.get("gear");
+        assertEquals(2, gear.length, "the toothed outline and the centre hole");
+        assertTrue(gear[0].split(" L").length >= 32, "eight teeth of four corners each");
+        assertFalse(gear[0].contains(" V") || gear[0].contains(" H"), "no sun-ray spokes");
+        assertNotEquals(String.join("|", all.get("sun")), String.join("|", gear));
+        for (String n : new String[]{"dice", "pen", "text", "world-base", "scalebar", "legend", "relief"}) assertTrue(Icons.has(n), n);
+    }
+
+    @Test
     void everyIconPartIsWellFormed() throws Exception {
         java.lang.reflect.Field f = Icons.class.getDeclaredField("ICONS");
         f.setAccessible(true);

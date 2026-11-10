@@ -113,7 +113,7 @@ public final class Theme {
         try {
             Files.createDirectories(f.getParent());
             try (OutputStream out = Files.newOutputStream(f)) {
-                p.store(out, "DnD Campaign Notes settings");
+                p.store(out, "Campaign Pocketbook settings");
             }
         } catch (IOException e) {
             dnd.util.Log.error("Problem in Theme", e); // the choice just won't be remembered

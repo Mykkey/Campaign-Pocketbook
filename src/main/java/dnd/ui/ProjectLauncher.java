@@ -43,7 +43,7 @@ public class ProjectLauncher extends VBox {
         setAlignment(Pos.TOP_CENTER);
         setMaxWidth(520);
 
-        Label title = new Label("D&D Campaign Notes");
+        Label title = new Label("Campaign Pocketbook");
         title.setStyle("-fx-font-size: 28px; -fx-font-weight: bold;");
         Label sub = new Label("Choose a campaign to open, or create a new one.");
         Label where = new Label("Saved in: " + base);

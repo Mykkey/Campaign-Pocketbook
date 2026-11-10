@@ -41,7 +41,7 @@ public final class AppSettings {
         try {
             Files.createDirectories(file().getParent());
             try (OutputStream out = Files.newOutputStream(file())) {
-                p.store(out, "DnD Campaign Notes settings");
+                p.store(out, "Campaign Pocketbook settings");
             }
         } catch (IOException e) {
             dnd.util.Log.error("Problem in AppSettings", e); // the choice just won't be remembered

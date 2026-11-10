@@ -8,7 +8,7 @@
     <artifactId>dnd-campaign-notes</artifactId>
     <version>1.25.0</version>
     <packaging>jar</packaging>
-    <name>DnD Campaign Notes</name>
+    <name>Campaign Pocketbook</name>
 
     <properties>
         <maven.compiler.release>21</maven.compiler.release>

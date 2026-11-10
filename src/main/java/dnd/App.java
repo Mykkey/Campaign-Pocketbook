@@ -12,7 +12,7 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
 public class App extends Application {
-    private static final String TITLE = "D&D Campaign Notes (" + UpdateChecker.currentVersion() + ")";
+    private static final String TITLE = "Campaign Pocketbook (" + UpdateChecker.currentVersion() + ")";
 
     private Stage stage;
     private WorkspaceView workspace;

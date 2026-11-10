@@ -26,7 +26,7 @@ if (Test-Path $iconPath) {
 }
 
 $label = New-Object System.Windows.Forms.Label
-$label.Text = "Starting D&&D Campaign Notes..."
+$label.Text = "Starting Campaign Pocketbook..."
 $label.ForeColor = [System.Drawing.Color]::White
 $label.Font = New-Object System.Drawing.Font("Segoe UI", 11, [System.Drawing.FontStyle]::Bold)
 $label.TextAlign = "MiddleCenter"
@@ -46,7 +46,7 @@ $timer = New-Object System.Windows.Forms.Timer
 $timer.Interval = 200
 $timer.Add_Tick({
     $up = Get-Process -ErrorAction SilentlyContinue |
-        Where-Object { $_.MainWindowTitle -like "D&D Campaign Notes*" }
+        Where-Object { $_.MainWindowTitle -like "Campaign Pocketbook*" }
     $elapsed = ((Get-Date) - $started).TotalSeconds
     # keep the splash a moment after the window shows so it never flashes
     if (($up -and $elapsed -gt 1.0) -or $elapsed -gt 90) { $timer.Stop(); $form.Close() }

@@ -1,4 +1,4 @@
-# D&D Campaign Notes
+# Campaign Pocketbook
 
 A note-taking and campaign-running app for D&D. Plan on **whiteboards** (text, sticky notes, drawings, curved arrows and images, with links and hover notes), run fights on **battlemaps** with fog of war, lighting and a battle tracker, and keep your **characters and monsters, spells, magic items, quests and session logs** as linked cards in one project. It also has random name, NPC and loot generators, an SRD monster and spell library, a family tree and relationship web, project-wide search, dark mode, and backup of a whole campaign to one file. Organise everything into projects and folders, and keep several items open at once in tabs.
 

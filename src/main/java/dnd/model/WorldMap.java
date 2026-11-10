@@ -28,6 +28,17 @@ public class WorldMap extends ProjectEntry {
     /** The named areas (kingdoms, forests...) outlined on the map. */
     public java.util.List<WorldRegion> regions = new java.util.ArrayList<>();
 
+    /** The grid laid over the map, its size in miles, and whether its cells are named. */
+    public WorldGridKind gridKind = WorldGridKind.NONE;
+    public double gridMiles = 24;
+    public boolean gridCoords;
+    /** Whether the scale bar and the legend are drawn, and where the legend's top left corner is (null: bottom left). */
+    public boolean showScale = true;
+    public boolean showLegend;
+    public Double legendX, legendY;
+    /** Miles per day for each way of travelling, used by the ruler. */
+    public java.util.Map<String, Double> paces = dnd.map.world.WorldTravel.defaultPaces();
+
     /** Bumped whenever the content changes (not the camera), so cached pictures know to redraw. Not saved. */
     @JsonIgnore
     public transient int revision;
@@ -95,6 +106,14 @@ public class WorldMap extends ProjectEntry {
         m.offsetX = offsetX;
         m.offsetY = offsetY;
         m.zoom = zoom;
+        m.gridKind = gridKind;
+        m.gridMiles = gridMiles;
+        m.gridCoords = gridCoords;
+        m.showScale = showScale;
+        m.showLegend = showLegend;
+        m.legendX = legendX;
+        m.legendY = legendY;
+        m.paces = new java.util.LinkedHashMap<>(paces);
         m.base = base().copy();
         m.biome = biome().copy();
         for (WorldStamp s : stamps) m.stamps.add(s.copy());

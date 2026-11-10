@@ -3,7 +3,10 @@ package dnd.ui;
 import dnd.map.AssetLibrary;
 import dnd.map.world.ScatterPlanner;
 import dnd.map.world.WorldAssets;
+import dnd.map.world.WorldGrid;
 import dnd.map.world.WorldLabels;
+import dnd.map.world.WorldLegend;
+import dnd.map.world.WorldTravel;
 import dnd.map.world.WorldPalette;
 import dnd.map.world.WorldPathGeometry;
 import dnd.map.world.WorldPathRenderer;
@@ -52,7 +55,7 @@ final class WorldMapView extends Pane {
     /** One undoable step. */
     private record Entry(Runnable undo, Runnable redo) { }
 
-    private enum Mode { NONE, PAN, PAINT, SCATTER, MOVE, MARQUEE, RESIZE, DRAWPATH, DRAGPOINT }
+    private enum Mode { NONE, PAN, PAINT, SCATTER, MOVE, MARQUEE, RESIZE, DRAWPATH, DRAGPOINT, LEGEND }
 
     private final WorldMap map;
     private final ProjectStore store;
@@ -79,6 +82,10 @@ final class WorldMapView extends Pane {
     /** The line or region selected (symbols and lines are never selected together), or null. */
     private String selShape;
     private int dragPoint = -1;
+    // the ruler, and dragging the legend
+    private final List<Double> ruler = new ArrayList<>();
+    private boolean rulerDone;
+    private Double legendX0, legendY0;
     // the paint stroke being drawn
     private PaintLayer layer;
     private boolean layerIsBiome;
@@ -214,6 +221,7 @@ final class WorldMapView extends Pane {
             case PATH -> pathPressed(px, py, e.getClickCount());
             case REGION -> regionPressed(px, py, e.getClickCount());
             case LABEL -> placeLabel(px, py);
+            case RULER -> rulerPressed(px, py, e.getClickCount());
             default -> { }
         }
         redraw();
@@ -253,6 +261,14 @@ final class WorldMapView extends Pane {
                 moved = true;
                 movePoint(px, py);
             }
+            case LEGEND -> {
+                moved = true;
+                double[] b = WorldLegend.bounds(map);
+                if (b != null) {
+                    map.legendX = b[0] + (px - lastWX);
+                    map.legendY = b[1] + (py - lastWY);
+                }
+            }
             case RESIZE -> {
                 WorldStamp s = singleSelected();
                 if (s != null) {
@@ -281,6 +297,13 @@ final class WorldMapView extends Pane {
             case SCATTER -> finishStampEdit();
             case MOVE, RESIZE, DRAGPOINT -> {
                 if (moved) finishStampEdit();
+            }
+            case LEGEND -> {
+                Double ox0 = legendX0, oy0 = legendY0, nx = map.legendX, ny = map.legendY;
+                if (moved) {
+                    push(new Entry(() -> setLegend(ox0, oy0), () -> setLegend(nx, ny)));
+                    store.markWorldMapDirty(map, true);
+                }
             }
             case DRAWPATH -> {
                 if (freehand) finishPath();
@@ -608,6 +631,15 @@ final class WorldMapView extends Pane {
             stampsBefore = WorldObjects.capture(map);
             return;
         }
+        double[] lb = WorldLegend.bounds(map);
+        if (lb != null && px >= lb[0] && px <= lb[0] + lb[2] && py >= lb[1] && py <= lb[1] + lb[3]) {
+            selected.clear();
+            selShape = null;
+            legendX0 = map.legendX;
+            legendY0 = map.legendY;
+            mode = Mode.LEGEND;
+            return;
+        }
         WorldPath hp = WorldPathRenderer.hitPath(map, px, py, 6 / zoom(), true);
         WorldRegion hr = hp == null ? WorldPathRenderer.hitRegion(map, px, py, true) : null;
         if (hp != null || hr != null) {
@@ -620,6 +652,78 @@ final class WorldMapView extends Pane {
         mode = Mode.MARQUEE;
         mqX0 = mqX1 = px;
         mqY0 = mqY1 = py;
+    }
+
+    private void setLegend(Double x, Double y) {
+        map.legendX = x;
+        map.legendY = y;
+        store.markWorldMapDirty(map, true);
+        redraw();
+    }
+
+    // ---- the ruler
+
+    private void rulerPressed(double px, double py, int clicks) {
+        if (rulerDone) {
+            ruler.clear();
+            rulerDone = false;
+        }
+        if (clicks >= 2) {
+            rulerDone = ruler.size() >= 4;
+            return;
+        }
+        ruler.add(px);
+        ruler.add(py);
+    }
+
+    /** Draws the route being measured and a box with its length and travel times. */
+    private void drawRuler(GraphicsContext g) {
+        if (ruler.isEmpty()) return;
+        List<Double> pts = new ArrayList<>(ruler);
+        if (!rulerDone && mouseSX >= 0 && ts.tool.get() == WorldTool.RULER) {
+            pts.add(wx(mouseSX));
+            pts.add(wy(mouseSY));
+        }
+        g.setLineDashes(8 / zoom(), 5 / zoom());
+        g.setStroke(Color.web("#ffffff"));
+        g.setLineWidth(4 / zoom());
+        for (int i = 2; i + 1 < pts.size(); i += 2) g.strokeLine(pts.get(i - 2), pts.get(i - 1), pts.get(i), pts.get(i + 1));
+        g.setStroke(Color.web("#c2410c"));
+        g.setLineWidth(2.2 / zoom());
+        for (int i = 2; i + 1 < pts.size(); i += 2) g.strokeLine(pts.get(i - 2), pts.get(i - 1), pts.get(i), pts.get(i + 1));
+        g.setLineDashes((double[]) null);
+        g.setFill(Color.web("#c2410c"));
+        for (int i = 0; i < ruler.size(); i += 2) g.fillOval(ruler.get(i) - 3 / zoom(), ruler.get(i + 1) - 3 / zoom(), 6 / zoom(), 6 / zoom());
+        double miles = WorldTravel.length(pts) * map.milesPerCell;
+        // the summary box, in screen pixels, beside the end of the route
+        g.save();
+        g.setTransform(1, 0, 0, 1, 0, 0);
+        double ex = map.offsetX + pts.get(pts.size() - 2) * zoom(), ey = map.offsetY + pts.get(pts.size() - 1) * zoom();
+        List<String> lines = new ArrayList<>();
+        lines.add("Distance: " + WorldTravel.distance(miles));
+        for (var e : map.paces.entrySet()) lines.add(e.getKey() + " (" + Math.round(e.getValue()) + " mi/day): " + WorldTravel.duration(miles, e.getValue()));
+        double w = 0;
+        g.setFont(javafx.scene.text.Font.font("SansSerif", 12));
+        for (String l : lines) {
+            javafx.scene.text.Text t = new javafx.scene.text.Text(l);
+            t.setFont(g.getFont());
+            w = Math.max(w, t.getLayoutBounds().getWidth());
+        }
+        double bw = w + 16, bh = lines.size() * 17 + 10;
+        double bx = Math.min(Math.max(6, ex + 14), Math.max(6, getWidth() - bw - 6)), by = Math.min(Math.max(6, ey + 14), Math.max(6, getHeight() - bh - 6));
+        g.setFill(Color.web("#ffffff", 0.94));
+        g.fillRoundRect(bx, by, bw, bh, 8, 8);
+        g.setStroke(Color.web("#c2410c"));
+        g.setLineWidth(1.2);
+        g.strokeRoundRect(bx, by, bw, bh, 8, 8);
+        g.setFill(Color.web("#1f2937"));
+        for (int i = 0; i < lines.size(); i++) g.fillText(lines.get(i), bx + 8, by + 18 + i * 17);
+        g.restore();
+    }
+
+    /** The length in miles of the route being measured, or 0. */
+    double rulerMiles() {
+        return WorldTravel.length(ruler) * map.milesPerCell;
     }
 
     // ---- lines and regions
@@ -775,6 +879,13 @@ final class WorldMapView extends Pane {
 
     /** Removes the selected symbols, line or region (or, while drawing, the last point). Returns false if there was nothing to remove. */
     boolean deleteSelection() {
+        if (!ruler.isEmpty() && ts.tool.get() == WorldTool.RULER) {
+            ruler.remove(ruler.size() - 1);
+            ruler.remove(ruler.size() - 1);
+            rulerDone = false;
+            redraw();
+            return true;
+        }
         if (drawingPath != null) {
             if (drawingPath.count() > 1) drawingPath.remove(drawingPath.count() - 1);
             else drawingPath = null;
@@ -810,9 +921,11 @@ final class WorldMapView extends Pane {
 
     /** Cancels a line or region being drawn, or drops the selection and puts away the armed symbol. Returns true if there was anything to drop. */
     boolean escape() {
-        boolean any = !selected.isEmpty() || ts.armed.get() != null || selShape != null || drawingPath != null || drawingRegion != null;
+        boolean any = !ruler.isEmpty() || !selected.isEmpty() || ts.armed.get() != null || selShape != null || drawingPath != null || drawingRegion != null;
         drawingPath = null;
         drawingRegion = null;
+        ruler.clear();
+        rulerDone = false;
         stampsBefore = null;
         selected.clear();
         selShape = null;
@@ -891,6 +1004,12 @@ final class WorldMapView extends Pane {
         undoStack.addLast(e);
     }
 
+    /** The grid, scale bar, legend or travel speeds changed: save and redraw. */
+    void overlaysChanged() {
+        store.markWorldMapDirty(map, true);
+        redraw();
+    }
+
     /** Forgets everything cached about the painted picture (after the art style changed). */
     void styleChanged() {
         WorldTerrainCache.of(map).invalidateAll();
@@ -912,8 +1031,9 @@ final class WorldMapView extends Pane {
             status.accept("");
             return;
         }
-        status.accept(String.format("%,.0f mi east, %,.0f mi south    zoom %d%%    %d symbols", cx * map.milesPerCell, cy * map.milesPerCell,
-                Math.round(map.zoom * 100), map.stamps.size()));
+        int[] cell = WorldGrid.cellAt(map, cx, cy);
+        status.accept(String.format("%,.0f mi east, %,.0f mi south%s    zoom %d%%    %d symbols", cx * map.milesPerCell, cy * map.milesPerCell,
+                cell == null ? "" : "    cell " + WorldGrid.name(cell[0], cell[1]), Math.round(map.zoom * 100), map.stamps.size()));
     }
 
     void redraw() {
@@ -931,8 +1051,11 @@ final class WorldMapView extends Pane {
         g.drawImage(img, 0, 0, map.cols, map.rows);
 
         WorldPathRenderer.draw(g, map, zoom(), vx0, vy0, vx1, vy1, true);
+        WorldGrid.draw(g, map, zoom(), vx0, vy0, vx1, vy1);
         WorldStampRenderer.draw(g, map, lib, zoom(), vx0, vy0, vx1, vy1, true);
+        WorldLegend.draw(g, map, lib, zoom());
         drawShapeOverlays(g);
+        drawRuler(g);
 
         g.setStroke(Color.web("#000000", 0.55));
         g.setLineWidth(1.5 / zoom());

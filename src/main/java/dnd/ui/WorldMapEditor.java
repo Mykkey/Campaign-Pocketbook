@@ -221,6 +221,54 @@ public class WorldMapEditor extends BorderPane implements ItemView {
         labelBox.managedProperty().bind(labelBox.visibleProperty());
         bar.getChildren().addAll(symbolBox, densityBox, pathBox, labelBox, new Separator(Orientation.VERTICAL));
 
+        // ---- grid, scale bar, legend and travel speeds
+        ComboBox<dnd.model.WorldGridKind> gridKind = new ComboBox<>(FXCollections.observableArrayList(dnd.model.WorldGridKind.values()));
+        gridKind.setValue(map.gridKind);
+        gridKind.setFocusTraversable(false);
+        gridKind.setTooltip(IconButtons.tip("Grid: lay a square or hex grid over the map for measuring"));
+        Spinner<Double> gridMiles = new Spinner<>(0.5, 1000.0, map.gridMiles, 1.0);
+        gridMiles.setPrefWidth(84);
+        gridMiles.setEditable(true);
+        gridMiles.setTooltip(IconButtons.tip("Grid size in miles: the width of a square, or of a hex across its flat sides"));
+        CheckBox gridNames = new CheckBox("Names");
+        gridNames.setSelected(map.gridCoords);
+        gridNames.setTooltip(IconButtons.tip("Write the name of each grid cell (A1, B1...) in it"));
+        Runnable gridChanged = () -> {
+            gridMiles.setDisable(map.gridKind == dnd.model.WorldGridKind.NONE);
+            gridNames.setDisable(map.gridKind == dnd.model.WorldGridKind.NONE);
+            view.overlaysChanged();
+        };
+        gridKind.valueProperty().addListener((o, a, n) -> {
+            if (n == null) return;
+            map.gridKind = n;
+            gridChanged.run();
+        });
+        gridMiles.valueProperty().addListener((o, a, n) -> {
+            if (n == null || n <= 0) return;
+            map.gridMiles = n;
+            gridChanged.run();
+        });
+        gridNames.setOnAction(e -> {
+            map.gridCoords = gridNames.isSelected();
+            gridChanged.run();
+        });
+        gridMiles.setDisable(map.gridKind == dnd.model.WorldGridKind.NONE);
+        gridNames.setDisable(map.gridKind == dnd.model.WorldGridKind.NONE);
+        ToggleButton scaleBtn = IconButtons.decorate(new ToggleButton(), "scalebar", "Scale bar: show how far a distance on the map is");
+        scaleBtn.setSelected(map.showScale);
+        scaleBtn.setOnAction(e -> {
+            map.showScale = scaleBtn.isSelected();
+            view.overlaysChanged();
+        });
+        ToggleButton legendBtn = IconButtons.decorate(new ToggleButton(), "legend", "Legend: a key to the symbols and lines used on the map. Drag it with the Select tool");
+        legendBtn.setSelected(map.showLegend);
+        legendBtn.setOnAction(e -> {
+            map.showLegend = legendBtn.isSelected();
+            view.overlaysChanged();
+        });
+        Button pacesBtn = iconButton("clock", "Travel speeds: how many miles a day each way of travelling covers (used by the Ruler)", this::editPaces);
+        bar.getChildren().addAll(gridKind, gridMiles, gridNames, scaleBtn, legendBtn, pacesBtn, new Separator(Orientation.VERTICAL));
+
         // ---- the art style of the whole map
         ComboBox<WorldStyle> style = new ComboBox<>(FXCollections.observableArrayList(WorldStyle.values()));
         style.setValue(map.style);
@@ -255,6 +303,40 @@ public class WorldMapEditor extends BorderPane implements ItemView {
             view.requestFocus();
         });
         return b;
+    }
+
+    /** A small dialog to change the miles per day of each way of travelling. */
+    private void editPaces() {
+        Dialog<ButtonType> d = new Dialog<>();
+        d.setTitle("Travel speeds");
+        d.setHeaderText("Miles covered in a day (8 hours of travel)");
+        if (getScene() != null) d.initOwner(getScene().getWindow());
+        javafx.scene.layout.GridPane grid = new javafx.scene.layout.GridPane();
+        grid.setHgap(8);
+        grid.setVgap(6);
+        Map<String, Spinner<Double>> spinners = new java.util.LinkedHashMap<>();
+        int row = 0;
+        for (var e : map.paces.entrySet()) {
+            Spinner<Double> sp = new Spinner<>(1.0, 1000.0, e.getValue(), 1.0);
+            sp.setEditable(true);
+            sp.setPrefWidth(90);
+            spinners.put(e.getKey(), sp);
+            grid.addRow(row++, new Label(e.getKey()), sp);
+        }
+        d.getDialogPane().setContent(grid);
+        d.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        Button reset = new Button("Defaults");
+        reset.setOnAction(e -> dnd.map.world.WorldTravel.defaultPaces().forEach((k, v) -> {
+            Spinner<Double> sp = spinners.get(k);
+            if (sp != null) sp.getValueFactory().setValue(v);
+        }));
+        grid.addRow(row, reset);
+        if (d.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK) {
+            spinners.forEach((k, sp) -> {
+                if (sp.getValue() != null) map.paces.put(k, sp.getValue());
+            });
+            view.overlaysChanged();
+        }
     }
 
     private void fit() {
@@ -302,6 +384,10 @@ public class WorldMapEditor extends BorderPane implements ItemView {
     public void activated() {
         view.redraw();
         view.requestFocus();
+    }
+
+    double rulerMilesForTest() {
+        return view.rulerMiles();
     }
 
     boolean pathSelectedForTest() {

@@ -127,6 +127,11 @@ public final class WorldLabels {
         return w;
     }
 
+    /** The width of a text in the small-note style at letter height 1 (for laying out the legend). */
+    public static double measure(WorldStyle style, String text) {
+        return natural(style, Kind.NOTE, text == null ? "" : text);
+    }
+
     /** The width of a whole text at height 1, letter spacing included. */
     private static double natural(WorldStyle style, Kind kind, String text) {
         double w = 0;

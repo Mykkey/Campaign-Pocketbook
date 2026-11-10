@@ -10,7 +10,8 @@ public enum WorldTool {
     PATH("Lines", "river", "Draw a river, road, trail, sea route, border or railway: drag to draw freehand, or click points and double-click to finish. Choose the kind next to the tool"),
     REGION("Region", "region", "Outline a named area (a kingdom, a forest): click the corners, double-click to close it, then name it"),
     SCATTER("Scatter", "scatter", "Paint a whole forest, hills or a mountain range of the chosen symbol and its relatives; they are spread out naturally"),
-    LABEL("Label", "text", "Write a name on the map: a sea, a kingdom, a town. Choose the kind and the curve next to the tool; double-click a label to change its words");
+    LABEL("Label", "text", "Write a name on the map: a sea, a kingdom, a town. Choose the kind and the curve next to the tool; double-click a label to change its words"),
+    RULER("Ruler", "ruler", "Measure a journey: click points along the way, and see the distance and how long it takes on foot, riding or by ship. Esc clears it");
 
     public final String label;
     public final String icon;

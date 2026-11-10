@@ -141,8 +141,8 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         projects.setOnAction(e -> exit());
         backBtn.setOnAction(e -> goBack());
         fwdBtn.setOnAction(e -> goForward());
-        backBtn.setTooltip(IconButtons.tip("Back (Alt+Left)"));
-        fwdBtn.setTooltip(IconButtons.tip("Forward (Alt+Right)"));
+        backBtn.setTooltip(IconButtons.tip(dnd.keys.Shortcuts.tip("Back", "global.back")));
+        fwdBtn.setTooltip(IconButtons.tip(dnd.keys.Shortcuts.tip("Forward", "global.forward")));
         trail.setAlignment(Pos.CENTER_LEFT);
         backlinks.setTooltip(IconButtons.tip("Whiteboards that link to this one"));
         backlinks.setOnShowing(e -> rebuildBacklinks());
@@ -162,19 +162,19 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         Button names = new Button("Names...");
-        names.setTooltip(IconButtons.tip("Random character name generator (Ctrl+G)"));
+        names.setTooltip(IconButtons.tip(dnd.keys.Shortcuts.tip("Random character name generator", "global.names")));
         names.setOnAction(e -> openNameGenerator());
         Button npc = new Button("NPC...");
-        npc.setTooltip(IconButtons.tip("Random NPC generator (Ctrl+Shift+N)"));
+        npc.setTooltip(IconButtons.tip(dnd.keys.Shortcuts.tip("Random NPC generator", "global.npc")));
         npc.setOnAction(e -> openNpcGenerator());
         Button loot = new Button("Loot...");
-        loot.setTooltip(IconButtons.tip("Random treasure generator (Ctrl+L)"));
+        loot.setTooltip(IconButtons.tip(dnd.keys.Shortcuts.tip("Random treasure generator", "global.loot")));
         loot.setOnAction(e -> openLootGenerator());
         Button rules = new Button("Rules...");
-        rules.setTooltip(IconButtons.tip("Quick reference: conditions, cover, grappling, travel, resting and more (Ctrl+R)"));
+        rules.setTooltip(IconButtons.tip(dnd.keys.Shortcuts.tip("Quick reference: conditions, cover, grappling, travel, resting and more", "global.rules")));
         rules.setOnAction(e -> RulesReferenceDialog.show(getScene().getWindow()));
         Button settings = new Button("Settings...");
-        settings.setTooltip(IconButtons.tip("Settings for the whole app: text size, colours, accessibility and keyboard shortcuts (Ctrl+,)"));
+        settings.setTooltip(IconButtons.tip(dnd.keys.Shortcuts.tip("Settings for the whole app: text size, colours, accessibility and keyboard shortcuts", "global.settings")));
         settings.setOnAction(e -> SettingsDialog.show(getScene().getWindow()));
         Button relations = new Button("Relations...");
         relations.setTooltip(IconButtons.tip("Family tree and relationship web of your cards"));
@@ -240,57 +240,74 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         ts.bold.addListener((o, a, n) -> style("font"));
         ts.italic.addListener((o, a, n) -> style("font"));
 
-        // keyboard shortcuts at scene level
+        // keyboard shortcuts: one place decides what a key does (see Shortcuts); the settings can rebind every one of them
         sceneProperty().addListener((o, old, scene) -> {
             if (scene == null) return;
-            // Ctrl+Z / Ctrl+Y and number keys 1..9,0 = tools, unless the user is typing in a text field.
-            scene.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, ev -> {
-                javafx.scene.Node focus = scene.getFocusOwner();
-                if (focus instanceof TextInputControl || focus instanceof Spinner<?> || focus instanceof ComboBoxBase<?>) return; // typing or adjusting a value
-                ItemView v = currentItem();
-                if (v == null) return;
-                KeyCode k = ev.getCode();
-                if (ev.isShortcutDown() && !ev.isAltDown()) {
-                    if (k == KeyCode.Z) {
-                        if (ev.isShiftDown()) v.redo(); else v.undo();
-                        ev.consume();
-                    } else if (k == KeyCode.Y) {
-                        v.redo();
-                        ev.consume();
-                    } else if (v.shortcut(ev)) {
-                        ev.consume();
-                    }
-                    return;
-                }
-                if (ev.isControlDown() || ev.isAltDown() || ev.isMetaDown() || ev.isShiftDown()) return;
-                if (k == KeyCode.ESCAPE) {
-                    if (v.escape()) ev.consume();
-                    return;
-                }
-                if (k == KeyCode.DELETE || k == KeyCode.BACK_SPACE) {
-                    if (scene.getFocusOwner() == tree) return; // the tree deletes its own selected item
-                    if (v.deleteSelection()) ev.consume();
-                    return;
-                }
-                int idx = k.isDigitKey() ? Integer.parseInt(k.getName()) : -1;
-                if (idx < 0) return;
-                int toolIndex = (idx + 9) % 10; // 1 -> 0 ... 9 -> 8, 0 -> 9
-                if (v.selectTool(toolIndex)) ev.consume();
-            });
-            scene.getAccelerators().put(new KeyCodeCombination(KeyCode.LEFT, KeyCombination.ALT_DOWN), this::goBack);
-            scene.getAccelerators().put(new KeyCodeCombination(KeyCode.RIGHT, KeyCombination.ALT_DOWN), this::goForward);
-            scene.getAccelerators().put(new KeyCodeCombination(KeyCode.W, KeyCombination.SHORTCUT_DOWN), this::closeCurrentTab);
-            scene.getAccelerators().put(new KeyCodeCombination(KeyCode.F, KeyCombination.SHORTCUT_DOWN), () -> search.requestFocus());
-            scene.getAccelerators().put(new KeyCodeCombination(KeyCode.G, KeyCombination.SHORTCUT_DOWN), this::openNameGenerator);
-            scene.getAccelerators().put(new KeyCodeCombination(KeyCode.L, KeyCombination.SHORTCUT_DOWN), this::openLootGenerator);
-            scene.getAccelerators().put(new KeyCodeCombination(KeyCode.R, KeyCombination.SHORTCUT_DOWN), () -> RulesReferenceDialog.show(getScene().getWindow()));
-            scene.getAccelerators().put(new KeyCodeCombination(KeyCode.COMMA, KeyCombination.SHORTCUT_DOWN), () -> SettingsDialog.show(getScene().getWindow()));
-            scene.getAccelerators().put(new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN, KeyCombination.SHIFT_DOWN), this::openNpcGenerator);
+            scene.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, ev -> dispatchKey(scene, ev));
         });
 
         refreshTree();
         restoreTabs();
         updateNavButtons();
+    }
+
+    // ================================================================ keys
+
+    /**
+     * Works out which action a key press asks for and does it. Shortcuts with Ctrl or Alt that are global work even in a text
+     * box; everything else is left alone while a text box, spinner or list of choices has the focus, so typing is never stolen.
+     */
+    private void dispatchKey(javafx.scene.Scene scene, javafx.scene.input.KeyEvent ev) {
+        javafx.scene.Node focus = scene.getFocusOwner();
+        boolean typing = focus instanceof TextInputControl || focus instanceof Spinner<?> || focus instanceof ComboBoxBase<?>;
+        ItemView v = currentItem();
+        dnd.keys.Shortcuts.Context editor = v == null ? null : v.keyContext();
+        dnd.keys.Shortcuts.Action a = dnd.keys.Shortcuts.find(ev, act -> appliesHere(act, typing, editor, v != null));
+        if (a == null) return;
+        if (runAction(a, v, focus)) ev.consume();
+    }
+
+    private static boolean appliesHere(dnd.keys.Shortcuts.Action a, boolean typing, dnd.keys.Shortcuts.Context editor, boolean hasItem) {
+        if (typing && !a.typing()) return false;
+        return switch (a.context()) {
+            case GLOBAL -> true;
+            case ITEM -> hasItem;
+            case BOARD, BATTLEMAP, WORLDMAP -> editor == a.context();
+            case BATTLE -> editor == dnd.keys.Shortcuts.Context.BATTLEMAP;
+            default -> false; // player windows and pop-up windows have their own scenes
+        };
+    }
+
+    private boolean runAction(dnd.keys.Shortcuts.Action a, ItemView v, javafx.scene.Node focus) {
+        switch (a.id()) {
+            case "global.back" -> goBack();
+            case "global.forward" -> goForward();
+            case "global.closeTab" -> closeCurrentTab();
+            case "global.search" -> search.requestFocus();
+            case "global.names" -> openNameGenerator();
+            case "global.loot" -> openLootGenerator();
+            case "global.rules" -> RulesReferenceDialog.show(getScene().getWindow());
+            case "global.npc" -> openNpcGenerator();
+            case "global.settings" -> SettingsDialog.show(getScene().getWindow());
+            default -> {
+                if (v == null) return false;
+                switch (a.id()) {
+                    case "item.undo" -> {
+                        v.undo();
+                        return true;
+                    }
+                    case "item.redo" -> {
+                        v.redo();
+                        return true;
+                    }
+                    default -> { }
+                }
+                if (a.canvasOnly() && !v.hasCanvasFocus()) return false;
+                if (focus == tree && a.id().equals("item.delete")) return false; // the tree deletes its own selected item
+                return v.perform(a.id());
+            }
+        }
+        return true;
     }
 
     // ================================================================ lifecycle

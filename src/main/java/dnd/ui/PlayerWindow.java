@@ -81,18 +81,17 @@ public final class PlayerWindow {
 
         Scene scene = new Scene(root, 1280, 800, Color.web("#0d0d0f"));
         scene.setOnKeyPressed(e -> {
-            KeyCode k = e.getCode();
-            if (k == KeyCode.F11) {
+            if (dnd.keys.Shortcuts.matches(e, "player.fullscreen")) {
                 stage.setFullScreen(!stage.isFullScreen());
-            } else if (k == KeyCode.F) {
+            } else if (dnd.keys.Shortcuts.matches(e, "player.fit")) {
                 view.fit();
-            } else if (k == KeyCode.G) {
+            } else if (dnd.keys.Shortcuts.matches(e, "player.grid")) {
                 view.toggleGrid();
-            } else if (k == KeyCode.I) {
+            } else if (dnd.keys.Shortcuts.matches(e, "player.turnOrder")) {
                 view.toggleInitiative();
-            } else if (k == KeyCode.PLUS || k == KeyCode.EQUALS || k == KeyCode.ADD) {
+            } else if (dnd.keys.Shortcuts.matches(e, "player.zoomIn")) {
                 view.zoomBy(1.2);
-            } else if (k == KeyCode.MINUS || k == KeyCode.SUBTRACT) {
+            } else if (dnd.keys.Shortcuts.matches(e, "player.zoomOut")) {
                 view.zoomBy(1 / 1.2);
             } else {
                 return;

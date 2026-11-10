@@ -13,10 +13,22 @@ public interface ItemView {
     void activated();
 
     /**
-     * Gives the item first go at a Ctrl+key shortcut (copy, paste, ...) even if keyboard focus is on a
-     * toolbar control. Returns true if it handled the key.
+     * Does what a keyboard shortcut asks (see {@link dnd.keys.Shortcuts}): the id of the action, for example {@code item.copy}
+     * or {@code tool.world.3}. Called by the workspace for every key that is bound to an action that applies to this kind of
+     * item, even if keyboard focus is on a toolbar control. Returns true if the action was done (the key is then used up);
+     * false lets the key go on to whatever else wanted it.
      */
-    default boolean shortcut(javafx.scene.input.KeyEvent e) {
+    default boolean perform(String actionId) {
+        return false;
+    }
+
+    /** Which editor this is, so that only its own shortcuts (tool keys, rotate...) apply: whiteboard, battlemap, world map. */
+    default dnd.keys.Shortcuts.Context keyContext() {
+        return dnd.keys.Shortcuts.Context.ITEM;
+    }
+
+    /** True while the picture itself (not a toolbar button) has the keyboard focus. */
+    default boolean hasCanvasFocus() {
         return false;
     }
 

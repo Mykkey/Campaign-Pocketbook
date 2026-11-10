@@ -222,7 +222,7 @@ public final class NpcDialog {
         if (owner != null) stage.initOwner(owner);
         Scene scene = new Scene(root, 860, 640);
         scene.setOnKeyPressed(e -> {
-            if (e.getCode() == KeyCode.ESCAPE) stage.close();
+            if (dnd.keys.Shortcuts.matches(e, "dialog.close")) stage.close();
         });
         stage.setScene(scene);
         stage.setOnHidden(e -> open = null);

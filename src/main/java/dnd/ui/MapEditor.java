@@ -66,12 +66,6 @@ public class MapEditor extends BorderPane implements ItemView {
         view.onTokenClicked = id -> {
             if (battleOpen && battleScreen != null) battleScreen.inspectToken(id);
         };
-        // N = next turn, P = previous turn while the battle screen is up (not while typing in a box)
-        addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, ev -> {
-            if (!battleOpen || battleScreen == null) return;
-            if (getScene() != null && getScene().getFocusOwner() instanceof TextInputControl) return;
-            if (battleScreen.handleKey(ev)) ev.consume();
-        });
         if (map.battle != null && map.battle.active) setBattleVisible(true); // a fight was in progress when it was saved
         // first open: show the whole map
         javafx.application.Platform.runLater(() -> {
@@ -87,7 +81,7 @@ public class MapEditor extends BorderPane implements ItemView {
         Map<MapTool, ToggleButton> buttons = new EnumMap<>(MapTool.class);
         for (MapTool t : MapTool.values()) {
             String key = String.valueOf((t.ordinal() + 1) % 10); // keys 1-9, then 0 for the tenth tool
-            ToggleButton b = IconButtons.decorate(new ToggleButton(), t.name().toLowerCase(), t.label + ": " + t.tip + " [" + key + "]");
+            ToggleButton b = IconButtons.decorate(new ToggleButton(), t.name().toLowerCase(), dnd.keys.Shortcuts.tip(t.label + ": " + t.tip, "tool.battle." + (t.ordinal() + 1)));
             b.setToggleGroup(group);
             b.setOnAction(e -> {
                 ts.tool.set(t);
@@ -208,9 +202,9 @@ public class MapEditor extends BorderPane implements ItemView {
         bar.getChildren().addAll(
                 battleBtn,
                 popOut,
-                iconAction("fit", "Fit: zoom to show the whole map (Ctrl+0)", view::fitToWindow),
-                iconAction("undo", "Undo (Ctrl+Z)", view::undo),
-                iconAction("redo", "Redo (Ctrl+Y)", view::redo),
+                iconAction("fit", dnd.keys.Shortcuts.tip("Fit: zoom to show the whole map", "item.fit"), view::fitToWindow),
+                iconAction("undo", dnd.keys.Shortcuts.tip("Undo", "item.undo"), view::undo),
+                iconAction("redo", dnd.keys.Shortcuts.tip("Redo", "item.redo"), view::redo),
                 iconAction("delete", "Delete the selection", view::deleteSelected));
         return bar;
     }
@@ -326,7 +320,20 @@ public class MapEditor extends BorderPane implements ItemView {
 
     @Override public boolean selectTool(int index) { return view.selectTool(index); }
 
-    @Override public boolean shortcut(javafx.scene.input.KeyEvent e) { return view.shortcut(e); }
+    @Override
+    public boolean perform(String id) {
+        if (id.equals("battle.next") || id.equals("battle.previous")) {
+            if (!battleOpen || battleScreen == null || !battleScreen.battle().active) return false;
+            if (id.equals("battle.next")) battleScreen.next();
+            else battleScreen.previous();
+            return true;
+        }
+        return view.perform(id);
+    }
+
+    @Override public dnd.keys.Shortcuts.Context keyContext() { return dnd.keys.Shortcuts.Context.BATTLEMAP; }
+
+    @Override public boolean hasCanvasFocus() { return view.hasCanvasFocus(); }
 
     @Override public boolean escape() { return view.escape(); }
 

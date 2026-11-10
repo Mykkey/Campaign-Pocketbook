@@ -296,7 +296,7 @@ final class BattleScreen implements BattleContext {
         players.setOnAction(e -> host.popOutPlayers());
         Button exit = IconButtons.decorate(new Button(), "exit", active ? "Exit (keeps the battle)" : "Close the battle screen");
         exit.setOnAction(e -> host.exit());
-        Button rules = IconButtons.decorate(new Button(), "rules", "Quick reference: conditions, cover, grappling and other rules (Ctrl+R)");
+        Button rules = IconButtons.decorate(new Button(), "rules", dnd.keys.Shortcuts.tip("Quick reference: conditions, cover, grappling and other rules", "global.rules"));
         rules.setOnAction(e -> RulesReferenceDialog.show(view.getScene() == null ? null : view.getScene().getWindow()));
         banner.getChildren().addAll(tools, players, rules, exit);
     }
@@ -481,20 +481,5 @@ final class BattleScreen implements BattleContext {
                 return;
             }
         }
-    }
-
-    /** N = next turn, P = previous turn. Returns true if the key was used. */
-    boolean handleKey(KeyEvent e) {
-        Battle b = battle();
-        if (!b.active || e.isShortcutDown() || e.isAltDown() || e.isShiftDown()) return false;
-        if (e.getCode() == KeyCode.N) {
-            next();
-            return true;
-        }
-        if (e.getCode() == KeyCode.P) {
-            previous();
-            return true;
-        }
-        return false;
     }
 }

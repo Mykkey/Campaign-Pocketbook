@@ -21,8 +21,8 @@ The **top bar icons**, left to right: house = Projects (back to the campaign lis
 | Curve a line or arrow | Select it: a round handle sits on the line, next to the square end handle. Drag the round handle sideways to bend the line into a curve, and drag it along the line to move where it bends. Pull it back onto the line to straighten it. The arrow head follows the curve. |
 | Add text | Double-click empty space (or the Text tool). Ctrl+Enter, Esc or clicking away finishes. |
 | Text box with a set width | With the Text tool, **drag out a box** instead of clicking. Text wraps onto the next line when it reaches the box edge, and the box gets taller or shorter by itself as you type. Drag the small square at its bottom-right corner to change the width at any time, including **while you are typing** (double-click a text and resize straight away); the words reflow as you drag. Right-click > **Fit width to text** puts it back to one automatic-width block. A plain click (or double-click on empty space) still makes a text that takes the width of what you type. |
-| Pan / zoom | Hand tool, middle-mouse drag, or hold Space and drag. Mouse wheel zooms, Ctrl+0 resets. |
-| Link to another board | Select an object, press **Link...** (Ctrl+L or right-click), pick a board. Double-click it to jump. Blue badge = linked, red = target was deleted. |
+| Pan / zoom | Hand tool, middle-mouse drag, or hold Space and drag. Mouse wheel zooms; Ctrl+0 fits everything in view, Ctrl+1 is actual size, Ctrl+= and Ctrl+- zoom in and out. |
+| Link to another board | Select an object, press **Link...** (Ctrl+K or right-click), pick a board. Double-click it to jump. Blue badge = linked, red = target was deleted. |
 | Go back | Back/Forward buttons or Alt+Left / Alt+Right. The trail shows where you came from. |
 | See what links here | **Backlinks** menu at the top. |
 | Search | Box at the top right (Ctrl+F). Finds text on whiteboards (including hover notes) and map pins, and inside cards (traits, actions, attacks, notes, relationship notes), spells, magic items, quests (summary, steps, giver), session logs (recap, what happened, next steps) and encounters (names and notes). Press Enter to search again; the results update as you type. |
@@ -32,6 +32,28 @@ The **top bar icons**, left to right: house = Projects (back to the campaign lis
 | Copy / paste / duplicate | Ctrl+C / Ctrl+V / Ctrl+D (works between tabs) |
 
 Styled words are saved as simple markup inside the text: `**bold**`, `*italic*` and `***both***`. While you are typing you see those marks around the words; once you finish, the board shows real bold and italic. A literal `*` that would be mistaken for formatting can be typed as `\*`. Search matches the words, ignoring the marks.
+
+### Keyboard shortcuts
+
+One rule: **Ctrl+letter acts on what you are editing, and a few Ctrl keys open the app's own windows.** The same keys work on whiteboards, battlemaps and world maps, whichever part of the tab you last clicked.
+
+| Keys | What it does |
+|---|---|
+| Alt+Left / Alt+Right | Back / forward through the items you opened |
+| Ctrl+W, Ctrl+F | Close the tab, search the campaign |
+| Ctrl+G, Ctrl+L, Ctrl+Shift+N, Ctrl+R | Name generator, loot generator, NPC generator, quick reference |
+| Ctrl+, | Settings |
+| Ctrl+Z, Ctrl+Y (or Ctrl+Shift+Z) | Undo, redo |
+| Ctrl+C, Ctrl+X, Ctrl+V, Ctrl+D, Ctrl+A | Copy, cut, paste, duplicate, select all (on all three kinds of map and board) |
+| **Ctrl+K** | **Link and note** the selected thing (whiteboard objects and words, world map items, battlemap tokens and pieces) |
+| Delete or Backspace, Esc | Delete the selection, deselect or cancel |
+| Ctrl+0, Ctrl+1, Ctrl+= / Ctrl+- | Fit everything, actual size, zoom |
+| [ and ], F, H | Rotate, flip, hide from players (battlemaps and world maps) |
+| Enter or F2 | Edit the selected text, or finish the line you are drawing |
+| N, P | Next / previous turn during a battle |
+| 1 to 9, 0 | Pick the tools in order, as described below. On world maps **B** is Bucket, **R** Reveal and **E** Elevation |
+
+While you type in a text box, only the Ctrl and Alt shortcuts that open windows or move between tabs work, so typing is never stolen. Every key is shown in the tooltip of its button.
 
 ### Tool shortcuts
 Press a number key to switch tools: **1** Select, **2** Hand, **3** Text, **4** Sticky, **5** Pen, **6** Eraser, **7** Rect, **8** Ellipse, **9** Line, **0** Arrow. The eraser only removes pen drawings.
@@ -76,7 +98,7 @@ The **Select** tool picks symbols (click, shift-click, or drag a box over empty 
 
 **Grid, scale, legend and travel times.** The toolbar can lay a **square or hex grid** over the map (you set its size in miles; hexes are measured across their flat sides) and write the name of each cell (A1, B1...), which also shows in the status bar under the cursor. The **scale bar** shows a round distance and can be turned off; the **legend** builds itself from the symbols and kinds of line you have used, and you drag it with the Select tool to where you want it. The **Ruler** tool measures a journey: click points along the way and it shows the total distance and how long it takes on foot (slow, normal and fast), riding, by sailing ship and by longship, counting 8 hours of travel a day. Esc clears it, Backspace takes back a point. The clock button sets how many miles a day each way of travelling covers (the defaults follow the 5th edition rules: 18, 24 and 30 miles on foot).
 
-**Links and notes.** Any symbol, settlement, label, banner, line or region can carry a **note** and a **link** to a whiteboard, card, battlemap, quest, session, spell, magic item, encounter or another world map (zoom into a region by linking it to a more detailed map). Select it and press the link button (or Ctrl+L), or right-click it and choose **Link and note...**. Things with a note or link show a small dot: blue for a link, green for a note. **Hover** one and the note appears above a preview of what it links to; **double-click** it (with the Select or Hand tool) to open the link, and the right-click menu has **Open linked item**. The eye button turns the previews off (the same setting as on the whiteboards). The **Backlinks** button in the top bar lists the map items that link to the item you have open, and clicking one jumps to it on the map. Project search also finds labels, names of lines and regions, and notes on world maps.
+**Links and notes.** Any symbol, settlement, label, banner, line or region can carry a **note** and a **link** to a whiteboard, card, battlemap, quest, session, spell, magic item, encounter or another world map (zoom into a region by linking it to a more detailed map). Select it and press the link button (or Ctrl+K), or right-click it and choose **Link and note...**. Things with a note or link show a small dot: blue for a link, green for a note. **Hover** one and the note appears above a preview of what it links to; **double-click** it (with the Select or Hand tool) to open the link, and the right-click menu has **Open linked item**. The eye button turns the previews off (the same setting as on the whiteboards). The **Backlinks** button in the top bar lists the map items that link to the item you have open, and clicking one jumps to it on the map. Project search also finds labels, names of lines and regions, and notes on world maps.
 
 **Elevation and relief.** The **Elevation** tool paints how high the land is. Choose what the brush does: **Raise** or **Lower** the land a little with every stroke (stroke again and again to build a mountain), **Smooth** it out, or **Flatten** it to a chosen height (0 is flat, 255 the highest peak). **Strength** is how much each stroke changes. The height is shown as **relief shading**: light on slopes facing the top left and shadow on the others, drawn in the way of each art style (hachure strokes in classic ink, soft washes in watercolour, strong shade in fantasy and dark fantasy, three flat tones in retro pixel). The relief button turns the shading on and off, **Shading** sets how strong it is, and **Flatten all** sets the whole map back to flat (you can undo it). Maps with no elevation look exactly as before; the height also follows the map when you scale or crop it.
 
@@ -115,7 +137,7 @@ Each game session can have its own page (**+ Session** in the project tree, save
 ## Links and notes in text
 On a whiteboard, links and notes work on **selected words**, not just whole text blocks:
 
-- **Link a few words:** double-click a text block or sticky note to edit it, select the words (a character name in the middle of a paragraph, say), then press **Link...** (or Ctrl+L) and pick the target. Only those words become a link: blue and underlined. **Hover** a link and a small preview of what it points to appears next to the pointer: a character or monster stat block, a spell card, a battlemap thumbnail, an encounter's creatures and difficulty, or the first lines of a whiteboard. **Double-click** it to open the target. Turn off **Link previews** (the eye icon) in the whiteboard toolbar if you would rather not see previews; the choice is remembered. In the text you will see the words wrapped like `[Mira]{1}` while you edit (just as bold shows as `**bold**`); the target is kept with the note, so deleting the brackets undoes it.
+- **Link a few words:** double-click a text block or sticky note to edit it, select the words (a character name in the middle of a paragraph, say), then press **Link...** (or Ctrl+K) and pick the target. Only those words become a link: blue and underlined. **Hover** a link and a small preview of what it points to appears next to the pointer: a character or monster stat block, a spell card, a battlemap thumbnail, an encounter's creatures and difficulty, or the first lines of a whiteboard. **Double-click** it to open the target. Turn off **Link previews** (the eye icon) in the whiteboard toolbar if you would rather not see previews; the choice is remembered. In the text you will see the words wrapped like `[Mira]{1}` while you edit (just as bold shows as `**bold**`); the target is kept with the note, so deleting the brackets undoes it.
 - **A note on a few words:** for things that have no sheet of their own (a rumour, what the innkeeper is hiding, a house rule), select words and press **Note...**, then type your own text. It can use `**bold**` and `*italic*` and run over several lines. The words turn green and underlined; **hover** them and the note appears in a small green-edged box. To change it later, **double-click** the words (or right-click them and choose **Edit note on these words...**). Right-click also has **Remove note from these words**.
 - **Both on the same words:** a link and a note can share a selection. They show blue with a small green dot; hovering shows the note above the preview, and double-click still opens the link (edit the note from the right-click menu or with **Note...** while typing).
 - **Whole objects:** with an object selected (not typing), **Link...** and **Note...** apply to the whole thing, for text blocks, pictures and shapes; a note shows as a green "i" badge next to the blue link badge. Right-click an object for the same options (**Edit note...**, **Remove note**). Double-click a shape or picture that only has a note to edit it.

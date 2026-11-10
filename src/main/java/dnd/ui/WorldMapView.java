@@ -405,22 +405,142 @@ final class WorldMapView extends Pane {
             spaceDown = true;
             refreshCursor();
             e.consume();
-        } else if (e.getCode() == KeyCode.OPEN_BRACKET && !e.isShortcutDown()) {
-            rotateSelection(-15);
-            e.consume();
-        } else if (e.getCode() == KeyCode.CLOSE_BRACKET && !e.isShortcutDown()) {
-            rotateSelection(15);
-            e.consume();
-        } else if (e.getCode() == KeyCode.ENTER) {
-            finishDrawing();
-            e.consume();
-        } else if (e.getCode() == KeyCode.F && !e.isShortcutDown()) {
-            flipSelection();
-            e.consume();
-        } else if (e.getCode() == KeyCode.H && !e.isShortcutDown() && hasSelection()) {
-            toggleHiddenSelection();
-            e.consume();
         }
+        // every other key is a shortcut the workspace handles (see Shortcuts and perform)
+    }
+
+    // ---- shortcuts
+
+    /** Does what a keyboard shortcut asks (the workspace calls this, so the keys work even when a toolbar button has the focus). */
+    boolean perform(String id) {
+        switch (id) {
+            case "item.copy" -> copySelection();
+            case "item.cut" -> {
+                if (!copySelection()) return false;
+                deleteSelection();
+            }
+            case "item.paste" -> {
+                return pasteClipboard();
+            }
+            case "item.duplicate" -> {
+                if (selected.isEmpty()) return false;
+                duplicateSelection();
+            }
+            case "item.selectAll" -> {
+                selected.clear();
+                selShape = null;
+                for (WorldStamp s : map.stamps) if (WorldEra.visible(s, map)) selected.add(s.id);
+                redraw();
+            }
+            case "item.link" -> {
+                if (!linkable()) return false;
+                editSelectedLinkNote();
+            }
+            case "item.delete" -> {
+                return deleteSelection();
+            }
+            case "item.escape" -> {
+                return escape();
+            }
+            case "item.edit" -> finishDrawing();
+            case "item.fit" -> fitToWindow();
+            case "item.actualSize" -> zoomTo(1);
+            case "item.zoomIn" -> zoomTo(map.zoom * 1.25);
+            case "item.zoomOut" -> zoomTo(map.zoom / 1.25);
+            case "item.rotateLeft" -> {
+                if (selected.isEmpty()) return false;
+                rotateSelection(-15);
+            }
+            case "item.rotateRight" -> {
+                if (selected.isEmpty()) return false;
+                rotateSelection(15);
+            }
+            case "item.flip" -> {
+                if (selected.isEmpty()) return false;
+                flipSelection();
+            }
+            case "item.hide" -> {
+                if (!hasSelection()) return false;
+                toggleHiddenSelection();
+            }
+            default -> {
+                if (id.startsWith("tool.world.")) return selectToolIndex(Integer.parseInt(id.substring("tool.world.".length())) - 1);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean selectToolIndex(int index) {
+        WorldTool[] all = WorldTool.values();
+        if (index < 0 || index >= all.length) return false;
+        ts.tool.set(all[index]);
+        return true;
+    }
+
+    /** Zooms around the middle of the view (1 = actual size). */
+    private void zoomTo(double z) {
+        double cx = getWidth() / 2, cy = getHeight() / 2;
+        double px = wx(cx), py = wy(cy);
+        map.zoom = Math.max(0.05, Math.min(16, z));
+        map.offsetX = cx - px * map.zoom;
+        map.offsetY = cy - py * map.zoom;
+        cameraChanged();
+        redraw();
+    }
+
+    /** What was last copied: the selected symbols and the selected line or region, as text. */
+    private String clipboardJson;
+    private int pasteCount;
+
+    /** Copies the selected symbols (and the selected line or region); returns false if nothing is selected. */
+    private boolean copySelection() {
+        WorldObjects o = new WorldObjects();
+        for (WorldStamp s : selectedStamps()) o.stamps.add(s);
+        Object shape = shapeById(selShape);
+        if (shape instanceof WorldPath p) o.paths.add(p);
+        else if (shape instanceof WorldRegion r) o.regions.add(r);
+        if (o.stamps.isEmpty() && o.paths.isEmpty() && o.regions.isEmpty()) return false;
+        clipboardJson = Json.write(o);
+        pasteCount = 0;
+        return true;
+    }
+
+    /** Pastes what was copied, a little way from where it was (further each time), and selects it. */
+    private boolean pasteClipboard() {
+        if (clipboardJson == null) return false;
+        WorldObjects o = Json.read(clipboardJson, WorldObjects.class);
+        pasteCount++;
+        double off = 3.0 * pasteCount;
+        String before = WorldObjects.capture(map);
+        selected.clear();
+        selShape = null;
+        for (WorldStamp s : o.stamps) {
+            WorldStamp c = s.copy();
+            c.x += off;
+            c.y += off;
+            map.stamps.add(c);
+            selected.add(c.id);
+        }
+        for (WorldPath p : o.paths) {
+            WorldPath c = p.copy();
+            for (int i = 0; i < c.points.size(); i++) c.points.set(i, c.points.get(i) + off);
+            map.paths.add(c);
+            selShape = c.id;
+        }
+        for (WorldRegion r : o.regions) {
+            WorldRegion c = r.copy();
+            for (int i = 0; i < c.points.size(); i++) c.points.set(i, c.points.get(i) + off);
+            if (c.labelX != null && c.labelY != null) {
+                c.labelX += off;
+                c.labelY += off;
+            }
+            map.regions.add(c);
+            selShape = c.id;
+        }
+        stampEdit(before);
+        redraw();
+        return true;
     }
 
     // ================================================================ painting

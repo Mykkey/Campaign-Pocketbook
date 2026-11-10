@@ -55,7 +55,7 @@ public final class TimelineDialog {
         if (owner != null) stage.initOwner(owner);
         Scene scene = new Scene(scroll, 640, 640);
         scene.setOnKeyPressed(e -> {
-            if (e.getCode() == KeyCode.ESCAPE) stage.close();
+            if (dnd.keys.Shortcuts.matches(e, "dialog.close")) stage.close();
         });
         stage.setScene(scene);
         stage.setOnHidden(e -> open = null);

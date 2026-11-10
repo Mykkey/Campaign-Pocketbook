@@ -115,7 +115,7 @@ public final class LibraryDialog {
         stage.setTitle("Monster and spell library");
         Scene scene = new Scene(root, 1150, 720);
         scene.setOnKeyPressed(e -> {
-            if (e.getCode() == KeyCode.ESCAPE && !(scene.getFocusOwner() instanceof TextInputControl)) stage.close();
+            if (dnd.keys.Shortcuts.matches(e, "dialog.close") && !(scene.getFocusOwner() instanceof TextInputControl)) stage.close();
         });
         stage.setScene(scene);
         stage.setOnHidden(e -> open = null);

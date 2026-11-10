@@ -85,6 +85,89 @@ public class BoardView extends Pane implements ItemView {
     }
 
     @Override
+    public dnd.keys.Shortcuts.Context keyContext() {
+        return dnd.keys.Shortcuts.Context.BOARD;
+    }
+
+    @Override
+    public boolean hasCanvasFocus() {
+        return isFocused();
+    }
+
+    @Override
+    public boolean perform(String id) {
+        if (editor != null) return false;
+        switch (id) {
+            case "item.copy" -> copy();
+            case "item.cut" -> {
+                copy();
+                deleteSelected();
+            }
+            case "item.paste" -> paste(null, null);
+            case "item.duplicate" -> {
+                copy();
+                paste(null, null);
+            }
+            case "item.selectAll" -> {
+                selected.clear();
+                for (BoardObject o : board.objects) selected.add(o.id);
+                redraw();
+            }
+            case "item.link" -> linkSelected();
+            case "item.delete" -> {
+                return deleteSelection();
+            }
+            case "item.escape" -> {
+                selected.clear();
+                ts.tool.set(Tool.SELECT);
+                redraw();
+            }
+            case "item.edit" -> {
+                BoardObject o = selected.size() == 1 ? board.find(selected.iterator().next()) : null;
+                if (o == null || (o.type != Type.TEXT && o.type != Type.STICKY)) return false;
+                startEdit(o, false);
+            }
+            case "item.fit" -> fitContent();
+            case "item.actualSize" -> zoomTo(1);
+            case "item.zoomIn" -> zoomTo(board.zoom * 1.25);
+            case "item.zoomOut" -> zoomTo(board.zoom / 1.25);
+            default -> {
+                if (id.startsWith("tool.board.")) return selectTool(Integer.parseInt(id.substring("tool.board.".length())) - 1);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Zooms around the middle of the view (1 = actual size). */
+    private void zoomTo(double z) {
+        double cx = getWidth() / 2, cy = getHeight() / 2;
+        double px = wx(cx), py = wy(cy);
+        board.zoom = Math.max(0.1, Math.min(5, z));
+        board.offsetX = cx - px * board.zoom;
+        board.offsetY = cy - py * board.zoom;
+        store.markDirty(board);
+        redraw();
+    }
+
+    /** Zooms and moves so everything on the board is in view (actual size if the board is empty). */
+    private void fitContent() {
+        double[] area = contentBounds();
+        if (area == null) {
+            board.zoom = 1;
+            board.offsetX = 40;
+            board.offsetY = 40;
+        } else {
+            double w = Math.max(100, getWidth()), h = Math.max(100, getHeight());
+            board.zoom = Math.max(0.1, Math.min(2, Math.min((w - 40) / area[2], (h - 40) / area[3])));
+            board.offsetX = (w - area[2] * board.zoom) / 2 - area[0] * board.zoom;
+            board.offsetY = (h - area[3] * board.zoom) / 2 - area[1] * board.zoom;
+        }
+        store.markDirty(board);
+        redraw();
+    }
+
+    @Override
     public boolean selectTool(int index) {
         Tool[] tools = Tool.values();
         if (index < 0 || index >= tools.length) return false;
@@ -1056,32 +1139,7 @@ public class BoardView extends Pane implements ItemView {
             e.consume();
             return;
         }
-        if (e.isShortcutDown()) {
-            switch (k) {
-                case Z -> { if (e.isShiftDown()) redo(); else undo(); }
-                case Y -> redo();
-                case C -> copy();
-                case X -> { copy(); deleteSelected(); }
-                case V -> paste(null, null);
-                case D -> { copy(); paste(null, null); }
-                case A -> { selected.clear(); for (BoardObject o : board.objects) selected.add(o.id); redraw(); }
-                case L -> linkSelected();
-                case DIGIT0 -> { board.zoom = 1; store.markDirty(board); redraw(); }
-                default -> { return; }
-            }
-            e.consume();
-            return;
-        }
-        switch (k) {
-            case DELETE, BACK_SPACE -> deleteSelected();
-            case ESCAPE -> { selected.clear(); ts.tool.set(Tool.SELECT); redraw(); }
-            case ENTER, F2 -> {
-                BoardObject o = selected.size() == 1 ? board.find(selected.iterator().next()) : null;
-                if (o != null && (o.type == Type.TEXT || o.type == Type.STICKY)) startEdit(o, false);
-            }
-            default -> { return; }
-        }
-        e.consume();
+        // every other key is a shortcut the workspace handles (see Shortcuts and perform)
     }
 
     private void onContextMenu(ContextMenuEvent e) {
@@ -1255,7 +1313,7 @@ public class BoardView extends Pane implements ItemView {
                     && (ev.getCode() == KeyCode.B || ev.getCode() == KeyCode.I)) {
                 styleSelectedWords(ev.getCode() == KeyCode.B);
                 ev.consume();
-            } else if (ev.isShortcutDown() && !ev.isAltDown() && !ev.isShiftDown() && ev.getCode() == KeyCode.L) {
+            } else if (dnd.keys.Shortcuts.matches(ev, "item.link")) {
                 linkSelected(); // links the selected words
                 ev.consume();
             }

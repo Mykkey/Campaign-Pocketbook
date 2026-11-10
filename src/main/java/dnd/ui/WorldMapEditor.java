@@ -50,7 +50,7 @@ public class WorldMapEditor extends BorderPane implements ItemView {
         ToggleGroup tools = new ToggleGroup();
         Map<WorldTool, ToggleButton> toolButtons = new EnumMap<>(WorldTool.class);
         for (WorldTool t : WorldTool.values()) {
-            ToggleButton b = IconButtons.decorate(new ToggleButton(), t.icon, t.label + ": " + t.tip + (t.ordinal() < 10 ? " [" + (t.ordinal() + 1) % 10 + "]" : ""));
+            ToggleButton b = IconButtons.decorate(new ToggleButton(), t.icon, dnd.keys.Shortcuts.tip(t.label + ": " + t.tip, "tool.world." + (t.ordinal() + 1)));
             b.setToggleGroup(tools);
             b.setOnAction(e -> {
                 ts.tool.set(t);
@@ -336,14 +336,14 @@ public class WorldMapEditor extends BorderPane implements ItemView {
         });
         Button pacesBtn = iconButton("clock", "Travel speeds: how many miles a day each way of travelling covers (used by the Ruler)", this::editPaces);
         bar.getChildren().addAll(gridKind, gridMiles, gridNames, scaleBtn, legendBtn, pacesBtn, new Separator(Orientation.VERTICAL));
-        Button linkBtn = iconButton("link", "Link and note: give the selected symbol, line or region a note and a link to a card, whiteboard, map, quest... (Ctrl+L, or right-click it)", view::editSelectedLinkNote);
+        Button linkBtn = iconButton("link", "Link and note: give the selected symbol, line or region a note and a link to a card, whiteboard, map, quest... (" + dnd.keys.Shortcuts.label("item.link") + ", or right-click it)", view::editSelectedLinkNote);
         linkBtn.visibleProperty().bind(ts.tool.isEqualTo(WorldTool.SELECT));
         linkBtn.managedProperty().bind(linkBtn.visibleProperty());
         javafx.scene.control.ToggleButton previewBtn = IconButtons.switchToggle("previews", "Link previews: show the note and a preview of the linked item when you hover over something on the map", ts.linkPreviews);
         bar.getChildren().addAll(linkBtn, previewBtn, new Separator(Orientation.VERTICAL));
 
         // ---- the players: what they may see, a window for the table screen, and saving a picture
-        Button hideSel = iconButton("eye-off", "Hide from players: the selected symbols, line or region are left out of the players' view and of their picture (H, or right-click it). Press again to show it", view::toggleHiddenSelection);
+        Button hideSel = iconButton("eye-off", "Hide from players: the selected symbols, line or region are left out of the players' view and of their picture (" + dnd.keys.Shortcuts.label("item.hide") + ", or right-click it). Press again to show it", view::toggleHiddenSelection);
         hideSel.visibleProperty().bind(ts.tool.isEqualTo(WorldTool.SELECT));
         hideSel.managedProperty().bind(hideSel.visibleProperty());
         ToggleButton fogBtn = IconButtons.decorate(new ToggleButton(), "fog", "Hide unexplored from players: the players only see the parts of the map you reveal with the Reveal tool; the rest is blank parchment. You still see everything, faintly covered");
@@ -441,8 +441,8 @@ public class WorldMapEditor extends BorderPane implements ItemView {
                         WorldGenerateDialog.show(getScene() == null ? null : getScene().getWindow(), map, view::resizeMap)),
                 iconButton("resize", "Map size: made the map too big (or too small)? Scale the whole map, crop or extend its canvas, or change how many miles across it is. Can be undone", () ->
                         WorldResizeDialog.show(getScene() == null ? null : getScene().getWindow(), map, view::resizeMap)),
-                iconButton("undo", "Undo (Ctrl+Z)", view::undo),
-                iconButton("redo", "Redo (Ctrl+Y)", view::redo));
+                iconButton("undo", dnd.keys.Shortcuts.tip("Undo", "item.undo"), view::undo),
+                iconButton("redo", dnd.keys.Shortcuts.tip("Redo", "item.redo"), view::redo));
 
         statusLabel.setStyle("-fx-text-fill: -t-text3; -fx-padding: 2 8 2 8;");
         setTop(bar);
@@ -570,16 +570,18 @@ public class WorldMapEditor extends BorderPane implements ItemView {
     }
 
     @Override
-    public boolean shortcut(javafx.scene.input.KeyEvent e) {
-        if (e.isShortcutDown() && e.getCode() == javafx.scene.input.KeyCode.L) {
-            if (view.linkable()) view.editSelectedLinkNote();
-            return true;
-        }
-        if (e.isShortcutDown() && e.getCode() == javafx.scene.input.KeyCode.D) {
-            view.duplicateSelection();
-            return true;
-        }
-        return false;
+    public boolean perform(String id) {
+        return view.perform(id);
+    }
+
+    @Override
+    public dnd.keys.Shortcuts.Context keyContext() {
+        return dnd.keys.Shortcuts.Context.WORLDMAP;
+    }
+
+    @Override
+    public boolean hasCanvasFocus() {
+        return view.isFocused();
     }
 
     @Override

@@ -51,8 +51,12 @@ public class App extends Application {
         ProjectLauncher launcher = new ProjectLauncher(this::showWorkspace);
         root.setCenter(new StackPane(launcher, launcher.loadingOverlay()));
         Scene scene = new Scene(root, stage.getWidth(), stage.getHeight());
-        scene.getAccelerators().put(new javafx.scene.input.KeyCodeCombination(javafx.scene.input.KeyCode.COMMA, javafx.scene.input.KeyCombination.SHORTCUT_DOWN),
-                () -> dnd.ui.SettingsDialog.show(stage));
+        scene.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, ev -> {
+            if (dnd.keys.Shortcuts.matches(ev, "global.settings")) {
+                dnd.ui.SettingsDialog.show(stage);
+                ev.consume();
+            }
+        });
         stage.setScene(scene);
         stage.setTitle(TITLE);
     }

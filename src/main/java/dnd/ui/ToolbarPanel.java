@@ -23,7 +23,7 @@ public class ToolbarPanel extends FlowPane {
         Map<Tool, ToggleButton> buttons = new EnumMap<>(Tool.class);
         for (Tool t : Tool.values()) {
             ToggleButton b = IconButtons.decorate(new ToggleButton(), t.name().toLowerCase(),
-                    t.label + ": " + t.tip + " [" + (t.ordinal() + 1) % 10 + "]");
+                    dnd.keys.Shortcuts.tip(t.label + ": " + t.tip, "tool.board." + (t.ordinal() + 1)));
             b.setToggleGroup(group);
             b.setOnAction(e -> {
                 ts.tool.set(t);
@@ -105,7 +105,7 @@ public class ToolbarPanel extends FlowPane {
 
         // --- links and notes
         getChildren().addAll(
-                action("link", "Link: link the selected words (while typing) or object(s) to another item (Ctrl+L). Blue = link: hover it to preview the item, double-click to open it", v -> v.linkSelected(), current),
+                action("link", "Link: link the selected words (while typing) or object(s) to another item (" + dnd.keys.Shortcuts.label("item.link") + "). Blue = link: hover it to preview the item, double-click to open it", v -> v.linkSelected(), current),
                 action("unlink", "Unlink: remove the link from the selected words (while typing) or object(s)", v -> v.unlinkSelected(), current),
                 action("note", "Note: write your own note that shows when you hover over the selected words (while typing) or object(s). Green = note. Double-click a note to edit it",
                         v -> v.noteSelected(), current),
@@ -114,8 +114,8 @@ public class ToolbarPanel extends FlowPane {
                 IconButtons.switchToggle("name-hints", "Name hints: underline the names of your cards and spells in text; hover one to link it", ts.nameHints),
                 IconButtons.switchToggle("previews", "Link previews: show a preview of the linked card, spell, map or whiteboard when you hover over a link", ts.linkPreviews),
                 new Separator(Orientation.VERTICAL),
-                action("undo", "Undo (Ctrl+Z)", v -> v.undo(), current),
-                action("redo", "Redo (Ctrl+Y)", v -> v.redo(), current),
+                action("undo", dnd.keys.Shortcuts.tip("Undo", "item.undo"), v -> v.undo(), current),
+                action("redo", dnd.keys.Shortcuts.tip("Redo", "item.redo"), v -> v.redo(), current),
                 action("delete", "Delete the selection", v -> v.deleteSelected(), current));
     }
 

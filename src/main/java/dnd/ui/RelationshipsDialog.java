@@ -128,7 +128,7 @@ public final class RelationshipsDialog {
         if (owner != null) stage.initOwner(owner);
         Scene scene = new Scene(root, 1100, 720);
         scene.setOnKeyPressed(e -> {
-            if (e.getCode() == KeyCode.ESCAPE) stage.close();
+            if (dnd.keys.Shortcuts.matches(e, "dialog.close")) stage.close();
         });
         stage.setScene(scene);
         ChangeListener<Boolean> themeListener = (o, was, now) -> redraw[0].run();

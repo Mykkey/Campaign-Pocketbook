@@ -108,7 +108,7 @@ public final class RulesReferenceDialog {
         if (owner != null) stage.initOwner(owner);
         Scene scene = new Scene(split, 760, 540);
         scene.setOnKeyPressed(e -> {
-            if (e.getCode() == KeyCode.ESCAPE) stage.close();
+            if (dnd.keys.Shortcuts.matches(e, "dialog.close")) stage.close();
         });
         stage.setScene(scene);
         stage.setOnHidden(e -> {

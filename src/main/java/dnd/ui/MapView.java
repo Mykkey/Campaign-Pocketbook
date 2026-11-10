@@ -1198,29 +1198,96 @@ public class MapView extends Pane implements ItemView {
 
     // ================================================================ keyboard & menu
 
-    /**
-     * Ctrl+C copy, Ctrl+X cut, Ctrl+V paste, Ctrl+D duplicate, Ctrl+A select all, Ctrl+0 fit.
-     * Returns true if the key was one of these. The workspace also calls this so the shortcuts work
-     * even when focus is on a toolbar control rather than the map.
-     */
+    /** Does what a keyboard shortcut asks (the workspace calls this, so the keys work even when a toolbar button has the focus). */
     @Override
-    public boolean shortcut(KeyEvent e) {
-        if (!e.isShortcutDown() || e.isAltDown()) return false;
-        switch (e.getCode()) {
-            case C -> copy();
-            case X -> { copy(); deleteSelected(); }
-            case V -> paste();
-            case D -> { copy(); paste(); }
-            case A -> {
+    public boolean perform(String id) {
+        switch (id) {
+            case "item.copy" -> copy();
+            case "item.cut" -> {
+                copy();
+                deleteSelected();
+            }
+            case "item.paste" -> paste();
+            case "item.duplicate" -> {
+                copy();
+                paste();
+            }
+            case "item.selectAll" -> {
                 selected.clear();
                 for (MapObject o : map.objects) selected.add(o.id);
                 for (MapToken t : map.tokens) selected.add(t.id);
                 redraw();
             }
-            case DIGIT0 -> fitToWindow();
-            default -> { return false; }
+            case "item.delete" -> {
+                return deleteSelection();
+            }
+            case "item.escape" -> {
+                return escape();
+            }
+            case "item.fit" -> fitToWindow();
+            case "item.actualSize" -> zoomTo(1);
+            case "item.zoomIn" -> zoomTo(map.zoom * 1.25);
+            case "item.zoomOut" -> zoomTo(map.zoom / 1.25);
+            case "item.rotateLeft" -> {
+                if (selected.isEmpty()) return false;
+                rotateSelected(-15);
+            }
+            case "item.rotateRight" -> {
+                if (selected.isEmpty()) return false;
+                rotateSelected(15);
+            }
+            case "item.flip" -> {
+                if (selected.isEmpty()) return false;
+                flipSelected();
+            }
+            case "item.hide" -> {
+                return toggleHiddenSelection();
+            }
+            case "item.link" -> {
+                Object piece = selected.size() == 1 ? firstSelectedPiece() : null;
+                if (piece == null) return false;
+                editLinkNote(piece);
+            }
+            default -> {
+                if (id.startsWith("tool.battle.")) return selectTool(Integer.parseInt(id.substring("tool.battle.".length())) - 1);
+                return false;
+            }
         }
         return true;
+    }
+
+    /** Zooms around the middle of the view (1 = actual size). */
+    private void zoomTo(double z) {
+        double cx = getWidth() / 2, cy = getHeight() / 2;
+        double px = wx(cx), py = wy(cy);
+        map.zoom = Math.max(0.1, Math.min(5, z));
+        map.offsetX = cx - px * map.zoom;
+        map.offsetY = cy - py * map.zoom;
+        store.markMapDirty(map);
+        redraw();
+    }
+
+    /** Hides the selected pieces and tokens from the players, or shows them again if all of them were hidden. */
+    private boolean toggleHiddenSelection() {
+        if (selected.isEmpty()) return false;
+        boolean allHidden = true;
+        for (String s : selected) {
+            MapObject so = map.findObject(s);
+            MapToken st = map.findToken(s);
+            if ((so != null && !so.hidden) || (st != null && !st.hidden)) allHidden = false;
+        }
+        setHiddenForSelection(!allHidden);
+        return true;
+    }
+
+    @Override
+    public dnd.keys.Shortcuts.Context keyContext() {
+        return dnd.keys.Shortcuts.Context.BATTLEMAP;
+    }
+
+    @Override
+    public boolean hasCanvasFocus() {
+        return isFocused();
     }
 
     @Override
@@ -1253,20 +1320,7 @@ public class MapView extends Pane implements ItemView {
             e.consume();
             return;
         }
-        if (shortcut(e)) {
-            e.consume();
-            return;
-        }
-        if (e.isShortcutDown()) return;
-        switch (k) {
-            case DELETE, BACK_SPACE -> deleteSelected();
-            case ESCAPE -> escape();
-            case OPEN_BRACKET -> rotateSelected(-15);
-            case CLOSE_BRACKET -> rotateSelected(15);
-            case F -> flipSelected();
-            default -> { return; }
-        }
-        e.consume();
+        // every other key is a shortcut the workspace handles (see Shortcuts and perform)
     }
 
     private void onContextMenu(ContextMenuEvent e) {

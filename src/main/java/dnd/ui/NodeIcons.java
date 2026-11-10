@@ -69,6 +69,31 @@ public final class NodeIcons {
         return p;
     }
 
+    /** The icon of a kind of item (null kind = whiteboard, "folder" = folder) with a small green plus, for the "new..." buttons. */
+    public static Node newIcon(String kind) {
+        TreeNode n = new TreeNode("", "folder".equals(kind));
+        if (!"folder".equals(kind)) n.kind = kind;
+        Node base = icon(n, false);
+        SVGPath halo = new SVGPath();
+        halo.setContent("M12.5 8.5 V15.5 M9 12 H16");
+        halo.setStroke(Color.web("#ffffff"));
+        halo.setStrokeWidth(4);
+        halo.setStrokeLineCap(StrokeLineCap.ROUND);
+        halo.setFill(null);
+        SVGPath plus = new SVGPath();
+        plus.setContent("M12.5 8.5 V15.5 M9 12 H16");
+        plus.setStroke(Color.web("#16a34a"));
+        plus.setStrokeWidth(2.2);
+        plus.setStrokeLineCap(StrokeLineCap.ROUND);
+        plus.setFill(null);
+        Pane p = new Pane(base, halo, plus);
+        p.setMinSize(18, 18);
+        p.setPrefSize(18, 18);
+        p.setMaxSize(18, 18);
+        p.setMouseTransparent(true);
+        return p;
+    }
+
     private static SVGPath fill(String path, Color c) {
         SVGPath s = new SVGPath();
         s.setContent(path);

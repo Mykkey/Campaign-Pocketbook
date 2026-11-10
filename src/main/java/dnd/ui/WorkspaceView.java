@@ -91,7 +91,17 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Button newEncounter = new Button("+ Encounter");
         newEncounter.setTooltip(IconButtons.tip("Plan a fight: pick creatures and see how hard it is for your party"));
         newEncounter.setOnAction(e -> newEncounter(selectedFolder()));
-        FlowPane treeButtons = new FlowPane(6, 6, newBoard, newMap, newCard, newSpell, newItem, newQuest, newSession, newWorld, newEncounter, newFolder);
+        newButton(newBoard, null, "New whiteboard: a free canvas for notes, text, images and links");
+        newButton(newMap, TreeNode.KIND_BATTLEMAP, "New battlemap: a square or hex map for running combat");
+        newButton(newCard, TreeNode.KIND_CARD, "New card: a character or creature (stat block)");
+        newButton(newSpell, TreeNode.KIND_SPELL, "New spell: your own homebrew spell, or edit one imported from the library");
+        newButton(newItem, TreeNode.KIND_ITEM, "New magic item: your own homebrew item, or one from your loot");
+        newButton(newQuest, TreeNode.KIND_QUEST, "New quest: a plot thread with steps, clues and the people and places it involves");
+        newButton(newSession, TreeNode.KIND_SESSION, "New session: what happened, a recap for next time, and what came up");
+        newButton(newWorld, TreeNode.KIND_WORLDMAP, "New world map: paint land, sea and biomes, then add mountains, forests, towns and labels");
+        newButton(newEncounter, TreeNode.KIND_ENCOUNTER, "New encounter: pick creatures and see how hard the fight is for your party");
+        newButton(newFolder, "folder", "New folder: to keep related items together");
+        FlowPane treeButtons = new FlowPane(4, 4, newBoard, newMap, newCard, newSpell, newItem, newQuest, newSession, newWorld, newEncounter, newFolder);
         tree.setCellFactory(v -> createTreeCell(true));
         tree.setOnMouseClicked(e -> {
             if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2) {
@@ -884,6 +894,12 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             case 1 -> "-fx-border-color: #2563eb; -fx-border-width: 0 0 2 0;";
             default -> "-fx-background-color: rgba(37,99,235,0.22);";
         };
+    }
+
+    /** Turns a "+ Something" button into a small icon button (the item's icon with a plus) with a tooltip. */
+    private static void newButton(Button b, String kind, String tip) {
+        IconButtons.decorate(b, "add", tip);
+        b.setGraphic(NodeIcons.newIcon(kind));
     }
 
     private boolean canMove(TreeItem<TreeNode> it, int delta) {

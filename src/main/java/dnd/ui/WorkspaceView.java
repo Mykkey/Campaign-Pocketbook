@@ -777,20 +777,33 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
                 e.consume();
             });
             cell.setOnDragOver(e -> {
-                if (e.getDragboard().hasString()) e.acceptTransferModes(TransferMode.MOVE);
+                if (e.getDragboard().hasString()) {
+                    e.acceptTransferModes(TransferMode.MOVE);
+                    cell.setStyle(dropStyle(dropZone(cell, e.getY())));
+                }
                 e.consume();
             });
+            cell.setOnDragExited(e -> cell.setStyle(""));
             cell.setOnDragDropped(e -> {
                 boolean done = false;
+                cell.setStyle("");
                 if (e.getDragboard().hasString()) {
-                    TreeNode target = cell.getItem() == null ? store.project.root : cell.getItem();
-                    if (!target.folder) {
-                        TreeNode p = store.project.root.parentOf(target.id);
-                        target = p == null ? store.project.root : p;
+                    String dragged = e.getDragboard().getString();
+                    TreeNode over = cell.getItem() == null ? store.project.root : cell.getItem();
+                    int zone = dropZone(cell, e.getY());
+                    TreeNode parent = over == store.project.root ? null : store.project.root.parentOf(over.id);
+                    if (zone == 0 || parent == null) {
+                        // onto a folder (or the empty part of the tree): put it inside, at the end
+                        TreeNode target = over.folder ? over : parent == null ? store.project.root : parent;
+                        done = store.moveNode(dragged, target) || store.moveNodeTo(dragged, target, target.children.size());
+                    } else {
+                        // between two items: before (-1) or after (1) the one it was dropped on
+                        int at = parent.children.indexOf(over) + (zone > 0 ? 1 : 0);
+                        done = store.moveNodeTo(dragged, parent, at);
                     }
-                    if (store.moveNode(e.getDragboard().getString(), target)) {
+                    if (done) {
                         refreshTree();
-                        done = true;
+                        selectInTree(dragged);
                     }
                 }
                 e.setDropCompleted(done);
@@ -854,6 +867,23 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             del.setDisable(isRoot);
         });
         return m;
+    }
+
+    /** Where on a tree row a drop lands: -1 above it (before), 1 below it (after), 0 on it (inside a folder). */
+    private int dropZone(TreeCell<TreeNode> cell, double y) {
+        TreeNode n = cell.getItem();
+        if (n == null || n == store.project.root) return 0;
+        double h = Math.max(1, cell.getHeight());
+        if (n.folder) return y < h * 0.25 ? -1 : y > h * 0.75 ? 1 : 0;
+        return y < h * 0.5 ? -1 : 1;
+    }
+
+    private static String dropStyle(int zone) {
+        return switch (zone) {
+            case -1 -> "-fx-border-color: #2563eb; -fx-border-width: 2 0 0 0;";
+            case 1 -> "-fx-border-color: #2563eb; -fx-border-width: 0 0 2 0;";
+            default -> "-fx-background-color: rgba(37,99,235,0.22);";
+        };
     }
 
     private boolean canMove(TreeItem<TreeNode> it, int delta) {

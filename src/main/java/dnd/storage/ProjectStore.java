@@ -889,6 +889,30 @@ public final class ProjectStore {
     }
 
     /**
+     * Moves an item to a given position among the children of a folder (0 = first).
+     *
+     * @param index where it should end up in the folder's list as it is before the move; clamped to the list
+     * @return false if the move is impossible (into itself) or changes nothing
+     */
+    public boolean moveNodeTo(String nodeId, TreeNode targetFolder, int index) {
+        TreeNode node = project.root.find(nodeId);
+        if (node == null || node == project.root || !targetFolder.folder) return false;
+        if (node.find(targetFolder.id) != null) return false;
+        TreeNode parent = project.root.parentOf(nodeId);
+        if (parent == null) return false;
+        int at = Math.max(0, Math.min(targetFolder.children.size(), index));
+        int old = parent.children.indexOf(node);
+        if (parent == targetFolder) {
+            if (old < at) at--; // the list gets shorter before the item is put back
+            if (at == old) return false;
+        }
+        parent.children.remove(node);
+        targetFolder.children.add(Math.min(at, targetFolder.children.size()), node);
+        markProjectDirty();
+        return true;
+    }
+
+    /**
      * Moves an item one place up (delta -1) or down (delta 1) among the items in its folder.
      *
      * @return false if it is already first or last, or is the root

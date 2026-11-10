@@ -126,4 +126,31 @@ class StoreTest {
         assertEquals(java.util.List.of(c.id, a.id, b.id), back.children.stream().map(n -> n.id).toList(), "the order is saved");
     }
 
+
+    @Test
+    void anItemCanBeDroppedAtAnyPositionInAnyFolder(@TempDir Path tmp) throws Exception {
+        ProjectStore store = ProjectStore.create(tmp, "Camp");
+        dnd.model.TreeNode one = store.createFolder(store.project.root, "One");
+        dnd.model.TreeNode two = store.createFolder(store.project.root, "Two");
+        dnd.model.Board a = store.createBoard(one, "A");
+        dnd.model.Board b = store.createBoard(one, "B");
+        dnd.model.Board c = store.createBoard(one, "C");
+        dnd.model.Board x = store.createBoard(two, "X");
+        java.util.function.Function<dnd.model.TreeNode, java.util.List<String>> ids = f -> f.children.stream().map(n -> n.id).toList();
+        assertTrue(store.moveNodeTo(a.id, one, 3), "to the end of its own folder");
+        assertEquals(java.util.List.of(b.id, c.id, a.id), ids.apply(one));
+        assertTrue(store.moveNodeTo(a.id, one, 0), "to the front");
+        assertEquals(java.util.List.of(a.id, b.id, c.id), ids.apply(one));
+        assertFalse(store.moveNodeTo(b.id, one, 1), "dropping it where it already is changes nothing");
+        assertFalse(store.moveNodeTo(b.id, one, 2), "just after itself is the same place");
+        assertTrue(store.moveNodeTo(c.id, two, 0), "into another folder, first");
+        assertEquals(java.util.List.of(c.id, x.id), ids.apply(two));
+        assertEquals(java.util.List.of(a.id, b.id), ids.apply(one));
+        assertFalse(store.moveNodeTo(one.id, one, 0), "a folder cannot go into itself");
+        dnd.model.TreeNode inner = store.createFolder(one, "Inner");
+        assertFalse(store.moveNodeTo(one.id, inner, 0), "nor into something inside it");
+        assertTrue(store.moveNodeTo(two.id, store.project.root, 0), "a folder can be put first at the top");
+        assertEquals(two.id, store.project.root.children.get(0).id);
+    }
+
 }

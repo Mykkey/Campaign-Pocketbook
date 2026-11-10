@@ -211,8 +211,13 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
                 menuRow("calendar", "Session timeline", null, timeline));
         MenuButton historyMenu = IconMenu.create("clock", "History: recent items and what links here");
         historyMenu.getItems().addAll(recentMenu, backlinks);
-        recentMenu.setOnShowing(e -> rebuildRecent());
-        backlinks.setOnShowing(e -> rebuildBacklinks());
+        // a submenu with no rows cannot be opened, so both are filled as soon as the History button opens
+        historyMenu.setOnShowing(e -> {
+            rebuildRecent();
+            rebuildBacklinks();
+        });
+        rebuildRecent();
+        rebuildBacklinks();
         HBox nav = new HBox(4, projects, backBtn, fwdBtn, trail, spacer, generators, reference, historyMenu, Theme.toggleButton(), settings, search);
         nav.setAlignment(Pos.CENTER_LEFT);
         nav.setPadding(new Insets(6, 8, 0, 8));

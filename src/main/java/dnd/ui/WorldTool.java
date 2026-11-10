@@ -13,7 +13,8 @@ public enum WorldTool {
     LABEL("Label", "text", "Write a name on the map: a sea, a kingdom, a town. Choose the kind and the curve next to the tool; double-click a label to change its words"),
     RULER("Ruler", "ruler", "Measure a journey: click points along the way, and see the distance and how long it takes on foot, riding or by ship. Esc clears it"),
     FILL("Bucket", "bucket", "Fill a whole area in one click: the sea, a lake, a continent, or all the land of one biome. Choose what to fill with next to the tool"),
-    REVEAL("Reveal", "eye", "Uncover the parts of the map your players have explored: drag to reveal, hold Alt to cover again. The rest stays blank parchment for them (turn on Hide unexplored first)");
+    REVEAL("Reveal", "eye", "Uncover the parts of the map your players have explored: drag to reveal, hold Alt to cover again. The rest stays blank parchment for them (turn on Hide unexplored first)"),
+    ELEVATION("Elevation", "relief", "Paint how high the land is: raise hills and mountains, lower valleys, smooth or flatten. Relief shading turns it into light and shadow on the map");
 
     public final String label;
     public final String icon;

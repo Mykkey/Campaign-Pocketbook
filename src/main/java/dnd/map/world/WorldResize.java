@@ -21,11 +21,11 @@ public final class WorldResize {
 
     /** Everything a resize changes, so it can be put back. */
     public record State(int cols, int rows, double milesPerCell, Double legendX, Double legendY,
-                        PaintLayer base, PaintLayer biome, PaintLayer reveal, String objects) { }
+                        PaintLayer base, PaintLayer biome, PaintLayer reveal, PaintLayer elevation, String objects) { }
 
     public static State capture(WorldMap m) {
         return new State(m.cols, m.rows, m.milesPerCell, m.legendX, m.legendY, m.base().copy(), m.biome().copy(), m.reveal().copy(),
-                WorldObjects.capture(m));
+                m.elevation().copy(), WorldObjects.capture(m));
     }
 
     public static void restore(WorldMap m, State s) {
@@ -34,7 +34,7 @@ public final class WorldResize {
         m.milesPerCell = s.milesPerCell();
         m.legendX = s.legendX();
         m.legendY = s.legendY();
-        m.replaceLayers(s.base().copy(), s.biome().copy(), s.reveal().copy());
+        m.replaceLayers(s.base().copy(), s.biome().copy(), s.reveal().copy(), s.elevation().copy());
         WorldObjects.restore(m, s.objects());
         finish(m);
     }
@@ -77,6 +77,7 @@ public final class WorldResize {
         // paint: each new cell takes the old cell at the same place on the map
         PaintLayer base = resample(m.base(), newCols, newRows, 1, k, dx, dy);
         PaintLayer biome = resample(m.biome(), newCols, newRows, 1, k, dx, dy);
+        PaintLayer elevation = resample(m.elevation(), newCols, newRows, 1, k, dx, dy);
         PaintLayer reveal = resample(m.reveal(), (newCols + step - 1) / step, (newRows + step - 1) / step, step, k, dx, dy);
 
         // symbols, lines, regions and the legend
@@ -107,7 +108,7 @@ public final class WorldResize {
         m.cols = newCols;
         m.rows = newRows;
         m.milesPerCell = Math.max(0.01, newMilesPerCell);
-        m.replaceLayers(base, biome, reveal);
+        m.replaceLayers(base, biome, reveal, elevation);
         finish(m);
     }
 

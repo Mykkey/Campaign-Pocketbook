@@ -133,9 +133,60 @@ public class WorldMapEditor extends BorderPane implements ItemView {
         });
         HBox brushBox = new HBox(4, new Label("Brush"), brush);
         brushBox.setAlignment(Pos.CENTER_LEFT);
-        brushBox.visibleProperty().bind(ts.tool.isEqualTo(WorldTool.BASE).or(ts.tool.isEqualTo(WorldTool.BIOME)).or(ts.tool.isEqualTo(WorldTool.SCATTER)).or(ts.tool.isEqualTo(WorldTool.REVEAL)));
+        brushBox.visibleProperty().bind(ts.tool.isEqualTo(WorldTool.BASE).or(ts.tool.isEqualTo(WorldTool.BIOME)).or(ts.tool.isEqualTo(WorldTool.SCATTER)).or(ts.tool.isEqualTo(WorldTool.REVEAL)).or(ts.tool.isEqualTo(WorldTool.ELEVATION)));
         brushBox.managedProperty().bind(brushBox.visibleProperty());
         bar.getChildren().add(brushBox);
+
+        // ---- elevation: what the brush does, and how the height is shown
+        ComboBox<WorldToolState.ElevationMode> elevMode = new ComboBox<>(FXCollections.observableArrayList(WorldToolState.ElevationMode.values()));
+        elevMode.setValue(ts.elevMode.get());
+        elevMode.setFocusTraversable(false);
+        elevMode.setTooltip(IconButtons.tip("Raise or lower the land, smooth it out, or flatten it to a chosen height"));
+        elevMode.valueProperty().addListener((o, a, n) -> {
+            if (n != null) ts.elevMode.set(n);
+        });
+        Spinner<Integer> elevStrength = new Spinner<>(1, 30, ts.elevStrength.get());
+        elevStrength.setPrefWidth(66);
+        elevStrength.setEditable(true);
+        elevStrength.setTooltip(IconButtons.tip("How strongly each stroke changes the height: 1 is gentle, 30 is strong"));
+        elevStrength.valueProperty().addListener((o, a, n) -> {
+            if (n != null) ts.elevStrength.set(n);
+        });
+        Spinner<Integer> elevHeight = new Spinner<>(0, 255, ts.elevHeight.get(), 5);
+        elevHeight.setPrefWidth(76);
+        elevHeight.setEditable(true);
+        elevHeight.setTooltip(IconButtons.tip("The height Flatten levels the land to (0 is flat ground, 255 the highest peak)"));
+        elevHeight.valueProperty().addListener((o, a, n) -> {
+            if (n != null) ts.elevHeight.set(n);
+        });
+        elevHeight.disableProperty().bind(ts.elevMode.isNotEqualTo(WorldToolState.ElevationMode.FLATTEN));
+        Spinner<Double> reliefStrength = new Spinner<>(0.2, 4.0, map.reliefStrength, 0.2);
+        reliefStrength.setPrefWidth(70);
+        reliefStrength.setEditable(true);
+        reliefStrength.setTooltip(IconButtons.tip("How strong the relief shading is: 1 is normal, more makes slopes look steeper"));
+        reliefStrength.valueProperty().addListener((o, a, n) -> {
+            if (n == null) return;
+            map.reliefStrength = n;
+            view.styleChanged();
+        });
+        ToggleButton reliefBtn = IconButtons.decorate(new ToggleButton(), "relief", "Relief shading: show the height of the land as light and shadow (painted with the Elevation tool)");
+        reliefBtn.setSelected(map.relief);
+        reliefBtn.setOnAction(e -> {
+            map.relief = reliefBtn.isSelected();
+            view.styleChanged();
+            view.requestFocus();
+        });
+        Button flatAll = new Button("Flatten all");
+        flatAll.setTooltip(IconButtons.tip("Set the height of the whole map back to flat (you can undo it)"));
+        flatAll.setOnAction(e -> {
+            view.clearElevation();
+            view.requestFocus();
+        });
+        HBox elevBox = new HBox(4, elevMode, new Label("Strength"), elevStrength, new Label("Height"), elevHeight, new Label("Shading"), reliefStrength, flatAll);
+        elevBox.setAlignment(Pos.CENTER_LEFT);
+        elevBox.visibleProperty().bind(ts.tool.isEqualTo(WorldTool.ELEVATION));
+        elevBox.managedProperty().bind(elevBox.visibleProperty());
+        bar.getChildren().addAll(reliefBtn, elevBox);
 
         // ---- symbols: how big, how thick, and in which art style
         Spinner<Integer> stampSize = new Spinner<>(0, 200, ts.stampSize.get());

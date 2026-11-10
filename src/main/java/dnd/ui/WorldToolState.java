@@ -35,6 +35,11 @@ final class WorldToolState {
     final javafx.beans.property.BooleanProperty fillBiome = new javafx.beans.property.SimpleBooleanProperty(false);
     /** Whether moving symbols and labels snaps them to the map's edges and middle. Remembered between runs. */
     final javafx.beans.property.BooleanProperty snap = new javafx.beans.property.SimpleBooleanProperty(AppSettings.getBoolean("worldSnap", true));
+    /** What the elevation tool does, how strongly (1 gentle, 30 strong), and the height the flatten mode levels to (0 to 255). */
+    enum ElevationMode { RAISE, LOWER, SMOOTH, FLATTEN }
+    final ObjectProperty<ElevationMode> elevMode = new SimpleObjectProperty<>(ElevationMode.RAISE);
+    final IntegerProperty elevStrength = new SimpleIntegerProperty(6);
+    final IntegerProperty elevHeight = new SimpleIntegerProperty(100);
     /** Whether the reveal tool covers the map again (true) instead of uncovering it. */
     final javafx.beans.property.BooleanProperty covering = new javafx.beans.property.SimpleBooleanProperty(false);
     /** Whether hovering something with a note or a link shows them. Remembered between runs (shared with the whiteboards). */

@@ -110,11 +110,13 @@ public final class WorldTerrainCache {
     private final class Sampler {
         private final WorldPalette pal = WorldPalette.of(map.style);
         private final WorldStyle style = map.style;
-        private final PaintLayer base = map.base(), bio = map.biome();
+        private final PaintLayer base = map.base(), bio = map.biome(), elev = map.elevation();
         private final double[] bw = new double[6], mw = new double[16];
         private final int bx0, by0, bw2, bh2;
         /** How much of the surroundings is solid ground: a wide blur (for shallows) and a tight one (for the coast itself). */
         private final float[] wide, tight;
+        /** Relief shading of the ground around this tile (see {@link WorldRelief}), or null when the map has no elevation or relief is turned off. */
+        private final float[] shade;
         private static final int R2 = 2;
 
         Sampler(int cx0, int cy0, int cx1, int cy1) {
@@ -131,6 +133,18 @@ public final class WorldTerrainCache {
             }
             wide = boxBlur(solid, bw2, bh2, R);
             tight = boxBlur(solid, bw2, bh2, R2);
+            if (map.relief && !elev.isEmpty()) {
+                float[] heights = new float[bw2 * bh2];
+                for (int y = 0; y < bh2; y++) {
+                    for (int x = 0; x < bw2; x++) {
+                        int ex = Math.max(0, Math.min(cols - 1, bx0 + x)), ey = Math.max(0, Math.min(rows - 1, by0 + y));
+                        heights[y * bw2 + x] = WorldRelief.heightOf(elev.get(ex, ey));
+                    }
+                }
+                shade = WorldRelief.shade(boxBlur(heights, bw2, bh2, 2), bw2, bh2, Math.max(0.1, map.reliefStrength));
+            } else {
+                shade = null;
+            }
         }
 
         /** Cells beyond the edge of the map count as the nearest cell, so the sea and land run right up to the border. */
@@ -231,7 +245,35 @@ public final class WorldTerrainCache {
                 case 5 -> ice(u, v);
                 default -> grain(pal.parchment, u, v, 0.07);
             };
+            if (shade != null && (best == 3 || best == 5)) col = relief(col, fieldAt(shade, wu, wv), u, v);
             return coast(col, dist);
+        }
+
+        /** Lights or darkens ground by its slope, in the way of each art style. */
+        private int relief(int col, double s, double u, double v) {
+            switch (style) {
+                case CLASSIC_INK -> {
+                    col = WorldPalette.scale(col, 1 + s * 0.10);
+                    if (s < -0.12) { // hachure strokes on the slopes in shadow
+                        double hv = (u - v) * 0.7;
+                        if (hv - Math.floor(hv) < 0.22) col = WorldPalette.mix(col, pal.ink, Math.min(0.55, -s * 0.9));
+                    }
+                    return col;
+                }
+                case WATERCOLOUR -> {
+                    return WorldPalette.scale(col, 1 + s * 0.22);
+                }
+                case RETRO_PIXEL -> {
+                    int band = WorldRelief.band(s);
+                    return band < 0 ? WorldPalette.scale(col, 0.8) : band > 0 ? WorldPalette.scale(col, 1.15) : col;
+                }
+                case DARK_FANTASY -> {
+                    return WorldPalette.scale(col, 1 + s * 0.5);
+                }
+                default -> {
+                    return WorldPalette.scale(col, 1 + s * 0.38);
+                }
+            }
         }
 
         private void addBase(int x, int y, double w) {

@@ -39,6 +39,10 @@ public class WorldMap extends ProjectEntry {
     /** Miles per day for each way of travelling, used by the ruler. */
     public java.util.Map<String, Double> paces = dnd.map.world.WorldTravel.defaultPaces();
 
+    /** Whether the height of the land is shown as relief shading (only has an effect once some elevation has been painted), and how strongly. */
+    public boolean relief = true;
+    public double reliefStrength = 1.0;
+
     /** True when the players only see the parts of the map the DM has revealed (the rest shows as unexplored parchment). */
     public boolean hideUnexplored;
 
@@ -51,8 +55,8 @@ public class WorldMap extends ProjectEntry {
     public transient int revision;
 
     @JsonIgnore
-    private PaintLayer base, biome, reveal;
-    private String loadedBase, loadedBiome, loadedReveal;
+    private PaintLayer base, biome, reveal, elevation;
+    private String loadedBase, loadedBiome, loadedReveal, loadedElevation;
 
     public WorldMap() { }
 
@@ -99,6 +103,23 @@ public class WorldMap extends ProjectEntry {
         return reveal().get((int) Math.floor(x / REVEAL_STEP), (int) Math.floor(y / REVEAL_STEP)) != 0;
     }
 
+    /** How high the land is, one value per cell from 0 (flat) to 255 (the highest peak), painted with the elevation tool. */
+    public PaintLayer elevation() {
+        if (elevation == null) elevation = PaintLayer.decode(cols, rows, loadedElevation);
+        return elevation;
+    }
+
+    @JsonGetter("elevationData")
+    private String elevationDataOut() {
+        return elevation().isEmpty() ? null : elevation().encode();
+    }
+
+    @JsonSetter("elevationData")
+    private void elevationDataIn(String data) {
+        loadedElevation = data;
+        elevation = null;
+    }
+
     @JsonGetter("revealData")
     private String revealDataOut() {
         return reveal().isEmpty() ? null : reveal().encode();
@@ -141,10 +162,11 @@ public class WorldMap extends ProjectEntry {
     }
 
     /** Puts in new paint layers (after the map was resized); they must already have the map's new size. */
-    public void replaceLayers(PaintLayer newBase, PaintLayer newBiome, PaintLayer newReveal) {
+    public void replaceLayers(PaintLayer newBase, PaintLayer newBiome, PaintLayer newReveal, PaintLayer newElevation) {
         base = newBase;
         biome = newBiome;
         reveal = newReveal;
+        elevation = newElevation;
     }
 
     public WorldMap copy() {
@@ -163,6 +185,9 @@ public class WorldMap extends ProjectEntry {
         m.legendY = legendY;
         m.hideUnexplored = hideUnexplored;
         m.reveal = reveal().copy();
+        m.elevation = elevation().copy();
+        m.relief = relief;
+        m.reliefStrength = reliefStrength;
         m.paces = new java.util.LinkedHashMap<>(paces);
         m.base = base().copy();
         m.biome = biome().copy();

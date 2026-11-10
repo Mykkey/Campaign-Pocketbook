@@ -107,7 +107,9 @@ final class WorldMapView extends Pane {
     private Double legendX0, legendY0;
     // the paint stroke being drawn
     private PaintLayer layer;
-    private boolean layerIsBiome;
+    private enum LayerKind { BASE, BIOME, ELEVATION }
+
+    private LayerKind layerKind = LayerKind.BASE;
     private byte[] layerBefore;
     private int minX, minY, maxX, maxY;
     private double lastCx, lastCy;
@@ -241,9 +243,9 @@ final class WorldMapView extends Pane {
         }
         if (e.getButton() != MouseButton.PRIMARY) return;
         switch (tool) {
-            case BASE, BIOME -> {
+            case BASE, BIOME, ELEVATION -> {
                 mode = Mode.PAINT;
-                beginStroke(tool == WorldTool.BIOME, px, py);
+                beginStroke(tool == WorldTool.BIOME ? LayerKind.BIOME : tool == WorldTool.ELEVATION ? LayerKind.ELEVATION : LayerKind.BASE, px, py);
             }
             case STAMP -> placeStamp(px, py);
             case SCATTER -> {
@@ -422,9 +424,9 @@ final class WorldMapView extends Pane {
 
     // ================================================================ painting
 
-    private void beginStroke(boolean biome, double cx, double cy) {
-        layerIsBiome = biome;
-        layer = biome ? map.biome() : map.base();
+    private void beginStroke(LayerKind kind, double cx, double cy) {
+        layerKind = kind;
+        layer = layerOf(kind);
         layerBefore = layer.cells.clone();
         minX = Integer.MAX_VALUE;
         minY = Integer.MAX_VALUE;
@@ -433,6 +435,10 @@ final class WorldMapView extends Pane {
         lastCx = cx;
         lastCy = cy;
         dab(cx, cy);
+    }
+
+    private PaintLayer layerOf(LayerKind kind) {
+        return kind == LayerKind.BIOME ? map.biome() : kind == LayerKind.ELEVATION ? map.elevation() : map.base();
     }
 
     /** Paints along the line from the last point so a fast drag leaves no gaps. */
@@ -453,7 +459,7 @@ final class WorldMapView extends Pane {
         double r = Math.max(0.5, ts.brush.get() / 2.0);
         int x0 = (int) Math.floor(cx - r), x1 = (int) Math.ceil(cx + r), y0 = (int) Math.floor(cy - r), y1 = (int) Math.ceil(cy + r);
         byte value;
-        if (layerIsBiome) {
+        if (layerKind == LayerKind.BIOME) {
             WorldBiome b = ts.biome.get();
             value = b == null ? 0 : b.code;
         } else {
@@ -466,7 +472,11 @@ final class WorldMapView extends Pane {
             for (int x = Math.max(0, x0); x <= Math.min(map.cols - 1, x1); x++) {
                 double dx = x + 0.5 - cx, dy = y + 0.5 - cy;
                 if (dx * dx + dy * dy > r * r) continue;
-                if (layerIsBiome && value != 0) { // biomes only go on land and ice
+                if (layerKind == LayerKind.ELEVATION) {
+                    if (elevate(x, y, Math.sqrt(dx * dx + dy * dy) / r)) changed = true;
+                    continue;
+                }
+                if (layerKind == LayerKind.BIOME && value != 0) { // biomes only go on land and ice
                     WorldTerrain t = WorldTerrain.of(base.get(x, y));
                     if (t != WorldTerrain.LAND && t != WorldTerrain.ICE) continue;
                 }
@@ -484,7 +494,7 @@ final class WorldMapView extends Pane {
     private void endStroke() {
         if (layer == null) return;
         PaintLayer finished = layer;
-        boolean biome = layerIsBiome;
+        LayerKind kind = layerKind;
         layer = null;
         if (minX > maxX) return; // nothing changed
         int w = maxX - minX + 1, h = maxY - minY + 1;
@@ -492,12 +502,53 @@ final class WorldMapView extends Pane {
         for (int j = 0; j < h; j++) System.arraycopy(layerBefore, (minY + j) * finished.w + minX, before, j * w, w);
         layerBefore = null;
         int x = minX, y = minY;
-        push(new Entry(() -> applyPatch(biome, x, y, w, h, before), () -> applyPatch(biome, x, y, w, h, after)));
+        push(new Entry(() -> applyPatch(kind, x, y, w, h, before), () -> applyPatch(kind, x, y, w, h, after)));
         store.markWorldMapDirty(map, true);
     }
 
-    private void applyPatch(boolean biome, int x, int y, int w, int h, byte[] data) {
-        (biome ? map.biome() : map.base()).putRect(x, y, w, h, data);
+    /** Changes the height of one cell under the elevation brush; {@code d} is how far from the middle of the brush it is (0 to 1). Returns true if it changed. */
+    private boolean elevate(int x, int y, double d) {
+        PaintLayer el = map.elevation();
+        double fall = 0.5 + 0.5 * Math.cos(Math.PI * Math.min(1, d)); // 1 in the middle, 0 at the edge
+        int old = el.get(x, y) & 0xFF;
+        double strength = ts.elevStrength.get();
+        double v = old;
+        switch (ts.elevMode.get()) {
+            case RAISE -> v = old + Math.round(strength * fall);
+            case LOWER -> v = old - Math.round(strength * fall);
+            case SMOOTH -> {
+                double sum = 0;
+                int n = 0;
+                for (int j = -2; j <= 2; j++) {
+                    for (int i = -2; i <= 2; i++) {
+                        int nx = x + i, ny = y + j;
+                        if (!el.inside(nx, ny)) continue;
+                        sum += el.get(nx, ny) & 0xFF;
+                        n++;
+                    }
+                }
+                v = old + (sum / Math.max(1, n) - old) * Math.min(1, 0.5 * fall * strength / 6);
+            }
+            case FLATTEN -> v = old + (ts.elevHeight.get() - old) * Math.min(1, 0.4 * fall * strength / 6);
+        }
+        int nv = (int) Math.max(0, Math.min(255, Math.round(v)));
+        if (nv == old) return false;
+        el.set(x, y, (byte) nv);
+        return true;
+    }
+
+    /** Sets the height of the whole map back to flat, as one undoable step. */
+    void clearElevation() {
+        PaintLayer el = map.elevation();
+        byte[] before = el.cells.clone();
+        if (el.isEmpty()) return;
+        byte[] after = new byte[before.length];
+        applyPatch(LayerKind.ELEVATION, 0, 0, el.w, el.h, after);
+        push(new Entry(() -> applyPatch(LayerKind.ELEVATION, 0, 0, el.w, el.h, before), () -> applyPatch(LayerKind.ELEVATION, 0, 0, el.w, el.h, after)));
+    }
+
+    private void applyPatch(LayerKind kind, int x, int y, int w, int h, byte[] data) {
+        layerOf(kind).putRect(x, y, w, h, data);
         WorldTerrainCache.of(map).invalidateCells(x, y, x + w - 1, y + h - 1);
         store.markWorldMapDirty(map, true);
         redraw();
@@ -522,7 +573,7 @@ final class WorldMapView extends Pane {
         byte from = target.get(cx, cy);
         if (from == value) return;
         if (biome && !landOrIce(base, cx, cy)) return;
-        layerIsBiome = biome;
+        layerKind = biome ? LayerKind.BIOME : LayerKind.BASE;
         layer = target;
         layerBefore = target.cells.clone();
         minX = Integer.MAX_VALUE;
@@ -1626,7 +1677,7 @@ final class WorldMapView extends Pane {
         // the brush
         g.setTransform(1, 0, 0, 1, 0, 0);
         WorldTool tool = ts.tool.get();
-        if (mouseSX >= 0 && (tool == WorldTool.BASE || tool == WorldTool.BIOME || tool == WorldTool.SCATTER || tool == WorldTool.REVEAL) && !spaceDown) {
+        if (mouseSX >= 0 && (tool == WorldTool.BASE || tool == WorldTool.BIOME || tool == WorldTool.SCATTER || tool == WorldTool.REVEAL || tool == WorldTool.ELEVATION) && !spaceDown) {
             double r = ts.brush.get() / 2.0 * zoom();
             g.setStroke(Color.web("#ffffff", 0.95));
             g.setLineWidth(1.4);

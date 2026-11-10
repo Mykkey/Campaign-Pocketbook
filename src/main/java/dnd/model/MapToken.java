@@ -19,6 +19,10 @@ public class MapToken {
     public boolean hidden;
     /** How far it sees in the dark, in feet (darkvision); 0 = it needs light. Only matters on a dark map. */
     public int visionFeet;
+    /** Id of a project item this token links to, or null. */
+    public String link;
+    /** The DM's own note shown on hover, or null. Never shown to the players. */
+    public String note;
 
     public MapToken() { }
 
@@ -26,6 +30,7 @@ public class MapToken {
         MapToken t = new MapToken();
         t.label = label; t.color = color; t.col = col; t.row = row; t.size = size;
         t.cardId = cardId; t.revealRadius = revealRadius; t.hidden = hidden; t.visionFeet = visionFeet;
+        t.link = link; t.note = note;
         return t;
     }
 }

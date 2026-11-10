@@ -73,6 +73,11 @@ public class MapView extends Pane implements ItemView {
     private String movingId, hoverPinId;
     /** Opens a project item in a tab (set by the map editor; used by a pin's link). */
     public java.util.function.Consumer<String> openItem = id -> { };
+    /** Lets a test answer the link-and-note dialog. */
+    static java.util.function.Supplier<LinkNoteDialog.Result> linkNoteAnswer;
+    private final javafx.animation.PauseTransition hoverDelay = new javafx.animation.PauseTransition(javafx.util.Duration.millis(450));
+    private final javafx.stage.Popup tip = new javafx.stage.Popup();
+    private String hoverKey;
 
     public MapView(BattleMap map, ProjectStore store, MapToolState ts) {
         this.map = map;
@@ -91,6 +96,7 @@ public class MapView extends Pane implements ItemView {
         setOnMouseMoved(e -> {
             hoverWX = wx(e.getX());
             hoverWY = wy(e.getY());
+            hoverTip(e);
             MapPin overPin = hitPin(hoverWX, hoverWY);
             String pinId = overPin == null ? null : overPin.id;
             boolean pinChanged = !Objects.equals(pinId, hoverPinId);
@@ -99,6 +105,7 @@ public class MapView extends Pane implements ItemView {
             if (tool == MapTool.ASSET || tool == MapTool.TERRAIN || tool == MapTool.TOKEN || pinChanged) redraw();
         });
         setOnMouseExited(e -> {
+            hideTip();
             hoverWX = Double.NaN;
             redraw();
         });
@@ -241,6 +248,7 @@ public class MapView extends Pane implements ItemView {
         drawSelection(g);
         drawFogRect(g);
         drawPinHover(g);
+        drawBadges(g);
         if (mode == Mode.MARQUEE) {
             g.setFill(Color.web("#2563eb33"));
             g.setStroke(SELECT_COLOR);
@@ -526,6 +534,7 @@ public class MapView extends Pane implements ItemView {
     }
 
     private void pressSelect(MouseEvent e) {
+        hideTip();
         MapObject single = singleObject();
         if (single != null) {
             if (near(rotateHandle(single), pressWX, pressWY)) {
@@ -542,6 +551,10 @@ public class MapView extends Pane implements ItemView {
         MapToken tok = hitToken(pressWX, pressWY);
         MapObject obj = tok == null ? hitObject(pressWX, pressWY) : null;
         String hitId = tok != null ? tok.id : obj != null ? obj.id : null;
+        if (obj != null && e.getClickCount() == 2 && obj.link != null && store.itemExists(obj.link)) {
+            openItem.accept(obj.link);
+            return;
+        }
         if (tok != null && e.getClickCount() == 2) {
             selected.clear();
             selected.add(tok.id);
@@ -1297,6 +1310,12 @@ public class MapView extends Pane implements ItemView {
             menu.getItems().add(item("Send to back", false, () -> reorder(false)));
             menu.getItems().add(new SeparatorMenuItem());
         }
+        Object single = selected.size() == 1 ? firstSelectedPiece() : null;
+        if (single != null) {
+            menu.getItems().add(item("Link and note...", false, () -> editLinkNote(single)));
+            String lk = linkOf(single);
+            if (lk != null && store.itemExists(lk)) menu.getItems().add(item("Open linked item", false, () -> openItem.accept(lk)));
+        }
         if (has) {
             boolean allHidden = true;
             for (String s : selected) {
@@ -1340,6 +1359,115 @@ public class MapView extends Pane implements ItemView {
         menu.getItems().add(item("Delete  (Del)", !has, this::deleteSelected));
         menu.show(this, e.getScreenX(), e.getScreenY());
         e.consume();
+    }
+
+    // ================================================================ links and notes on pieces
+
+    private Object firstSelectedPiece() {
+        for (String s : selected) {
+            MapToken t = map.findToken(s);
+            if (t != null) return t;
+            MapObject o = map.findObject(s);
+            if (o != null) return o;
+        }
+        return null;
+    }
+
+    private static String linkOf(Object o) {
+        return o instanceof MapToken t ? t.link : o instanceof MapObject m ? m.link : null;
+    }
+
+    private static String noteOf(Object o) {
+        String n = o instanceof MapToken t ? t.note : o instanceof MapObject m ? m.note : null;
+        return n == null || n.isBlank() ? null : n;
+    }
+
+    private String nameOf(Object o) {
+        if (o instanceof MapToken t) return t.label == null || t.label.isBlank() ? "Token" : t.label;
+        if (o instanceof MapObject m) {
+            dnd.map.AssetLibrary.Asset a = m.assetId == null ? null : lib.get(m.assetId);
+            return a == null ? "Piece" : a.name;
+        }
+        return "";
+    }
+
+    private void editLinkNote(Object o) {
+        LinkNoteDialog.Result r;
+        if (linkNoteAnswer != null) r = linkNoteAnswer.get();
+        else r = LinkNoteDialog.show(getScene() == null ? null : getScene().getWindow(), store, nameOf(o), noteOf(o), linkOf(o), openItem).orElse(null);
+        if (r == null) return;
+        checkpoint();
+        if (o instanceof MapToken t) {
+            t.note = r.note();
+            t.link = r.link();
+        } else if (o instanceof MapObject m) {
+            m.note = r.note();
+            m.link = r.link();
+        }
+        changed();
+    }
+
+    private Object pieceAt(double px, double py) {
+        MapToken t = hitToken(px, py);
+        return t != null ? t : hitObject(px, py);
+    }
+
+    private void hideTip() {
+        hoverDelay.stop();
+        tip.hide();
+        hoverKey = null;
+    }
+
+    /** Shows the note and a preview of the link of the piece under the pointer, after a short rest (DM only). */
+    private void hoverTip(MouseEvent e) {
+        MapTool tool = ts.tool.get();
+        if (mode != Mode.NONE || spaceDown || (tool != MapTool.SELECT && tool != MapTool.HAND)) {
+            if (hoverKey != null) hideTip();
+            return;
+        }
+        Object o = pieceAt(wx(e.getX()), wy(e.getY()));
+        String link = linkOf(o);
+        if (link != null && !store.itemExists(link)) link = null;
+        String note = noteOf(o);
+        String key = o == null || (note == null && link == null) ? null : o instanceof MapToken t ? t.id : ((MapObject) o).id;
+        if (Objects.equals(key, hoverKey)) return;
+        hideTip();
+        hoverKey = key;
+        if (key == null) return;
+        final String showNote = note, showLink = link;
+        final double sx = e.getScreenX(), sy = e.getScreenY();
+        hoverDelay.setOnFinished(ev -> {
+            javafx.scene.Node preview = ItemPreview.hover(store, showNote, showLink);
+            if (preview == null) return;
+            preview.setMouseTransparent(true);
+            tip.getContent().setAll(preview);
+            tip.show(this, sx + 18, sy + 18);
+        });
+        hoverDelay.playFromStart();
+    }
+
+    /** Small badges on pieces that have a note (green) or a link (blue); shown to the DM only. */
+    private void drawBadges(GraphicsContext g) {
+        MapTool t = ts.tool.get();
+        if (t != MapTool.SELECT && t != MapTool.HAND) return;
+        double r = 4.5 / zoom();
+        for (MapObject o : map.objects) {
+            if (linkOf(o) == null && noteOf(o) == null) continue;
+            badge(g, o.x + o.w / 2, o.y - o.h / 2, r, o.link != null);
+        }
+        for (MapToken tk : map.tokens) {
+            if ((linkOf(tk) == null && noteOf(tk) == null) || !grid.inside(tk.col, tk.row)) continue;
+            double[] c = grid.center(tk.col, tk.row);
+            double d = tokenDiameter(tk) / 2 * 0.75;
+            badge(g, c[0] + d, c[1] - d, r, tk.link != null);
+        }
+    }
+
+    private static void badge(GraphicsContext g, double x, double y, double r, boolean link) {
+        g.setFill(Color.WHITE);
+        g.fillOval(x - r, y - r, 2 * r, 2 * r);
+        g.setFill(Color.web(link ? "#2563eb" : "#16a34a"));
+        g.fillOval(x - r * 0.65, y - r * 0.65, 1.3 * r, 1.3 * r);
     }
 
     // ================================================================ area templates, pins and lights

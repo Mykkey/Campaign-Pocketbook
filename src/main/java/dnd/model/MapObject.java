@@ -15,6 +15,10 @@ public class MapObject {
     public boolean flipX;
     /** When true the players don't see this piece (traps, secret doors), even in revealed areas. */
     public boolean hidden;
+    /** Id of a project item this piece links to, or null. */
+    public String link;
+    /** The DM's own note shown on hover, or null. Never shown to the players. */
+    public String note;
 
     public MapObject() { }
 
@@ -23,6 +27,7 @@ public class MapObject {
         o.assetId = assetId;
         o.x = x; o.y = y; o.w = w; o.h = h;
         o.rotation = rotation; o.flipX = flipX; o.hidden = hidden;
+        o.link = link; o.note = note;
         return o;
     }
 

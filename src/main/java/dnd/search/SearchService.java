@@ -211,6 +211,9 @@ public final class SearchService {
                 if (t.label != null && t.label.toLowerCase(Locale.ROOT).contains(q)) {
                     out.add(new Result(n.id, n.name, null, "Token \"" + t.label + "\""));
                     if (out.size() >= limit) return out;
+                } else if (has(t.note, q)) {
+                    out.add(new Result(n.id, n.name, null, "Token note: " + excerpt(t.note, q)));
+                    if (out.size() >= limit) return out;
                 }
             }
         }
@@ -335,6 +338,17 @@ public final class SearchService {
                 for (dnd.model.SpanRef r : o.refs.values()) if (targetId.equals(r.link)) refers = true;
                 if (refers) out.add(new Result(id, store.boardName(id), o.id, snippet(o)));
             }
+        }
+        // battlemaps: pins, tokens and pieces that link here
+        for (String id : store.allMapIds()) {
+            dnd.model.BattleMap bm = store.battleMap(id);
+            if (bm == null || id.equals(targetId)) continue;
+            String name = store.itemName(id);
+            for (dnd.model.MapPin pin : bm.pins) if (targetId.equals(pin.link)) out.add(new Result(id, name, null, "battlemap pin"));
+            for (dnd.model.MapToken t : bm.tokens) {
+                if (targetId.equals(t.link)) out.add(new Result(id, name, null, "battlemap token: " + (t.label == null || t.label.isBlank() ? "token" : t.label)));
+            }
+            for (dnd.model.MapObject o : bm.objects) if (targetId.equals(o.link)) out.add(new Result(id, name, null, "battlemap piece"));
         }
         // world maps: symbols, lines and regions that link here
         for (String id : store.allWorldMapIds()) {

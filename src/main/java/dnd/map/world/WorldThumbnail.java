@@ -24,6 +24,7 @@ public final class WorldThumbnail {
         g.drawImage(WorldTerrainCache.of(map).fullImage(), 0, 0, widthPx, heightPx);
         g.save();
         g.scale(scale, scale);
+        WorldPathRenderer.draw(g, map, scale, 0, 0, map.cols, map.rows, false);
         WorldStampRenderer.draw(g, map, lib, scale, 0, 0, map.cols, map.rows, false);
         g.restore();
         SnapshotParameters params = new SnapshotParameters();

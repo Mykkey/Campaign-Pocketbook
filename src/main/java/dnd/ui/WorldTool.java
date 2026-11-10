@@ -7,6 +7,8 @@ public enum WorldTool {
     BASE("Land and sea", "world-base", "Paint ocean, lakes, land, lava or ice. Choose what to paint next to the tool; the eraser takes it away again"),
     BIOME("Biomes", "leaf", "Paint what covers the land: grass, sand, snow, forest floor... (only on land and ice)"),
     STAMP("Stamp", "stamp", "Place the symbol chosen in the side panel (a mountain, a town...). Click as often as you like; Esc to stop"),
+    PATH("Lines", "river", "Draw a river, road, trail, sea route, border or railway: drag to draw freehand, or click points and double-click to finish. Choose the kind next to the tool"),
+    REGION("Region", "region", "Outline a named area (a kingdom, a forest): click the corners, double-click to close it, then name it"),
     SCATTER("Scatter", "scatter", "Paint a whole forest, hills or a mountain range of the chosen symbol and its relatives; they are spread out naturally");
 
     public final String label;

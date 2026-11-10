@@ -23,6 +23,10 @@ public class WorldMap extends ProjectEntry {
 
     /** The symbols placed on the map (mountains, trees, towns...). */
     public java.util.List<WorldStamp> stamps = new java.util.ArrayList<>();
+    /** The rivers, roads, borders and other lines drawn on the map. */
+    public java.util.List<WorldPath> paths = new java.util.ArrayList<>();
+    /** The named areas (kingdoms, forests...) outlined on the map. */
+    public java.util.List<WorldRegion> regions = new java.util.ArrayList<>();
 
     /** Bumped whenever the content changes (not the camera), so cached pictures know to redraw. Not saved. */
     @JsonIgnore
@@ -94,6 +98,8 @@ public class WorldMap extends ProjectEntry {
         m.base = base().copy();
         m.biome = biome().copy();
         for (WorldStamp s : stamps) m.stamps.add(s.copy());
+        for (WorldPath p : paths) m.paths.add(p.copy());
+        for (WorldRegion r : regions) m.regions.add(r.copy());
         return m;
     }
 }

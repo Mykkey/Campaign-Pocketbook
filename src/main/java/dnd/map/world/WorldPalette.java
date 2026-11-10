@@ -9,6 +9,8 @@ import java.util.Map;
 /** The colours of one art style (packed ARGB ints). The fantasy palette is the source; the others are derived from it. */
 public final class WorldPalette {
     public final int parchment, oceanDeep, oceanShallow, lake, land, lavaHot, lavaCool, ice, ink;
+    /** Colours for roads and trails, and for borders. */
+    public int road, border;
     /** Indexed by biome code (1..15); index 0 is plain land. */
     public final int[] biome = new int[16];
 
@@ -42,6 +44,8 @@ public final class WorldPalette {
         String[] hex = {"a8c46c", "7fb94f", "b3c964", "cdb858", "3f7d3a", "2a8a4a", "c9b45a", "e6d28f", "dcb872", "c27a4a",
                 "8e8b88", "f4f8fb", "aab8a0", "52745a", "8a7a8a", "4a4642"};
         for (int i = 0; i < hex.length; i++) p.biome[i] = rgb(hex[i]);
+        p.road = rgb("8a6a43");
+        p.border = rgb("b0302a");
         return p;
     }
 
@@ -68,6 +72,8 @@ public final class WorldPalette {
         WorldPalette p = new WorldPalette(parchment, oceanDeep, oceanShallow, lake, land,
                 landFn.applyAsInt(f.lavaHot), landFn.applyAsInt(f.lavaCool), landFn.applyAsInt(f.ice), ink);
         for (int i = 0; i < f.biome.length; i++) p.biome[i] = landFn.applyAsInt(f.biome[i]);
+        p.road = landFn.applyAsInt(f.road);
+        p.border = landFn.applyAsInt(f.border);
         return p;
     }
 

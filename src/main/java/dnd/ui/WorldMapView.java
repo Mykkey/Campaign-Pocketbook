@@ -4,11 +4,16 @@ import dnd.map.AssetLibrary;
 import dnd.map.world.ScatterPlanner;
 import dnd.map.world.WorldAssets;
 import dnd.map.world.WorldPalette;
+import dnd.map.world.WorldPathGeometry;
+import dnd.map.world.WorldPathRenderer;
 import dnd.map.world.WorldStampRenderer;
 import dnd.map.world.WorldTerrainCache;
 import dnd.model.PaintLayer;
 import dnd.model.WorldBiome;
 import dnd.model.WorldMap;
+import dnd.model.WorldObjects;
+import dnd.model.WorldPath;
+import dnd.model.WorldRegion;
 import dnd.model.WorldStamp;
 import dnd.model.WorldStyle;
 import dnd.model.WorldTerrain;
@@ -18,6 +23,7 @@ import javafx.animation.PauseTransition;
 import javafx.scene.Cursor;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
@@ -45,7 +51,7 @@ final class WorldMapView extends Pane {
     /** One undoable step. */
     private record Entry(Runnable undo, Runnable redo) { }
 
-    private enum Mode { NONE, PAN, PAINT, SCATTER, MOVE, MARQUEE, RESIZE }
+    private enum Mode { NONE, PAN, PAINT, SCATTER, MOVE, MARQUEE, RESIZE, DRAWPATH, DRAGPOINT }
 
     private final WorldMap map;
     private final ProjectStore store;
@@ -63,8 +69,15 @@ final class WorldMapView extends Pane {
     private double lastSX, lastSY, mouseSX = -1, mouseSY = -1;
     private double lastWX, lastWY, mqX0, mqY0, mqX1, mqY1;
     private boolean moved;
-    /** The stamps as they were when a gesture began, for undo. */
+    /** Everything placed on the map as it was when a gesture began, for undo. */
     private String stampsBefore;
+    // lines and regions being drawn or edited
+    private WorldPath drawingPath;
+    private WorldRegion drawingRegion;
+    private boolean freehand;
+    /** The line or region selected (symbols and lines are never selected together), or null. */
+    private String selShape;
+    private int dragPoint = -1;
     // the paint stroke being drawn
     private PaintLayer layer;
     private boolean layerIsBiome;
@@ -191,12 +204,14 @@ final class WorldMapView extends Pane {
             case SCATTER -> {
                 if (ts.armed.get() == null) return;
                 mode = Mode.SCATTER;
-                stampsBefore = Json.write(map.stamps);
+                stampsBefore = WorldObjects.capture(map);
                 lastCx = px;
                 lastCy = py;
                 scatterAt(px, py);
             }
-            case SELECT -> selectPressed(px, py, e.isShiftDown());
+            case SELECT -> selectPressed(px, py, e.isShiftDown(), e.getClickCount(), e.isAltDown());
+            case PATH -> pathPressed(px, py, e.getClickCount());
+            case REGION -> regionPressed(px, py, e.getClickCount());
             default -> { }
         }
         redraw();
@@ -224,6 +239,18 @@ final class WorldMapView extends Pane {
                     }
                 }
             }
+            case DRAWPATH -> {
+                if (drawingPath != null && Math.hypot(px - lastCx, py - lastCy) >= Math.max(1.5, 7 / zoom())) {
+                    drawingPath.add(px, py);
+                    lastCx = px;
+                    lastCy = py;
+                    freehand = true;
+                }
+            }
+            case DRAGPOINT -> {
+                moved = true;
+                movePoint(px, py);
+            }
             case RESIZE -> {
                 WorldStamp s = singleSelected();
                 if (s != null) {
@@ -249,8 +276,11 @@ final class WorldMapView extends Pane {
         switch (mode) {
             case PAINT -> endStroke();
             case SCATTER -> finishStampEdit();
-            case MOVE, RESIZE -> {
+            case MOVE, RESIZE, DRAGPOINT -> {
                 if (moved) finishStampEdit();
+            }
+            case DRAWPATH -> {
+                if (freehand) finishPath();
             }
             case MARQUEE -> {
                 double x0 = Math.min(mqX0, mqX1), x1 = Math.max(mqX0, mqX1), y0 = Math.min(mqY0, mqY1), y1 = Math.max(mqY0, mqY1);
@@ -276,6 +306,9 @@ final class WorldMapView extends Pane {
             e.consume();
         } else if (e.getCode() == KeyCode.CLOSE_BRACKET && !e.isShortcutDown()) {
             rotateSelection(15);
+            e.consume();
+        } else if (e.getCode() == KeyCode.ENTER) {
+            finishDrawing();
             e.consume();
         } else if (e.getCode() == KeyCode.F && !e.isShortcutDown()) {
             flipSelection();
@@ -378,7 +411,7 @@ final class WorldMapView extends Pane {
     private void placeStamp(double px, double py) {
         String f = ts.armed.get();
         if (f == null || WorldAssets.get(f) == null) return;
-        String before = Json.write(map.stamps);
+        String before = WorldObjects.capture(map);
         WorldStamp s = newStamp(f, px, py);
         map.stamps.add(s);
         selected.clear();
@@ -393,16 +426,16 @@ final class WorldMapView extends Pane {
     }
 
     private void stampEdit(String before) {
-        String after = Json.write(map.stamps);
+        String after = WorldObjects.capture(map);
         if (before.equals(after)) return;
         push(new Entry(() -> restoreStamps(before), () -> restoreStamps(after)));
         store.markWorldMapDirty(map, true);
     }
 
     private void restoreStamps(String json) {
-        map.stamps.clear();
-        map.stamps.addAll(Json.readStamps(json));
+        WorldObjects.restore(map, json);
         selected.removeIf(id -> map.stamps.stream().noneMatch(s -> s.id.equals(id)));
+        if (selShape != null && shapeById(selShape) == null) selShape = null;
         store.markWorldMapDirty(map, true);
         redraw();
     }
@@ -466,15 +499,43 @@ final class WorldMapView extends Pane {
         return Math.abs(px - h[0]) <= tol && Math.abs(py - h[1]) <= tol;
     }
 
-    private void selectPressed(double px, double py, boolean shift) {
+    private void selectPressed(double px, double py, boolean shift, int clicks, boolean alt) {
         WorldStamp single = singleSelected();
         if (single != null && onHandle(single, px, py)) {
             mode = Mode.RESIZE;
-            stampsBefore = Json.write(map.stamps);
+            stampsBefore = WorldObjects.capture(map);
             return;
+        }
+        // the points of the selected line or region
+        Object shape = shapeById(selShape);
+        if (shape != null) {
+            int idx = pointAt(shape, px, py);
+            if (idx >= 0 && alt && pointCount(shape) > (shape instanceof WorldRegion ? 3 : 2)) {
+                String before = WorldObjects.capture(map);
+                removePoint(shape, idx);
+                stampEdit(before);
+                return;
+            }
+            if (idx >= 0) {
+                dragPoint = idx;
+                mode = Mode.DRAGPOINT;
+                stampsBefore = WorldObjects.capture(map);
+                return;
+            }
+            if (clicks >= 2 && shape instanceof WorldPath path && WorldPathGeometry.distance(WorldPathGeometry.smooth(path, 8), px, py) <= 8 / zoom()) {
+                String before = WorldObjects.capture(map);
+                path.insert(WorldPathGeometry.insertIndex(path, px, py), px, py);
+                stampEdit(before);
+                return;
+            }
+            if (clicks >= 2 && shape instanceof WorldRegion region && region.contains(px, py)) {
+                renameRegion(region);
+                return;
+            }
         }
         WorldStamp hit = WorldStampRenderer.hit(map, px, py, true);
         if (hit != null) {
+            selShape = null;
             if (shift) {
                 if (!selected.remove(hit.id)) selected.add(hit.id);
             } else if (!selected.contains(hit.id)) {
@@ -482,23 +543,196 @@ final class WorldMapView extends Pane {
                 selected.add(hit.id);
             }
             mode = Mode.MOVE;
-            stampsBefore = Json.write(map.stamps);
-        } else {
-            if (!shift) selected.clear();
-            mode = Mode.MARQUEE;
-            mqX0 = mqX1 = px;
-            mqY0 = mqY1 = py;
+            stampsBefore = WorldObjects.capture(map);
+            return;
         }
+        WorldPath hp = WorldPathRenderer.hitPath(map, px, py, 6 / zoom(), true);
+        WorldRegion hr = hp == null ? WorldPathRenderer.hitRegion(map, px, py, true) : null;
+        if (hp != null || hr != null) {
+            selected.clear();
+            selShape = hp != null ? hp.id : hr.id;
+            return;
+        }
+        selShape = null;
+        if (!shift) selected.clear();
+        mode = Mode.MARQUEE;
+        mqX0 = mqX1 = px;
+        mqY0 = mqY1 = py;
+    }
+
+    // ---- lines and regions
+
+    private Object shapeById(String id) {
+        if (id == null) return null;
+        for (WorldPath p : map.paths) if (p.id.equals(id)) return p;
+        for (WorldRegion r : map.regions) if (r.id.equals(id)) return r;
+        return null;
+    }
+
+    private int pointCount(Object shape) {
+        return shape instanceof WorldPath p ? p.count() : ((WorldRegion) shape).count();
+    }
+
+    private double[] pointOf(Object shape, int i) {
+        return shape instanceof WorldPath p ? new double[]{p.x(i), p.y(i)} : new double[]{((WorldRegion) shape).x(i), ((WorldRegion) shape).y(i)};
+    }
+
+    /** The index of the control point near (px, py), or -1. */
+    private int pointAt(Object shape, double px, double py) {
+        double tol = 8 / zoom();
+        for (int i = 0; i < pointCount(shape); i++) {
+            double[] q = pointOf(shape, i);
+            if (Math.abs(q[0] - px) <= tol && Math.abs(q[1] - py) <= tol) return i;
+        }
+        return -1;
+    }
+
+    private void removePoint(Object shape, int i) {
+        if (shape instanceof WorldPath p) p.remove(i);
+        else {
+            WorldRegion r = (WorldRegion) shape;
+            r.points.remove(2 * i + 1);
+            r.points.remove(2 * i);
+        }
+    }
+
+    private void movePoint(double px, double py) {
+        Object shape = shapeById(selShape);
+        if (shape == null || dragPoint < 0) return;
+        List<Double> pts = shape instanceof WorldPath p ? p.points : ((WorldRegion) shape).points;
+        pts.set(2 * dragPoint, px);
+        pts.set(2 * dragPoint + 1, py);
+    }
+
+    private void pathPressed(double px, double py, int clicks) {
+        if (drawingPath == null) {
+            drawingPath = new WorldPath(ts.pathType.get());
+            drawingPath.width = ts.pathWidth.get();
+            drawingPath.style = ts.stampStyle.get();
+            drawingPath.add(px, py);
+            stampsBefore = WorldObjects.capture(map);
+            freehand = false;
+        } else {
+            if (clicks >= 2) {
+                finishPath();
+                return;
+            }
+            drawingPath.add(px, py);
+        }
+        lastCx = px;
+        lastCy = py;
+        mode = Mode.DRAWPATH;
+    }
+
+    private void finishPath() {
+        WorldPath p = drawingPath;
+        drawingPath = null;
+        if (p != null && freehand) p.points = WorldPathGeometry.simplify(p.points, Math.max(0.8, 3 / zoom())); // fewer points to edit
+        freehand = false;
+        if (p == null || p.count() < 2) {
+            stampsBefore = null;
+            redraw();
+            return;
+        }
+        map.paths.add(p);
+        selected.clear();
+        selShape = p.id;
+        finishStampEdit();
+        redraw();
+    }
+
+    private void regionPressed(double px, double py, int clicks) {
+        if (drawingRegion == null) {
+            drawingRegion = new WorldRegion();
+            stampsBefore = WorldObjects.capture(map);
+        } else if (clicks >= 2) {
+            finishRegion();
+            return;
+        }
+        drawingRegion.add(px, py);
+    }
+
+    private void finishRegion() {
+        WorldRegion r = drawingRegion;
+        drawingRegion = null;
+        if (r == null || r.count() < 3) {
+            stampsBefore = null;
+            redraw();
+            return;
+        }
+        r.name = askRegionName("Kingdom");
+        map.regions.add(r);
+        selected.clear();
+        selShape = r.id;
+        finishStampEdit();
+        redraw();
+    }
+
+    /** Lets a test answer the region-name question without a dialog. */
+    static java.util.function.UnaryOperator<String> nameAsker;
+
+    private String askRegionName(String initial) {
+        if (nameAsker != null) return nameAsker.apply(initial);
+        TextInputDialog d = new TextInputDialog(initial);
+        d.setTitle("Region");
+        d.setHeaderText("Name this region (leave empty for none)");
+        if (getScene() != null) d.initOwner(getScene().getWindow());
+        return d.showAndWait().map(String::trim).orElse("");
+    }
+
+    private void renameRegion(WorldRegion r) {
+        String before = WorldObjects.capture(map);
+        r.name = askRegionName(r.name == null ? "" : r.name);
+        stampEdit(before);
+        redraw();
+    }
+
+    /** Changes the kind and width of the selected line (the line tool's settings apply to it). */
+    void updateSelectedPath(WorldPath.Type type, double width) {
+        if (!(shapeById(selShape) instanceof WorldPath p)) return;
+        String before = WorldObjects.capture(map);
+        p.type = type;
+        p.width = width;
+        stampEdit(before);
+        redraw();
+    }
+
+    boolean pathSelected() {
+        return shapeById(selShape) instanceof WorldPath;
     }
 
     boolean hasSelection() {
         return !selected.isEmpty();
     }
 
-    /** Removes the selected symbols. Returns false if nothing was selected. */
+    /** Removes the selected symbols, line or region (or, while drawing, the last point). Returns false if there was nothing to remove. */
     boolean deleteSelection() {
+        if (drawingPath != null) {
+            if (drawingPath.count() > 1) drawingPath.remove(drawingPath.count() - 1);
+            else drawingPath = null;
+            redraw();
+            return true;
+        }
+        if (drawingRegion != null) {
+            if (drawingRegion.count() > 1) {
+                drawingRegion.points.remove(drawingRegion.points.size() - 1);
+                drawingRegion.points.remove(drawingRegion.points.size() - 1);
+            } else drawingRegion = null;
+            redraw();
+            return true;
+        }
+        Object shape = shapeById(selShape);
+        if (shape != null) {
+            String before = WorldObjects.capture(map);
+            if (shape instanceof WorldPath p) map.paths.remove(p);
+            else map.regions.remove((WorldRegion) shape);
+            selShape = null;
+            stampEdit(before);
+            redraw();
+            return true;
+        }
         if (selected.isEmpty()) return false;
-        String before = Json.write(map.stamps);
+        String before = WorldObjects.capture(map);
         map.stamps.removeIf(s -> selected.contains(s.id));
         selected.clear();
         stampEdit(before);
@@ -506,18 +740,28 @@ final class WorldMapView extends Pane {
         return true;
     }
 
-    /** Drops the selection and puts away the armed symbol. Returns true if there was anything to drop. */
+    /** Cancels a line or region being drawn, or drops the selection and puts away the armed symbol. Returns true if there was anything to drop. */
     boolean escape() {
-        boolean any = !selected.isEmpty() || ts.armed.get() != null;
+        boolean any = !selected.isEmpty() || ts.armed.get() != null || selShape != null || drawingPath != null || drawingRegion != null;
+        drawingPath = null;
+        drawingRegion = null;
+        stampsBefore = null;
         selected.clear();
+        selShape = null;
         ts.armed.set(null);
         redraw();
         return any;
     }
 
+    /** Finishes the line or region being drawn (Enter). */
+    void finishDrawing() {
+        if (drawingPath != null) finishPath();
+        else if (drawingRegion != null) finishRegion();
+    }
+
     void duplicateSelection() {
         if (selected.isEmpty()) return;
-        String before = Json.write(map.stamps);
+        String before = WorldObjects.capture(map);
         Set<String> copies = new LinkedHashSet<>();
         for (WorldStamp s : selectedStamps()) {
             WorldStamp c = s.copy();
@@ -534,7 +778,7 @@ final class WorldMapView extends Pane {
 
     void rotateSelection(double degrees) {
         if (selected.isEmpty()) return;
-        String before = Json.write(map.stamps);
+        String before = WorldObjects.capture(map);
         for (WorldStamp s : selectedStamps()) s.rotation = ((s.rotation + degrees) % 360 + 360) % 360;
         stampEdit(before);
         redraw();
@@ -542,7 +786,7 @@ final class WorldMapView extends Pane {
 
     void flipSelection() {
         if (selected.isEmpty()) return;
-        String before = Json.write(map.stamps);
+        String before = WorldObjects.capture(map);
         for (WorldStamp s : selectedStamps()) s.flipX = !s.flipX;
         stampEdit(before);
         redraw();
@@ -551,7 +795,7 @@ final class WorldMapView extends Pane {
     /** Gives the selected symbols an art style (null = follow the map's style). */
     void styleSelection(WorldStyle style) {
         if (selected.isEmpty()) return;
-        String before = Json.write(map.stamps);
+        String before = WorldObjects.capture(map);
         for (WorldStamp s : selectedStamps()) s.style = style;
         stampEdit(before);
         redraw();
@@ -618,7 +862,9 @@ final class WorldMapView extends Pane {
         g.setImageSmoothing(map.style != WorldStyle.RETRO_PIXEL);
         g.drawImage(img, 0, 0, map.cols, map.rows);
 
+        WorldPathRenderer.draw(g, map, zoom(), vx0, vy0, vx1, vy1, true);
         WorldStampRenderer.draw(g, map, lib, zoom(), vx0, vy0, vx1, vy1, true);
+        drawShapeOverlays(g);
 
         g.setStroke(Color.web("#000000", 0.55));
         g.setLineWidth(1.5 / zoom());
@@ -659,6 +905,62 @@ final class WorldMapView extends Pane {
             g.setStroke(Color.web("#000000", 0.7));
             g.setLineWidth(0.8);
             g.strokeOval(mouseSX - r - 1, mouseSY - r - 1, 2 * r + 2, 2 * r + 2);
+        }
+    }
+
+    /** The selected line or region with its points, and the line or region being drawn. */
+    private void drawShapeOverlays(GraphicsContext g) {
+        double px = 7 / zoom();
+        Object shape = shapeById(selShape);
+        if (shape instanceof WorldPath p && p.count() >= 2) {
+            List<double[]> pts = WorldPathGeometry.smooth(p, 10);
+            g.setStroke(Color.web("#2563eb", 0.45));
+            g.setLineWidth(Math.max(p.drawnWidth() + 3 / zoom(), 5 / zoom()));
+            g.beginPath();
+            g.moveTo(pts.get(0)[0], pts.get(0)[1]);
+            for (int i = 1; i < pts.size(); i++) g.lineTo(pts.get(i)[0], pts.get(i)[1]);
+            g.stroke();
+        } else if (shape instanceof WorldRegion r && r.count() >= 3) {
+            double[] xs = new double[r.count()], ys = new double[r.count()];
+            for (int i = 0; i < r.count(); i++) {
+                xs[i] = r.x(i);
+                ys[i] = r.y(i);
+            }
+            g.setStroke(Color.web("#2563eb", 0.55));
+            g.setLineWidth(3 / zoom());
+            g.strokePolygon(xs, ys, r.count());
+        }
+        if (shape != null) {
+            g.setFill(Color.WHITE);
+            g.setStroke(Color.web("#2563eb"));
+            g.setLineWidth(1.5 / zoom());
+            for (int i = 0; i < pointCount(shape); i++) {
+                double[] q = pointOf(shape, i);
+                g.fillRect(q[0] - px / 2, q[1] - px / 2, px, px);
+                g.strokeRect(q[0] - px / 2, q[1] - px / 2, px, px);
+            }
+        }
+        if (drawingPath != null) {
+            WorldPath tmp = drawingPath.copy();
+            if (mouseSX >= 0 && !freehand) tmp.add(wx(mouseSX), wy(mouseSY));
+            if (tmp.count() >= 2) WorldPathRenderer.drawOne(g, map, tmp, zoom());
+            g.setFill(Color.web("#2563eb"));
+            for (int i = 0; i < drawingPath.count(); i++) g.fillOval(drawingPath.x(i) - px / 3, drawingPath.y(i) - px / 3, px * 2 / 3, px * 2 / 3);
+        }
+        if (drawingRegion != null) {
+            int n = drawingRegion.count();
+            double[] xs = new double[n + 1], ys = new double[n + 1];
+            for (int i = 0; i < n; i++) {
+                xs[i] = drawingRegion.x(i);
+                ys[i] = drawingRegion.y(i);
+            }
+            xs[n] = mouseSX >= 0 ? wx(mouseSX) : xs[n - 1];
+            ys[n] = mouseSX >= 0 ? wy(mouseSY) : ys[n - 1];
+            g.setStroke(Color.web("#2563eb"));
+            g.setLineWidth(2 / zoom());
+            g.setLineDashes(6 / zoom(), 4 / zoom());
+            g.strokePolyline(xs, ys, n + 1);
+            g.setLineDashes((double[]) null);
         }
     }
 

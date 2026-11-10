@@ -16,6 +16,10 @@ final class WorldToolState {
     final ObjectProperty<WorldBiome> biome = new SimpleObjectProperty<>(WorldBiome.GRASS);
     /** Brush width in map cells. */
     final IntegerProperty brush = new SimpleIntegerProperty(14);
+    /** The kind of line the line tool draws. */
+    final ObjectProperty<dnd.model.WorldPath.Type> pathType = new SimpleObjectProperty<>(dnd.model.WorldPath.Type.ROAD);
+    /** The width of new lines in map cells; 0 means the kind's own width. */
+    final javafx.beans.property.DoubleProperty pathWidth = new javafx.beans.property.SimpleDoubleProperty(0);
     /** The symbol (library id) the stamp and scatter tools place, or null. */
     final ObjectProperty<String> armed = new SimpleObjectProperty<>();
     /** Width of placed symbols in map cells; 0 means each symbol's own default width. */

@@ -156,7 +156,44 @@ public class WorldMapEditor extends BorderPane implements ItemView {
         densityBox.setAlignment(Pos.CENTER_LEFT);
         densityBox.visibleProperty().bind(ts.tool.isEqualTo(WorldTool.SCATTER));
         densityBox.managedProperty().bind(densityBox.visibleProperty());
-        bar.getChildren().addAll(symbolBox, densityBox, new Separator(Orientation.VERTICAL));
+        // ---- lines: rivers, roads and so on
+        ToggleGroup pathGroup = new ToggleGroup();
+        Map<dnd.model.WorldPath.Type, ToggleButton> pathButtons = new EnumMap<>(dnd.model.WorldPath.Type.class);
+        List<javafx.scene.Node> pathNodes = new ArrayList<>();
+        String[] pathIcons = {"river", "road", "trail", "route", "border", "railway"};
+        String[] pathTips = {"A river, thinnest at its source and wider towards its mouth", "A road", "A trail: a dashed path",
+                "A sea route: a dashed line over the water", "A border between lands", "A railway"};
+        for (dnd.model.WorldPath.Type t : dnd.model.WorldPath.Type.values()) {
+            ToggleButton b = IconButtons.decorate(new ToggleButton(), pathIcons[t.ordinal()], t.label + ": " + pathTips[t.ordinal()]);
+            b.setToggleGroup(pathGroup);
+            b.setOnAction(e -> {
+                ts.pathType.set(t);
+                if (ts.tool.get() != WorldTool.SELECT) ts.tool.set(WorldTool.PATH);
+                b.setSelected(true);
+            });
+            pathButtons.put(t, b);
+            pathNodes.add(b);
+        }
+        pathButtons.get(ts.pathType.get()).setSelected(true);
+        Spinner<Double> pathWidth = new Spinner<>(0.0, 12.0, ts.pathWidth.get(), 0.2);
+        pathWidth.setPrefWidth(74);
+        pathWidth.setEditable(true);
+        pathWidth.setTooltip(IconButtons.tip("Line width in map cells. 0 uses each kind's own width"));
+        pathWidth.valueProperty().addListener((o, a, n) -> {
+            if (n == null) return;
+            ts.pathWidth.set(n);
+            if (ts.tool.get() == WorldTool.SELECT && view.pathSelected()) view.updateSelectedPath(ts.pathType.get(), n);
+        });
+        ts.pathType.addListener((o, a, n) -> {
+            pathButtons.get(n).setSelected(true);
+            if (ts.tool.get() == WorldTool.SELECT && view.pathSelected()) view.updateSelectedPath(n, ts.pathWidth.get());
+        });
+        pathNodes.add(pathWidth);
+        HBox pathBox = new HBox(4, pathNodes.toArray(new javafx.scene.Node[0]));
+        pathBox.setAlignment(Pos.CENTER_LEFT);
+        pathBox.visibleProperty().bind(ts.tool.isEqualTo(WorldTool.PATH).or(ts.tool.isEqualTo(WorldTool.SELECT)));
+        pathBox.managedProperty().bind(pathBox.visibleProperty());
+        bar.getChildren().addAll(symbolBox, densityBox, pathBox, new Separator(Orientation.VERTICAL));
 
         // ---- the art style of the whole map
         ComboBox<WorldStyle> style = new ComboBox<>(FXCollections.observableArrayList(WorldStyle.values()));
@@ -239,6 +276,10 @@ public class WorldMapEditor extends BorderPane implements ItemView {
     public void activated() {
         view.redraw();
         view.requestFocus();
+    }
+
+    boolean pathSelectedForTest() {
+        return view.pathSelected();
     }
 
     /** True while something on the map is selected. */

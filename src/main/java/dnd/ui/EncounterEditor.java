@@ -96,7 +96,42 @@ public class EncounterEditor extends BorderPane implements ItemView {
         hint.setStyle("-fx-text-fill: -t-text3;");
         hint.setWrapText(true);
 
-        VBox left = new VBox(10, name, hint, sectionLabel("Creatures"), rows, addBar, sectionLabel("Notes"), notes);
+        // ---- treasure for this fight
+        ComboBox<dnd.loot.LootGenerator.Kind> lootKind = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(dnd.loot.LootGenerator.Kind.values()));
+        lootKind.setValue(dnd.loot.LootGenerator.Kind.INDIVIDUAL);
+        lootKind.setTooltip(new Tooltip("A creature's pockets: every enemy carries some coin at its own level. A hoard: one stash at the level of the strongest enemy."));
+        Button rollLoot = new Button("Roll treasure");
+        rollLoot.setTooltip(new Tooltip("Rolls treasure from the enemies' challenge ratings. Roll again for something different; you can edit the text."));
+        Button copyLoot = new Button("Copy");
+        Button toSession = new Button("Add to a session...");
+        toSession.setTooltip(new Tooltip("Adds this treasure to the notes of one of your sessions"));
+        TextArea lootText = new TextArea(enc.loot == null ? "" : enc.loot);
+        lootText.setPromptText("Treasure the enemies carry or guard. Press Roll treasure, or write your own.");
+        lootText.setWrapText(true);
+        lootText.setPrefRowCount(6);
+        lootText.textProperty().addListener((o, a, n) -> {
+            enc.loot = n == null || n.isBlank() ? null : n;
+            store.markEncounterDirty(enc);
+        });
+        rollLoot.setOnAction(e -> {
+            List<dnd.loot.EncounterLoot.Creature> fight = new ArrayList<>();
+            for (Encounter.Entry en : enc.entries) {
+                Card c = cardOf(en);
+                if (c != null && en.side == Side.ENEMY) fight.add(new dnd.loot.EncounterLoot.Creature(c.name, c.challenge, en.count));
+            }
+            lootText.setText(dnd.loot.EncounterLoot.roll(fight, lootKind.getValue(), new java.util.Random()).text());
+        });
+        copyLoot.setOnAction(e -> {
+            javafx.scene.input.ClipboardContent cc = new javafx.scene.input.ClipboardContent();
+            cc.putString(lootText.getText());
+            javafx.scene.input.Clipboard.getSystemClipboard().setContent(cc);
+        });
+        toSession.setOnAction(e -> addLootToSession(lootText.getText()));
+        HBox lootBar = new HBox(8, lootKind, rollLoot, copyLoot, toSession);
+        lootBar.setAlignment(Pos.CENTER_LEFT);
+
+        VBox left = new VBox(10, name, hint, sectionLabel("Creatures"), rows, addBar, sectionLabel("Notes"), notes,
+                sectionLabel("Treasure"), lootBar, lootText);
         left.setPadding(new Insets(14));
         ScrollPane leftScroll = new ScrollPane(left);
         leftScroll.setFitToWidth(true);
@@ -111,6 +146,36 @@ public class EncounterEditor extends BorderPane implements ItemView {
         split.setDividerPositions(0.62);
         setCenter(split);
         rebuild();
+    }
+
+    private record SessionPick(dnd.model.Session session) {
+        @Override
+        public String toString() {
+            return session.label();
+        }
+    }
+
+    /** Appends the treasure to the notes of a session the user picks. */
+    private void addLootToSession(String loot) {
+        if (loot == null || loot.isBlank()) return;
+        List<dnd.model.Session> sessions = store.allSessions();
+        if (sessions.isEmpty()) {
+            new Alert(Alert.AlertType.INFORMATION, "There are no sessions yet. Make a session first, then add the treasure to it.").show();
+            return;
+        }
+        List<SessionPick> picks = new ArrayList<>();
+        for (dnd.model.Session s : sessions) picks.add(new SessionPick(s));
+        ChoiceDialog<SessionPick> d = new ChoiceDialog<>(picks.get(picks.size() - 1), picks);
+        d.setTitle("Add treasure to a session");
+        d.setHeaderText("Which session found this treasure?");
+        if (getScene() != null) d.initOwner(getScene().getWindow());
+        d.showAndWait().ifPresent(pick -> {
+            dnd.model.Session s = pick.session();
+            String block = "Treasure from " + enc.name + ":\n" + loot.trim();
+            s.summary = s.summary == null || s.summary.isBlank() ? block : s.summary.stripTrailing() + "\n\n" + block;
+            store.markSessionDirty(s);
+            new Alert(Alert.AlertType.INFORMATION, "Added to " + s.label() + ". If that session is open in a tab, close and reopen it to see the change.").show();
+        });
     }
 
     private static Label sectionLabel(String text) {

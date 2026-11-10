@@ -12,6 +12,8 @@ public class Encounter {
     public String id = UUID.randomUUID().toString();
     public String name = "New Encounter";
     public String notes = "";
+    /** Treasure rolled for this fight (plain text the DM can edit), or null. */
+    public String loot;
     public List<Entry> entries = new ArrayList<>();
 
     /** One line of the encounter: {@code count} creatures made from a card. */
@@ -53,6 +55,7 @@ public class Encounter {
         Encounter e = new Encounter();
         e.name = name;
         e.notes = notes;
+        e.loot = loot;
         for (Entry x : entries) e.entries.add(x.copy());
         return e;
     }

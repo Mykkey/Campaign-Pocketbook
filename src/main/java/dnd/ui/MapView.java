@@ -429,7 +429,7 @@ public class MapView extends Pane implements ItemView {
 
     private void checkpoint() {
         undoStack.addLast(snapshot());
-        if (undoStack.size() > 200) undoStack.removeFirst();
+        if (undoStack.size() > GeneralSettings.undoDepth(200)) undoStack.removeFirst();
         redoStack.clear();
     }
 
@@ -962,7 +962,7 @@ public class MapView extends Pane implements ItemView {
     private void commitPending() {
         if (!gestureCheckpointed && pendingSnapshot != null) {
             undoStack.addLast(pendingSnapshot);
-            if (undoStack.size() > 200) undoStack.removeFirst();
+            if (undoStack.size() > GeneralSettings.undoDepth(200)) undoStack.removeFirst();
             redoStack.clear();
             gestureCheckpointed = true;
         }
@@ -1490,6 +1490,7 @@ public class MapView extends Pane implements ItemView {
         if (key == null) return;
         final String showNote = note, showLink = link;
         final double sx = e.getScreenX(), sy = e.getScreenY();
+        hoverDelay.setDuration(javafx.util.Duration.millis(GeneralSettings.hoverDelayMs(450)));
         hoverDelay.setOnFinished(ev -> {
             javafx.scene.Node preview = ItemPreview.hover(store, showNote, showLink);
             if (preview == null) return;

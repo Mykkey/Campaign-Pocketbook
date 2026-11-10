@@ -64,7 +64,10 @@ public final class SettingsDialog {
     private static void build(Window owner) {
         List<Page> pages = new ArrayList<>();
         pages.add(appearance());
+        pages.add(general());
         pages.add(accessibility());
+        pages.add(maps());
+        pages.add(players());
         pages.add(new Page("Shortcuts", new ShortcutsPane(), ShortcutsPane::resetAll));
         pages.add(data());
 
@@ -217,6 +220,156 @@ public final class SettingsDialog {
             AppSettings.remove("linkPreviews");
             Theme.setDark(false);
         });
+    }
+
+    // ---------------------------------------------------------------- general
+
+    /** A box of choices for a number setting: {@code values[i]} is stored when {@code names[i]} is picked; the nearest one is shown. */
+    private static ComboBox<String> choice(String key, int standardValue, int[] values, String[] names) {
+        ComboBox<String> box = new ComboBox<>();
+        box.getItems().addAll(names);
+        int now = AppSettings.getInt(key, standardValue);
+        int pick = 0;
+        for (int i = 0; i < values.length; i++) if (Math.abs(values[i] - now) < Math.abs(values[pick] - now)) pick = i;
+        box.setValue(names[pick]);
+        box.setOnAction(e -> {
+            int i = box.getItems().indexOf(box.getValue());
+            if (i < 0) return;
+            if (values[i] == standardValue && standardValue == 0) AppSettings.remove(key);
+            else AppSettings.setInt(key, values[i]);
+        });
+        return box;
+    }
+
+    private static HBox row(String label, Node control) {
+        HBox r = new HBox(10, new Label(label), control);
+        r.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        return r;
+    }
+
+    private static Page general() {
+        ComboBox<String> autosave = choice(GeneralSettings.AUTOSAVE_MS, 1000, new int[]{500, 1000, 3000, 10000, 30000},
+                new String[]{"half a second", "1 second", "3 seconds", "10 seconds", "30 seconds"});
+        ComboBox<String> undo = choice(GeneralSettings.UNDO_DEPTH, 0, new int[]{0, 50, 100, 200, 500, 1000},
+                new String[]{"as usual (100 to 200)", "50", "100", "200", "500", "1000"});
+        ComboBox<String> hover = choice(GeneralSettings.HOVER_DELAY, 0, new int[]{0, 200, 450, 800, 1200},
+                new String[]{"as usual (about half a second)", "quickly", "after half a second", "slowly", "very slowly"});
+        javafx.scene.control.Spinner<Integer> keep = new javafx.scene.control.Spinner<>(1, 50, GeneralSettings.backupKeep());
+        keep.setEditable(true);
+        keep.setPrefWidth(80);
+        keep.valueProperty().addListener((o, a1, n1) -> {
+            if (n1 != null) AppSettings.setInt(GeneralSettings.BACKUP_KEEP, n1);
+        });
+        Button openBackups = new Button("Open the backups folder");
+        openBackups.setOnAction(e -> {
+            try {
+                java.nio.file.Path dir = dnd.storage.ProjectBackups.root(ProjectStore.baseDir());
+                java.nio.file.Files.createDirectories(dir);
+                java.awt.Desktop.getDesktop().open(dir.toFile());
+            } catch (IOException | RuntimeException ex) {
+                new Alert(Alert.AlertType.INFORMATION, "Your backups are kept in:\n" + dnd.storage.ProjectBackups.root(ProjectStore.baseDir())).show();
+            }
+        });
+        Button showUpdate = new Button("Show a dismissed update again");
+        showUpdate.setOnAction(e -> {
+            AppSettings.remove("update.dismissed");
+            new Alert(Alert.AlertType.INFORMATION, "The update bar will show again the next time the app starts and finds a newer version.").show();
+        });
+        VBox box = new VBox(10,
+                heading("Saving"), row("Save changes after", autosave),
+                row("Undo remembers up to", undo),
+                note("Your campaign is saved a moment after you stop making changes, and again when you close it."),
+                heading("Backups"),
+                check("Make a backup copy of a campaign when I close it", GeneralSettings.BACKUP_ON_CLOSE, true),
+                row("Backups kept for each campaign", keep), openBackups,
+                note("A backup is always made before something is deleted. Import backup... on the project list brings one back as a new campaign."),
+                heading("When the app starts"),
+                check("Open the campaign I used last time straight away", GeneralSettings.REOPEN_LAST, false),
+                check("Look for a newer version of the app (needs the internet)", GeneralSettings.UPDATE_CHECK, true), showUpdate,
+                heading("Asking and hovering"),
+                check("Ask before deleting an item from the project tree (a backup is made either way)", GeneralSettings.CONFIRM_DELETE, true),
+                row("Previews of links and notes appear", hover));
+        return new Page("General", box, () -> {
+            AppSettings.resetPrefix("general.");
+            AppSettings.resetPrefix("backup.");
+            AppSettings.remove(GeneralSettings.UPDATE_CHECK);
+        });
+    }
+
+    private static Page maps() {
+        ComboBox<dnd.model.WorldStyle> style = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(dnd.model.WorldStyle.values()));
+        dnd.model.WorldStyle current = dnd.model.WorldStyle.FANTASY_COLOUR;
+        try {
+            current = dnd.model.WorldStyle.valueOf(AppSettings.getString("new.world.style", current.name()));
+        } catch (IllegalArgumentException ignored) {
+            // an unknown name means the usual style
+        }
+        style.setValue(current);
+        style.setOnAction(e -> {
+            if (style.getValue() != null) AppSettings.setString("new.world.style", style.getValue().name());
+        });
+        ComboBox<String> worldSize = choice("new.world.size", 1, new int[]{0, 1, 2}, new String[]{"Small (512 x 384)", "Medium (1024 x 768)", "Large (2048 x 1536)"});
+        javafx.scene.control.Spinner<Integer> miles = intSpinner("new.world.miles", 2000, 50, 100000, 100, 100);
+        ComboBox<String> grid = new ComboBox<>(javafx.collections.FXCollections.observableArrayList("Squares", "Hexagons"));
+        grid.setValue("hex".equals(AppSettings.getString("new.battle.grid", "square")) ? "Hexagons" : "Squares");
+        grid.setOnAction(e -> AppSettings.setString("new.battle.grid", "Hexagons".equals(grid.getValue()) ? "hex" : "square"));
+        javafx.scene.control.Spinner<Integer> cols = intSpinner("new.battle.cols", 30, 3, 200, 1, 90);
+        javafx.scene.control.Spinner<Integer> rows = intSpinner("new.battle.rows", 20, 3, 200, 1, 90);
+        javafx.scene.control.Spinner<Integer> cell = intSpinner("new.battle.cell", 50, 20, 200, 5, 90);
+        javafx.scene.control.Spinner<Integer> party = intSpinner("new.partySize", 4, 1, 10, 1, 80);
+        javafx.scene.control.Spinner<Integer> level = intSpinner("new.partyLevel", 3, 1, 20, 1, 80);
+        javafx.scene.control.Spinner<Integer> font = intSpinner("new.board.fontSize", 22, 8, 120, 1, 80);
+        javafx.scene.control.ColorPicker ink = colourPicker("new.board.color", "#222222");
+        javafx.scene.control.ColorPicker paper = colourPicker("new.board.fill", "#FFF2A8");
+        ComboBox<String> units = new ComboBox<>(javafx.collections.FXCollections.observableArrayList("Miles", "Kilometres"));
+        units.setValue(dnd.map.world.WorldTravel.useKm() ? "Kilometres" : "Miles");
+        units.setOnAction(e -> AppSettings.setString("units.distance", "Kilometres".equals(units.getValue()) ? "km" : "mi"));
+        javafx.scene.control.Spinner<Integer> hours = intSpinner("units.hoursPerDay", 8, 1, 24, 1, 80);
+        VBox box = new VBox(10,
+                heading("New world maps start as"), row("Art style", style), row("Size", worldSize), row("Miles across", miles),
+                heading("New battlemaps start as"), row("Grid", grid), row("Columns", cols), row("Rows", rows), row("Cell size (px)", cell),
+                heading("New campaigns start with a party of"), row("Characters", party), row("Level", level),
+                heading("New whiteboard text starts as"), row("Text size", font), row("Text colour", ink), row("Sticky note colour", paper),
+                note("These only decide how new things start; nothing that already exists changes."),
+                heading("Distances on world maps"), row("Show distances in", units), row("Hours of travel in a day", hours),
+                note("Maps are drawn and measured in miles inside; this only changes what the scale bar, the ruler and the status line show. The boxes that ask for miles still ask for miles."));
+        return new Page("Maps & new things", box, () -> {
+            AppSettings.resetPrefix("new.");
+            AppSettings.resetPrefix("units.");
+        });
+    }
+
+    private static javafx.scene.control.Spinner<Integer> intSpinner(String key, int standard, int min, int max, int step, double width) {
+        javafx.scene.control.Spinner<Integer> sp = new javafx.scene.control.Spinner<>(min, max, Math.max(min, Math.min(max, AppSettings.getInt(key, standard))), step);
+        sp.setEditable(true);
+        sp.setPrefWidth(width);
+        sp.valueProperty().addListener((o, a1, n1) -> {
+            if (n1 != null) AppSettings.setInt(key, n1);
+        });
+        return sp;
+    }
+
+    private static javafx.scene.control.ColorPicker colourPicker(String key, String standard) {
+        javafx.scene.paint.Color c;
+        try {
+            c = javafx.scene.paint.Color.web(AppSettings.getString(key, standard));
+        } catch (IllegalArgumentException e) {
+            c = javafx.scene.paint.Color.web(standard);
+        }
+        javafx.scene.control.ColorPicker picker = new javafx.scene.control.ColorPicker(c);
+        picker.setOnAction(e -> AppSettings.setString(key, String.format("#%02X%02X%02X", (int) Math.round(picker.getValue().getRed() * 255),
+                (int) Math.round(picker.getValue().getGreen() * 255), (int) Math.round(picker.getValue().getBlue() * 255))));
+        return picker;
+    }
+
+    private static Page players() {
+        VBox box = new VBox(10,
+                heading("The players' window"),
+                check("Open the player window full screen", "player.fullscreen", false),
+                check("Do not show the \"drag this window to the playtable screen\" hint", "player.hideHint", false),
+                check("Show the turn order strip on battlemaps (the I key turns it on and off)", "player.turnOrder", true),
+                note("The window also remembers where you left it, including which screen."));
+        return new Page("Player windows", box, () -> AppSettings.resetPrefix("player."));
     }
 
     private static Page accessibility() {

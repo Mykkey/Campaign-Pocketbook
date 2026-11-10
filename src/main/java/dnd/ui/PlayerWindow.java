@@ -74,6 +74,7 @@ public final class PlayerWindow {
                 + "   |   F fit   |   G grid   |   I turn order");
         hint.setStyle("-fx-background-color: #000000b0; -fx-text-fill: white; -fx-padding: 6 14 6 14; -fx-background-radius: 14;");
         hint.setMouseTransparent(true);
+        hint.setVisible(!AppSettings.getBoolean("player.hideHint", false));
         StackPane.setAlignment(hint, Pos.BOTTOM_CENTER);
         StackPane.setMargin(hint, new Insets(0, 0, 18, 0));
         StackPane root = new StackPane(view, hint);
@@ -142,7 +143,7 @@ public final class PlayerWindow {
         OPEN.put(mapId, this);
         stage.show();
         timer.start();
-        if (PREFS.getBoolean("fullscreen", false)) stage.setFullScreen(true);
+        if (PREFS.getBoolean("fullscreen", false) || AppSettings.getBoolean("player.fullscreen", false)) stage.setFullScreen(true);
         view.requestFocus();
     }
 

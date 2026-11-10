@@ -22,13 +22,19 @@ final class NewWorldMapDialog {
     static Optional<Result> show(Window owner) {
         TextField name = new TextField("New World");
         ComboBox<String> size = new ComboBox<>(FXCollections.observableArrayList(SIZES));
-        size.setValue(SIZES[1]);
-        Spinner<Integer> miles = new Spinner<>(50, 100000, 2000, 100);
+        size.setValue(SIZES[Math.max(0, Math.min(2, AppSettings.getInt("new.world.size", 1)))]);
+        Spinner<Integer> miles = new Spinner<>(50, 100000, Math.max(50, Math.min(100000, AppSettings.getInt("new.world.miles", 2000))), 100);
         miles.setEditable(true);
         miles.setPrefWidth(120);
         ComboBox<WorldStyle> style = new ComboBox<>(FXCollections.observableArrayList(WorldStyle.values()));
-        style.setValue(WorldStyle.FANTASY_COLOUR);
-        Label styleNote = new Label(WorldStyle.FANTASY_COLOUR.description);
+        WorldStyle startStyle = WorldStyle.FANTASY_COLOUR;
+        try {
+            startStyle = WorldStyle.valueOf(AppSettings.getString("new.world.style", startStyle.name()));
+        } catch (IllegalArgumentException ignored) {
+            // an unknown name means the usual style
+        }
+        style.setValue(startStyle);
+        Label styleNote = new Label(startStyle.description);
         styleNote.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
         styleNote.setWrapText(true);
         style.valueProperty().addListener((o, a, n) -> styleNote.setText(n == null ? "" : n.description));

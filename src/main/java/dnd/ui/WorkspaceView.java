@@ -57,7 +57,10 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         this.store = store;
         this.onExit = onExit;
 
-        store.onDirty = saver::playFromStart;
+        store.onDirty = () -> {
+            saver.setDuration(Duration.millis(GeneralSettings.autosaveMs()));
+            saver.playFromStart();
+        };
         saver.setOnFinished(e -> save());
 
         // ---- left: tree
@@ -353,7 +356,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         if (v != null) v.requestFocus(); // forces any in-place text edit to commit
         store.onDirty = () -> { };
         save();
-        dnd.storage.ProjectBackups.backup(store, false); // a copy of the campaign as it is now (skipped if nothing changed)
+        if (GeneralSettings.backupOnClose()) dnd.storage.ProjectBackups.backup(store, false); // a copy of the campaign as it is now (skipped if nothing changed)
     }
 
     private void exit() {
@@ -1191,12 +1194,14 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         TreeItem<TreeNode> it = tree.getSelectionModel().getSelectedItem();
         if (it == null || it.getValue() == store.project.root) return;
         TreeNode n = it.getValue();
+        if (GeneralSettings.confirmDelete()) {
         Alert a = new Alert(Alert.AlertType.CONFIRMATION,
                 "Delete \"" + n.name + "\"" + (n.folder ? " and everything inside it" : "") + "? This cannot be undone.",
                 ButtonType.OK, ButtonType.CANCEL);
         a.setHeaderText("Delete " + (n.folder ? "folder" : n.isBattleMap() ? "battlemap" : n.isCard() ? "card" : n.isEncounter() ? "encounter" : n.isSpell() ? "spell" : n.isMagicItem() ? "magic item" : n.isQuest() ? "quest" : n.isSession() ? "session" : n.isWorldMap() ? "world map" : "whiteboard"));
         Optional<ButtonType> r = a.showAndWait();
         if (r.isEmpty() || r.get() != ButtonType.OK) return;
+        }
         dnd.storage.ProjectBackups.beforeDelete(store); // a way back if it was a mistake
 
         List<TreeNode> boards = new ArrayList<>();

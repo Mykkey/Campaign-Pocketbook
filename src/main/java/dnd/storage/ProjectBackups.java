@@ -20,7 +20,13 @@ import java.util.stream.Stream;
 public final class ProjectBackups {
     private ProjectBackups() { }
 
+    /** How many backups are kept by default; the settings can change it (see {@link #keep()}). */
     public static final int KEEP = 5;
+
+    /** How many backups of each campaign are kept now (the setting, 1 to 50). */
+    public static int keep() {
+        return Math.max(1, Math.min(50, dnd.ui.AppSettings.getInt("backup.keep", KEEP)));
+    }
     private static final Duration DELETE_BACKUP_GAP = Duration.ofMinutes(10);
     private static final DateTimeFormatter STAMP = DateTimeFormatter.ofPattern("yyyy-MM-dd_HHmmss");
     private static final Map<Path, Long> LAST_BEFORE_DELETE = new HashMap<>();
@@ -89,6 +95,6 @@ public final class ProjectBackups {
             s.filter(p -> p.getFileName().toString().endsWith(".zip")).forEach(all::add);
         }
         all.sort((a, b) -> b.getFileName().toString().compareTo(a.getFileName().toString()));
-        for (int i = KEEP; i < all.size(); i++) Files.deleteIfExists(all.get(i));
+        for (int i = keep(); i < all.size(); i++) Files.deleteIfExists(all.get(i));
     }
 }

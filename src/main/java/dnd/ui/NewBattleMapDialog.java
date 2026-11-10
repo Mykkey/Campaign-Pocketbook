@@ -31,10 +31,12 @@ public final class NewBattleMapDialog {
         RadioButton hexes = new RadioButton("Hexagons");
         squares.setToggleGroup(tg);
         hexes.setToggleGroup(tg);
-        squares.setSelected(true);
-        Spinner<Integer> cols = new Spinner<>(3, 200, 30);
-        Spinner<Integer> rows = new Spinner<>(3, 200, 20);
-        Spinner<Integer> cell = new Spinner<>(20, 200, 50);
+        boolean startHex = "hex".equals(AppSettings.getString("new.battle.grid", "square"));
+        squares.setSelected(!startHex);
+        hexes.setSelected(startHex);
+        Spinner<Integer> cols = new Spinner<>(3, 200, Math.max(3, Math.min(200, AppSettings.getInt("new.battle.cols", 30))));
+        Spinner<Integer> rows = new Spinner<>(3, 200, Math.max(3, Math.min(200, AppSettings.getInt("new.battle.rows", 20))));
+        Spinner<Integer> cell = new Spinner<>(20, 200, Math.max(20, Math.min(200, AppSettings.getInt("new.battle.cell", 50))));
         for (Spinner<Integer> s : java.util.List.of(cols, rows, cell)) {
             s.setEditable(true);
             s.setPrefWidth(100);

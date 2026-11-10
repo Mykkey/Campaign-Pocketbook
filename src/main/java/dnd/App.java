@@ -16,6 +16,7 @@ public class App extends Application {
 
     private Stage stage;
     private WorkspaceView workspace;
+    private ProjectLauncher launcher;
 
     @Override
     public void start(Stage stage) {
@@ -40,9 +41,15 @@ public class App extends Application {
         stage.setOnCloseRequest(e -> {
             if (workspace != null) workspace.shutdown();
         });
-        UpdateBanner.startCheck();
+        if (dnd.ui.GeneralSettings.updateCheck()) UpdateBanner.startCheck();
         showLauncher();
         stage.show();
+        // the campaign that was open last time, if the settings say so
+        String last = dnd.ui.AppSettings.getString(dnd.ui.GeneralSettings.LAST_PROJECT, "");
+        if (dnd.ui.GeneralSettings.reopenLast() && !last.isBlank() && launcher != null
+                && java.nio.file.Files.isDirectory(ProjectStore.baseDir().resolve(last))) {
+            javafx.application.Platform.runLater(() -> launcher.openProject(last));
+        }
     }
 
     /** Shows the current screen again, built afresh (after the text size changed); the open campaign and its tabs come back as they were. */
@@ -56,11 +63,18 @@ public class App extends Application {
         }
     }
 
+    /** Leaves the campaign for the project list (so the next start does not reopen it). */
+    private void backToProjects() {
+        dnd.ui.AppSettings.remove(dnd.ui.GeneralSettings.LAST_PROJECT);
+        showLauncher();
+    }
+
     private void showLauncher() {
         workspace = null;
         BorderPane root = new BorderPane();
         root.setTop(new UpdateBanner(getHostServices()));
         ProjectLauncher launcher = new ProjectLauncher(this::showWorkspace);
+        this.launcher = launcher;
         root.setCenter(new StackPane(launcher, launcher.loadingOverlay()));
         Scene scene = new Scene(root, stage.getWidth(), stage.getHeight());
         scene.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, ev -> {
@@ -74,7 +88,8 @@ public class App extends Application {
     }
 
     private void showWorkspace(ProjectStore store) {
-        workspace = new WorkspaceView(store, this::showLauncher, getHostServices());
+        dnd.ui.AppSettings.setString(dnd.ui.GeneralSettings.LAST_PROJECT, store.dir.getFileName().toString());
+        workspace = new WorkspaceView(store, this::backToProjects, getHostServices());
         stage.setScene(new Scene(workspace, stage.getWidth(), stage.getHeight()));
         stage.setTitle(TITLE + " - " + store.project.name);
     }

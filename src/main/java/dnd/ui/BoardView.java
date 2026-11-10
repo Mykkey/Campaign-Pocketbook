@@ -763,7 +763,7 @@ public class BoardView extends Pane implements ItemView {
 
     void checkpoint() {
         undoStack.addLast(Json.write(board.objects));
-        if (undoStack.size() > 200) undoStack.removeFirst();
+        if (undoStack.size() > GeneralSettings.undoDepth(200)) undoStack.removeFirst();
         redoStack.clear();
     }
 

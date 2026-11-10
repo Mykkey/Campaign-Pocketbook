@@ -15,6 +15,16 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class WorldGridTest {
+    @org.junit.jupiter.api.BeforeEach
+    void ownSettings(@org.junit.jupiter.api.io.TempDir java.nio.file.Path settingsDir) {
+        dnd.ui.AppSettings.useFile(settingsDir.resolve("settings.properties")); // never the real settings of whoever runs the tests
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void realSettings() {
+        dnd.ui.AppSettings.useFile(null);
+    }
+
     private static WorldMap map(WorldGridKind kind) {
         WorldMap m = new WorldMap("W", 100, 80, 1000, WorldStyle.FANTASY_COLOUR); // 10 miles a cell
         m.gridKind = kind;

@@ -180,7 +180,11 @@ public class ProjectLauncher extends VBox {
         String projectName = name.get();
         launch("Creating " + projectName + "...", () -> {
             Files.createDirectories(base);
-            return ProjectStore.create(base, projectName);
+            ProjectStore made = ProjectStore.create(base, projectName);
+            made.project.partySize = Math.max(1, Math.min(10, AppSettings.getInt("new.partySize", 4)));
+            made.project.partyLevel = Math.max(1, Math.min(20, AppSettings.getInt("new.partyLevel", 3)));
+            made.markProjectDirty();
+            return made;
         }, "Could not create project: ");
     }
 

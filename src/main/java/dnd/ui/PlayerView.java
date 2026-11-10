@@ -38,7 +38,7 @@ public class PlayerView extends Pane {
     private boolean dirty = true;
     private int drawnRevision = -1;
     private double dragX, dragY;
-    private boolean showInitiative = true;
+    private boolean showInitiative = AppSettings.getBoolean("player.turnOrder", true);
     private final HBox strip = new HBox(6);
 
     public PlayerView(BattleMap map, ProjectStore store) {

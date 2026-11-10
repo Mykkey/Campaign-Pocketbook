@@ -8,8 +8,35 @@ import java.util.Map;
 public final class WorldTravel {
     private WorldTravel() { }
 
-    /** Hours of travel in a day. */
+    /** Hours of travel in a day when nothing else is chosen. */
     public static final double HOURS_PER_DAY = 8;
+
+    public static final double KM_PER_MILE = 1.609344;
+
+    /** Hours of travel in a day, from the settings (1 to 24). */
+    public static double hoursPerDay() {
+        return Math.max(1, Math.min(24, dnd.ui.AppSettings.getDouble("units.hoursPerDay", HOURS_PER_DAY)));
+    }
+
+    /** True if distances are shown in kilometres (a setting; the map itself always stores miles). */
+    public static boolean useKm() {
+        return "km".equals(dnd.ui.AppSettings.getString("units.distance", "mi"));
+    }
+
+    /** A distance in miles in the unit being shown. */
+    public static double shown(double miles) {
+        return useKm() ? miles * KM_PER_MILE : miles;
+    }
+
+    /** The short name of the unit being shown: "mi" or "km". */
+    public static String unit() {
+        return useKm() ? "km" : "mi";
+    }
+
+    /** "24 mi/day" or "39 km/day" for a pace stored in miles a day. */
+    public static String paceText(double milesPerDay) {
+        return Math.round(shown(milesPerDay)) + " " + unit() + "/day";
+    }
 
     /** Miles per day for each way of travelling (the 5th edition rules: 18, 24 and 30 miles on foot at a slow, normal and fast pace). */
     public static Map<String, Double> defaultPaces() {
@@ -33,10 +60,11 @@ public final class WorldTravel {
     /** A time in days as words: "3 days 2 hr", "5 hr", "under an hour". */
     public static String duration(double miles, double milesPerDay) {
         if (milesPerDay <= 0 || miles <= 0) return "-";
-        double hours = miles / milesPerDay * HOURS_PER_DAY;
+        double hoursInDay = hoursPerDay();
+        double hours = miles / milesPerDay * hoursInDay;
         long totalHours = Math.round(hours);
         if (totalHours < 1) return "under an hour";
-        long days = (long) (totalHours / HOURS_PER_DAY), rest = Math.round(totalHours - days * HOURS_PER_DAY);
+        long days = (long) (totalHours / hoursInDay), rest = Math.round(totalHours - days * hoursInDay);
         if (days == 0) return rest + " hr";
         String d = days + (days == 1 ? " day" : " days");
         return rest == 0 ? d : d + " " + rest + " hr";
@@ -44,12 +72,18 @@ public final class WorldTravel {
 
     /** A distance in miles as words: "12 mi", "1,240 mi", "0.4 mi". */
     public static String distance(double miles) {
-        if (miles < 1) return String.format("%.1f mi", miles);
-        return String.format("%,.0f mi", miles);
+        double v = shown(miles);
+        if (v < 1) return String.format("%.1f %s", v, unit());
+        return String.format("%,.0f %s", v, unit());
     }
 
     /** A round length for a scale bar that is at most {@code atMost} miles: 1, 2, 5, 10, 20, 50... */
     public static double niceLength(double atMost) {
+        if (useKm()) return niceRound(atMost * KM_PER_MILE) / KM_PER_MILE; // a round number of kilometres, as miles
+        return niceRound(atMost);
+    }
+
+    private static double niceRound(double atMost) {
         if (atMost <= 0) return 1;
         double mag = Math.pow(10, Math.floor(Math.log10(atMost)));
         for (double m : new double[]{5, 2, 1}) if (m * mag <= atMost) return m * mag;

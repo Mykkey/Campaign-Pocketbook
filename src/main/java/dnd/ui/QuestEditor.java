@@ -121,7 +121,7 @@ public class QuestEditor extends BorderPane implements ItemView {
         colour.run();
         Theme.darkProperty().addListener((o, was, now) -> colour.run());
         HBox.setHgrow(linked, Priority.ALWAYS);
-        Tooltip preview = IconButtons.tip();
+        Tooltip preview = IconButtons.tip("");
         preview.setShowDelay(javafx.util.Duration.millis(350));
         preview.setShowDuration(javafx.util.Duration.minutes(5));
         preview.setStyle("-fx-background-color: transparent; -fx-padding: 0;");

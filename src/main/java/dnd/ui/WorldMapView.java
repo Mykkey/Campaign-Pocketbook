@@ -1292,6 +1292,7 @@ final class WorldMapView extends Pane {
         if (key == null) return;
         final String showNote = note, showLink = link;
         final double sx = e.getScreenX(), sy = e.getScreenY();
+        hoverDelay.setDuration(Duration.millis(GeneralSettings.hoverDelayMs(450)));
         hoverDelay.setOnFinished(ev -> {
             javafx.scene.Node preview = ItemPreview.hover(store, showNote, showLink);
             if (preview == null) return;
@@ -1474,7 +1475,7 @@ final class WorldMapView extends Pane {
         double ex = map.offsetX + pts.get(pts.size() - 2) * zoom(), ey = map.offsetY + pts.get(pts.size() - 1) * zoom();
         List<String> lines = new ArrayList<>();
         lines.add("Distance: " + WorldTravel.distance(miles));
-        for (var e : map.paces.entrySet()) lines.add(e.getKey() + " (" + Math.round(e.getValue()) + " mi/day): " + WorldTravel.duration(miles, e.getValue()));
+        for (var e : map.paces.entrySet()) lines.add(e.getKey() + " (" + WorldTravel.paceText(e.getValue()) + "): " + WorldTravel.duration(miles, e.getValue()));
         double w = 0;
         g.setFont(javafx.scene.text.Font.font("SansSerif", 12));
         for (String l : lines) {
@@ -1768,7 +1769,7 @@ final class WorldMapView extends Pane {
 
     private void push(Entry e) {
         undoStack.addLast(e);
-        if (undoStack.size() > 100) undoStack.removeFirst();
+        if (undoStack.size() > GeneralSettings.undoDepth(100)) undoStack.removeFirst();
         redoStack.clear();
     }
 
@@ -1814,7 +1815,7 @@ final class WorldMapView extends Pane {
             return;
         }
         int[] cell = WorldGrid.cellAt(map, cx, cy);
-        status.accept(String.format("%,.0f mi east, %,.0f mi south%s    zoom %d%%    %d symbols", cx * map.milesPerCell, cy * map.milesPerCell,
+        status.accept(String.format("%,.0f %s east, %,.0f %s south%s    zoom %d%%    %d symbols", WorldTravel.shown(cx * map.milesPerCell), WorldTravel.unit(), WorldTravel.shown(cy * map.milesPerCell), WorldTravel.unit(),
                 cell == null ? "" : "    cell " + WorldGrid.name(cell[0], cell[1]), Math.round(map.zoom * 100), map.stamps.size()));
     }
 

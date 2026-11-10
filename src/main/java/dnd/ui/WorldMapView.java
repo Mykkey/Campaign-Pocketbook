@@ -3,6 +3,7 @@ package dnd.ui;
 import dnd.map.AssetLibrary;
 import dnd.map.world.ScatterPlanner;
 import dnd.map.world.WorldAssets;
+import dnd.map.world.WorldLabels;
 import dnd.map.world.WorldPalette;
 import dnd.map.world.WorldPathGeometry;
 import dnd.map.world.WorldPathRenderer;
@@ -212,6 +213,7 @@ final class WorldMapView extends Pane {
             case SELECT -> selectPressed(px, py, e.isShiftDown(), e.getClickCount(), e.isAltDown());
             case PATH -> pathPressed(px, py, e.getClickCount());
             case REGION -> regionPressed(px, py, e.getClickCount());
+            case LABEL -> placeLabel(px, py);
             default -> { }
         }
         redraw();
@@ -255,7 +257,8 @@ final class WorldMapView extends Pane {
                 WorldStamp s = singleSelected();
                 if (s != null) {
                     moved = true;
-                    s.size = Math.max(0.5, Math.abs(WorldStampRenderer.toLocal(s, px, py)[0]) * 2);
+                    double width = Math.abs(WorldStampRenderer.toLocal(s, px, py)[0]) * 2;
+                    s.size = WorldLabels.isLabel(s) ? Math.max(0.6, width / WorldLabels.ratio(s, map.style)) : Math.max(0.5, width);
                 }
             }
             case MARQUEE -> {
@@ -413,10 +416,63 @@ final class WorldMapView extends Pane {
         if (f == null || WorldAssets.get(f) == null) return;
         String before = WorldObjects.capture(map);
         WorldStamp s = newStamp(f, px, py);
+        if (WorldLabels.isBanner(s)) {
+            String text = askText("Banner", "Text on the banner", "");
+            if (text == null) return;
+            s.text = text;
+        }
         map.stamps.add(s);
         selected.clear();
         selected.add(s.id);
         stampEdit(before);
+    }
+
+    /** Puts a text label where the user clicked, after asking what it says. */
+    private void placeLabel(double px, double py) {
+        String text = askText("Label", "What should the label say?", "");
+        if (text == null || text.isBlank()) return;
+        String before = WorldObjects.capture(map);
+        WorldStamp s = new WorldStamp(WorldLabels.FEATURE, px, py);
+        s.text = text.trim();
+        s.labelKind = ts.labelKind.get().name();
+        s.bend = ts.labelBend.get();
+        s.style = ts.stampStyle.get();
+        map.stamps.add(s);
+        selected.clear();
+        selShape = null;
+        selected.add(s.id);
+        stampEdit(before);
+    }
+
+    /** Changes what a label or banner says. */
+    private void editText(WorldStamp s) {
+        String t = askText(WorldLabels.isLabel(s) ? "Label" : "Banner", "Text", s.text == null ? "" : s.text);
+        if (t == null || (WorldLabels.isLabel(s) && t.isBlank())) return;
+        String before = WorldObjects.capture(map);
+        s.text = t.trim();
+        stampEdit(before);
+        redraw();
+    }
+
+    /** Gives the selected labels a kind and a bend (the label tool's settings apply to them). */
+    void updateSelectedLabels(WorldLabels.Kind kind, double bend) {
+        List<WorldStamp> labels = new ArrayList<>();
+        for (WorldStamp s : selectedStamps()) if (WorldLabels.isLabel(s)) labels.add(s);
+        if (labels.isEmpty()) return;
+        String before = WorldObjects.capture(map);
+        for (WorldStamp s : labels) {
+            if (!kind.name().equals(s.labelKind)) {
+                s.labelKind = kind.name();
+                s.size = 0;
+            }
+            s.bend = bend;
+        }
+        stampEdit(before);
+        redraw();
+    }
+
+    boolean labelSelected() {
+        return selectedStamps().stream().anyMatch(WorldLabels::isLabel);
     }
 
     /** Saves what a stamp gesture changed as one undo step. */
@@ -494,7 +550,7 @@ final class WorldMapView extends Pane {
     }
 
     private boolean onHandle(WorldStamp s, double px, double py) {
-        double[] h = WorldStampRenderer.handleOf(s);
+        double[] h = WorldStampRenderer.handleOf(s, map.style);
         double tol = 8 / zoom();
         return Math.abs(px - h[0]) <= tol && Math.abs(py - h[1]) <= tol;
     }
@@ -534,6 +590,12 @@ final class WorldMapView extends Pane {
             }
         }
         WorldStamp hit = WorldStampRenderer.hit(map, px, py, true);
+        if (hit != null && clicks >= 2 && WorldLabels.hasText(hit)) {
+            selected.clear();
+            selected.add(hit.id);
+            editText(hit);
+            return;
+        }
         if (hit != null) {
             selShape = null;
             if (shift) {
@@ -672,12 +734,18 @@ final class WorldMapView extends Pane {
     static java.util.function.UnaryOperator<String> nameAsker;
 
     private String askRegionName(String initial) {
+        String t = askText("Region", "Name this region (leave empty for none)", initial);
+        return t == null ? "" : t;
+    }
+
+    /** Asks for a line of text; null if the user cancelled. */
+    private String askText(String title, String header, String initial) {
         if (nameAsker != null) return nameAsker.apply(initial);
         TextInputDialog d = new TextInputDialog(initial);
-        d.setTitle("Region");
-        d.setHeaderText("Name this region (leave empty for none)");
+        d.setTitle(title);
+        d.setHeaderText(header);
         if (getScene() != null) d.initOwner(getScene().getWindow());
-        return d.showAndWait().map(String::trim).orElse("");
+        return d.showAndWait().map(String::trim).orElse(null);
     }
 
     private void renameRegion(WorldRegion r) {
@@ -875,13 +943,13 @@ final class WorldMapView extends Pane {
         g.setLineWidth(1.5 / zoom());
         g.setLineDashes(6 / zoom(), 4 / zoom());
         for (WorldStamp s : selectedStamps()) {
-            double[][] c = WorldStampRenderer.corners(s);
+            double[][] c = WorldStampRenderer.corners(s, map.style);
             g.strokePolygon(new double[]{c[0][0], c[1][0], c[2][0], c[3][0]}, new double[]{c[0][1], c[1][1], c[2][1], c[3][1]}, 4);
         }
         g.setLineDashes((double[]) null);
         WorldStamp single = singleSelected();
         if (single != null) {
-            double[] h = WorldStampRenderer.handleOf(single);
+            double[] h = WorldStampRenderer.handleOf(single, map.style);
             double s = 9 / zoom();
             g.setFill(Color.WHITE);
             g.fillRect(h[0] - s / 2, h[1] - s / 2, s, s);

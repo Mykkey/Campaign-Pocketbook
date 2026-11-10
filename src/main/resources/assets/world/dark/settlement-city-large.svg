@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+<ellipse cx="50.0" cy="90.0" rx="50.0" ry="6.0" fill="#000000" fill-opacity="0.30"/>
+<path d="M45.0,52.0 Q70.0,8.0 95.0,52.0 Z" fill="#605e5b" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round"  />
+<polygon points="70.0,30.0 73.1,30.3 76.2,31.4 79.4,33.1 82.5,35.5 85.6,38.6 88.8,42.4 91.9,46.8 95.0,52.0 70.0,52.0 95.0,52.0" fill="#484743" fill-opacity="0.70" stroke="none"/>
+<path d="M45.0,52.0 Q70.0,8.0 95.0,52.0 Z" fill="none" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round"  />
+<polygon points="59.0,44.0 59.0,26.0 70.0,26.0 70.0,44.0" fill="#85827f" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="70.0,26.0 81.0,26.0 81.0,44.0 70.0,44.0" fill="#514e4b" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="59.0" y="23.0" width="3.7" height="3.0" rx="0.0" fill="#716f6b" stroke="#0b0b0d" stroke-width="0.40" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="66.3" y="23.0" width="3.7" height="3.0" rx="0.0" fill="#716f6b" stroke="#0b0b0d" stroke-width="0.40" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="73.7" y="23.0" width="3.7" height="3.0" rx="0.0" fill="#716f6b" stroke="#0b0b0d" stroke-width="0.40" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="60.0" y="18.0" width="4.5" height="8.0" rx="0.0" fill="#6a6763" stroke="#0b0b0d" stroke-width="0.50" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="76.0" y="18.0" width="4.5" height="8.0" rx="0.0" fill="#6a6763" stroke="#0b0b0d" stroke-width="0.50" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<line x1="70.0" y1="18.0" x2="70.0" y2="9.0" stroke="#3b2f22" stroke-width="0.90" stroke-opacity="1.00" stroke-linecap="round"/>
+<polygon points="70.0,9.0 76.0,11.0 70.0,13.0" fill="#5c2924" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="0.50" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<path d="M66.7,44.0 L66.7,39.1 Q70.0,33.9 73.3,39.1 L73.3,44.0 Z" fill="#171410" stroke="#0b0b0d" stroke-width="0.60" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="26.5,48.0 26.5,35.0 34.0,35.0 34.0,48.0" fill="#8f8c83" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="34.0,35.0 41.5,35.0 41.5,48.0 34.0,48.0" fill="#5a574f" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="25.5,35.0 34.0,26.8 34.0,35.0" fill="#775551" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="34.0,26.8 42.5,35.0 34.0,35.0" fill="#442421" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="32.6" y="41.5" width="2.7" height="6.5" rx="0.0" fill="#171410" stroke="#0b0b0d" stroke-width="0.40" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="6.5,52.0 6.5,39.0 14.0,39.0 14.0,52.0" fill="#8f8c83" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="14.0,39.0 21.5,39.0 21.5,52.0 14.0,52.0" fill="#5a574f" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="5.5,39.0 14.0,30.8 14.0,39.0" fill="#6b5e50" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="14.0,30.8 22.5,39.0 14.0,39.0" fill="#382d20" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="12.7" y="45.5" width="2.7" height="6.5" rx="0.0" fill="#171410" stroke="#0b0b0d" stroke-width="0.40" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="42.0,58.0 42.0,44.0 50.0,44.0 50.0,58.0" fill="#8f8c83" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="50.0,44.0 58.0,44.0 58.0,58.0 50.0,58.0" fill="#5a574f" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="41.0,44.0 50.0,35.2 50.0,44.0" fill="#775551" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="50.0,35.2 59.0,44.0 50.0,44.0" fill="#442421" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="48.6" y="51.0" width="2.9" height="7.0" rx="0.0" fill="#171410" stroke="#0b0b0d" stroke-width="0.40" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="11.5,66.0 11.5,51.0 20.0,51.0 20.0,66.0" fill="#8f8c83" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="20.0,51.0 28.5,51.0 28.5,66.0 20.0,66.0" fill="#5a574f" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="10.5,51.0 20.0,41.6 20.0,51.0" fill="#6b5e50" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="20.0,41.6 29.5,51.0 20.0,51.0" fill="#382d20" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="18.5" y="58.5" width="3.1" height="7.5" rx="0.0" fill="#171410" stroke="#0b0b0d" stroke-width="0.40" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="74.5,66.0 74.5,53.0 82.0,53.0 82.0,66.0" fill="#8f8c83" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="82.0,53.0 89.5,53.0 89.5,66.0 82.0,66.0" fill="#5a574f" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="73.5,53.0 82.0,44.8 82.0,53.0" fill="#775551" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="82.0,44.8 90.5,53.0 82.0,53.0" fill="#442421" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="80.7" y="59.5" width="2.7" height="6.5" rx="0.0" fill="#171410" stroke="#0b0b0d" stroke-width="0.40" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="53.5,70.0 53.5,55.0 62.0,55.0 62.0,70.0" fill="#8f8c83" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="62.0,55.0 70.5,55.0 70.5,70.0 62.0,70.0" fill="#5a574f" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="52.5,55.0 62.0,45.6 62.0,55.0" fill="#6b5e50" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="62.0,45.6 71.5,55.0 62.0,55.0" fill="#382d20" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="60.5" y="62.5" width="3.1" height="7.5" rx="0.0" fill="#171410" stroke="#0b0b0d" stroke-width="0.40" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="31.5,72.0 31.5,57.0 40.0,57.0 40.0,72.0" fill="#8f8c83" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="40.0,57.0 48.5,57.0 48.5,72.0 40.0,72.0" fill="#5a574f" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="30.5,57.0 40.0,47.6 40.0,57.0" fill="#775551" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="40.0,47.6 49.5,57.0 40.0,57.0" fill="#442421" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="38.5" y="64.5" width="3.1" height="7.5" rx="0.0" fill="#171410" stroke="#0b0b0d" stroke-width="0.40" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="13.5,58.0 13.5,35.0 22.5,35.0 22.5,58.0" fill="#8f8c83" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="22.5,35.0 31.5,35.0 31.5,58.0 22.5,58.0" fill="#5a574f" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="12.5,35.0 22.5,25.1 22.5,35.0" fill="#775551" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="22.5,25.1 32.5,35.0 22.5,35.0" fill="#442421" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="20.9" y="46.5" width="3.2" height="11.5" rx="0.0" fill="#171410" stroke="#0b0b0d" stroke-width="0.40" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="33.0,58.0 33.0,25.8 39.0,25.8 39.0,58.0" fill="#8f8c83" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="39.0,25.8 45.0,25.8 45.0,58.0 39.0,58.0" fill="#5a574f" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="32.4,25.8 39.0,5.1 39.0,25.8" fill="#775551" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="39.0,5.1 45.6,25.8 39.0,25.8" fill="#442421" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="4.0" y="82.0" width="92.0" height="12.0" rx="0.0" fill="#65625e" stroke="#0b0b0d" stroke-width="0.70" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="4.0" y="79.8" width="4.0" height="2.2" rx="0.0" fill="#716f6b" stroke="#0b0b0d" stroke-width="0.40" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="12.0" y="79.8" width="4.0" height="2.2" rx="0.0" fill="#716f6b" stroke="#0b0b0d" stroke-width="0.40" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="20.0" y="79.8" width="4.0" height="2.2" rx="0.0" fill="#716f6b" stroke="#0b0b0d" stroke-width="0.40" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="28.0" y="79.8" width="4.0" height="2.2" rx="0.0" fill="#716f6b" stroke="#0b0b0d" stroke-width="0.40" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="36.0" y="79.8" width="4.0" height="2.2" rx="0.0" fill="#716f6b" stroke="#0b0b0d" stroke-width="0.40" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="44.0" y="79.8" width="4.0" height="2.2" rx="0.0" fill="#716f6b" stroke="#0b0b0d" stroke-width="0.40" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="52.0" y="79.8" width="4.0" height="2.2" rx="0.0" fill="#716f6b" stroke="#0b0b0d" stroke-width="0.40" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="60.0" y="79.8" width="4.0" height="2.2" rx="0.0" fill="#716f6b" stroke="#0b0b0d" stroke-width="0.40" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="68.0" y="79.8" width="4.0" height="2.2" rx="0.0" fill="#716f6b" stroke="#0b0b0d" stroke-width="0.40" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="76.0" y="79.8" width="4.0" height="2.2" rx="0.0" fill="#716f6b" stroke="#0b0b0d" stroke-width="0.40" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="84.0" y="79.8" width="4.0" height="2.2" rx="0.0" fill="#716f6b" stroke="#0b0b0d" stroke-width="0.40" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="92.0" y="79.8" width="4.0" height="2.2" rx="0.0" fill="#716f6b" stroke="#0b0b0d" stroke-width="0.40" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<path d="M45.0,94.0 L45.0,86.8 Q50.0,79.0 55.0,86.8 L55.0,94.0 Z" fill="#171410" stroke="#0b0b0d" stroke-width="0.60" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="0.0,94.0 0.0,68.0 6.0,68.0 6.0,94.0" fill="#85827f" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="6.0,68.0 12.0,68.0 12.0,94.0 6.0,94.0" fill="#514e4b" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="-1.0,68.0 6.0,57.2 6.0,68.0" fill="#775551" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="6.0,57.2 13.0,68.0 6.0,68.0" fill="#442421" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="88.0,94.0 88.0,68.0 94.0,68.0 94.0,94.0" fill="#85827f" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="94.0,68.0 100.0,68.0 100.0,94.0 94.0,94.0" fill="#514e4b" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="87.0,68.0 94.0,57.2 94.0,68.0" fill="#775551" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="94.0,57.2 101.0,68.0 94.0,68.0" fill="#442421" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="25.0,94.0 25.0,74.0 30.0,74.0 30.0,94.0" fill="#85827f" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="30.0,74.0 35.0,74.0 35.0,94.0 30.0,94.0" fill="#514e4b" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="24.0,74.0 30.0,65.0 30.0,74.0" fill="#775551" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="30.0,65.0 36.0,74.0 30.0,74.0" fill="#442421" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="65.0,94.0 65.0,74.0 70.0,74.0 70.0,94.0" fill="#85827f" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="70.0,74.0 75.0,74.0 75.0,94.0 70.0,94.0" fill="#514e4b" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="64.0,74.0 70.0,65.0 70.0,74.0" fill="#775551" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="70.0,65.0 76.0,74.0 70.0,74.0" fill="#442421" fill-opacity="1.00" stroke="#0b0b0d" stroke-width="1.00" stroke-opacity="1.00" stroke-linejoin="round" stroke-linecap="round" />
+</svg>

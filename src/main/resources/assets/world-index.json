@@ -609,5 +609,338 @@
   "h": 4.0,
   "anchor": "base",
   "family": "landmarks"
+ },
+ {
+  "id": "settlement-capital",
+  "name": "Capital",
+  "category": "Settlements",
+  "w": 18,
+  "h": 18.9,
+  "anchor": "base",
+  "family": "settlements"
+ },
+ {
+  "id": "settlement-castle",
+  "name": "Castle",
+  "category": "Settlements",
+  "w": 8,
+  "h": 7.2,
+  "anchor": "base",
+  "family": "settlements"
+ },
+ {
+  "id": "settlement-city-large",
+  "name": "City",
+  "category": "Settlements",
+  "w": 15,
+  "h": 15.0,
+  "anchor": "base",
+  "family": "settlements"
+ },
+ {
+  "id": "settlement-cottage",
+  "name": "Cottage",
+  "category": "Settlements",
+  "w": 4,
+  "h": 3.2,
+  "anchor": "base",
+  "family": "settlements"
+ },
+ {
+  "id": "settlement-dwarven",
+  "name": "Dwarven hold",
+  "category": "Settlements",
+  "w": 8,
+  "h": 7.2,
+  "anchor": "base",
+  "family": "settlements"
+ },
+ {
+  "id": "settlement-elven",
+  "name": "Elven hold",
+  "category": "Settlements",
+  "w": 8,
+  "h": 7.2,
+  "anchor": "base",
+  "family": "settlements"
+ },
+ {
+  "id": "settlement-fortress",
+  "name": "Fortress",
+  "category": "Settlements",
+  "w": 8,
+  "h": 7.2,
+  "anchor": "base",
+  "family": "settlements"
+ },
+ {
+  "id": "settlement-hamlet",
+  "name": "Hamlet",
+  "category": "Settlements",
+  "w": 6,
+  "h": 4.8,
+  "anchor": "base",
+  "family": "settlements"
+ },
+ {
+  "id": "settlement-monastery",
+  "name": "Monastery",
+  "category": "Settlements",
+  "w": 6,
+  "h": 5.1,
+  "anchor": "base",
+  "family": "settlements"
+ },
+ {
+  "id": "settlement-orc",
+  "name": "Orc stronghold",
+  "category": "Settlements",
+  "w": 7,
+  "h": 5.95,
+  "anchor": "base",
+  "family": "settlements"
+ },
+ {
+  "id": "settlement-port",
+  "name": "Port",
+  "category": "Settlements",
+  "w": 11,
+  "h": 9.35,
+  "anchor": "base",
+  "family": "settlements"
+ },
+ {
+  "id": "settlement-ruined-city",
+  "name": "Ruined city",
+  "category": "Settlements",
+  "w": 9,
+  "h": 7.2,
+  "anchor": "base",
+  "family": "settlements"
+ },
+ {
+  "id": "settlement-town",
+  "name": "Town",
+  "category": "Settlements",
+  "w": 10,
+  "h": 8.5,
+  "anchor": "base",
+  "family": "settlements"
+ },
+ {
+  "id": "settlement-village",
+  "name": "Village",
+  "category": "Settlements",
+  "w": 8,
+  "h": 6.4,
+  "anchor": "base",
+  "family": "settlements"
+ },
+ {
+  "id": "settlement-city-small",
+  "name": "Walled town",
+  "category": "Settlements",
+  "w": 12,
+  "h": 10.8,
+  "anchor": "base",
+  "family": "settlements"
+ },
+ {
+  "id": "settlement-watchtower",
+  "name": "Watchtower",
+  "category": "Settlements",
+  "w": 4,
+  "h": 3.6,
+  "anchor": "base",
+  "family": "settlements"
+ },
+ {
+  "id": "deco-anchor",
+  "name": "Anchor",
+  "category": "Decorations",
+  "w": 4,
+  "h": 4.0,
+  "anchor": "center",
+  "family": "flourish"
+ },
+ {
+  "id": "deco-compass-rose",
+  "name": "Compass rose",
+  "category": "Decorations",
+  "w": 12,
+  "h": 12.0,
+  "anchor": "center",
+  "family": "compass"
+ },
+ {
+  "id": "deco-corner",
+  "name": "Corner piece",
+  "category": "Decorations",
+  "w": 8,
+  "h": 8.0,
+  "anchor": "center",
+  "family": "flourish"
+ },
+ {
+  "id": "deco-divider",
+  "name": "Divider",
+  "category": "Decorations",
+  "w": 10,
+  "h": 2.0,
+  "anchor": "center",
+  "family": "flourish"
+ },
+ {
+  "id": "deco-dragon",
+  "name": "Dragon",
+  "category": "Decorations",
+  "w": 12,
+  "h": 9.6,
+  "anchor": "center",
+  "family": "monster"
+ },
+ {
+  "id": "deco-flourish",
+  "name": "Flourish",
+  "category": "Decorations",
+  "w": 10,
+  "h": 4.0,
+  "anchor": "center",
+  "family": "flourish"
+ },
+ {
+  "id": "deco-giant-crab",
+  "name": "Giant crab",
+  "category": "Decorations",
+  "w": 8,
+  "h": 5.6,
+  "anchor": "center",
+  "family": "monster"
+ },
+ {
+  "id": "deco-kraken",
+  "name": "Kraken",
+  "category": "Decorations",
+  "w": 12,
+  "h": 11.4,
+  "anchor": "center",
+  "family": "monster"
+ },
+ {
+  "id": "deco-longship",
+  "name": "Longship",
+  "category": "Decorations",
+  "w": 7,
+  "h": 4.2,
+  "anchor": "center",
+  "family": "ship"
+ },
+ {
+  "id": "deco-north-arrow",
+  "name": "North arrow",
+  "category": "Decorations",
+  "w": 4,
+  "h": 5.2,
+  "anchor": "center",
+  "family": "compass"
+ },
+ {
+  "id": "deco-galleon",
+  "name": "Sailing ship",
+  "category": "Decorations",
+  "w": 8,
+  "h": 7.2,
+  "anchor": "center",
+  "family": "ship"
+ },
+ {
+  "id": "deco-sea-serpent",
+  "name": "Sea serpent",
+  "category": "Decorations",
+  "w": 13,
+  "h": 9.1,
+  "anchor": "center",
+  "family": "monster"
+ },
+ {
+  "id": "deco-compass-simple",
+  "name": "Simple compass",
+  "category": "Decorations",
+  "w": 9,
+  "h": 9.0,
+  "anchor": "center",
+  "family": "compass"
+ },
+ {
+  "id": "deco-whale",
+  "name": "Whale",
+  "category": "Decorations",
+  "w": 11,
+  "h": 6.6,
+  "anchor": "center",
+  "family": "monster"
+ },
+ {
+  "id": "deco-wind-rose",
+  "name": "Wind rose",
+  "category": "Decorations",
+  "w": 14,
+  "h": 14.0,
+  "anchor": "center",
+  "family": "compass"
+ },
+ {
+  "id": "banner-cartouche",
+  "name": "Cartouche",
+  "category": "Banners",
+  "w": 14,
+  "h": 7.0,
+  "anchor": "center",
+  "family": "banner"
+ },
+ {
+  "id": "banner-pennant",
+  "name": "Hanging banner",
+  "category": "Banners",
+  "w": 6,
+  "h": 6.6,
+  "anchor": "base",
+  "family": "banner"
+ },
+ {
+  "id": "banner-heraldic",
+  "name": "Heraldic shield",
+  "category": "Banners",
+  "w": 6,
+  "h": 6.0,
+  "anchor": "center",
+  "family": "banner"
+ },
+ {
+  "id": "banner-plaque",
+  "name": "Plaque",
+  "category": "Banners",
+  "w": 12,
+  "h": 4.32,
+  "anchor": "center",
+  "family": "banner"
+ },
+ {
+  "id": "banner-ribbon",
+  "name": "Ribbon",
+  "category": "Banners",
+  "w": 14,
+  "h": 5.04,
+  "anchor": "center",
+  "family": "banner"
+ },
+ {
+  "id": "banner-scroll",
+  "name": "Scroll",
+  "category": "Banners",
+  "w": 14,
+  "h": 5.04,
+  "anchor": "center",
+  "family": "banner"
  }
 ]

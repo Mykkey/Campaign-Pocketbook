@@ -15,23 +15,40 @@ import java.util.List;
 public final class WorldStampRenderer {
     private WorldStampRenderer() { }
 
-    /** The symbol's width in map cells. */
-    public static double widthOf(WorldStamp s) {
+    /** The symbol's width in map cells (labels are measured in the given map style). */
+    public static double widthOf(WorldStamp s, WorldStyle mapStyle) {
+        if (WorldLabels.isLabel(s)) return WorldLabels.ratio(s, mapStyle) * WorldLabels.sizeOf(s);
         WorldAssets.Feature f = WorldAssets.get(s.feature);
         if (s.size > 0) return s.size;
         return f == null ? 4 : f.w();
     }
 
-    public static double heightOf(WorldStamp s) {
+    public static double widthOf(WorldStamp s) {
+        return widthOf(s, WorldStyle.CLASSIC_INK);
+    }
+
+    public static double heightOf(WorldStamp s, WorldStyle mapStyle) {
+        if (WorldLabels.isLabel(s)) {
+            double w = widthOf(s, mapStyle);
+            return WorldLabels.sizeOf(s) * 1.3 + Math.abs(s.bend * w);
+        }
         WorldAssets.Feature f = WorldAssets.get(s.feature);
-        double w = widthOf(s);
+        double w = widthOf(s, mapStyle);
         return f == null ? w : w * f.h() / f.w();
     }
 
+    public static double heightOf(WorldStamp s) {
+        return heightOf(s, WorldStyle.CLASSIC_INK);
+    }
+
     /** Distance from the stamp's point up to the top of its picture (negative y), in cells. */
-    private static double topOf(WorldStamp s) {
+    private static double topOf(WorldStamp s, WorldStyle mapStyle) {
+        if (WorldLabels.isLabel(s)) {
+            double w = widthOf(s, mapStyle);
+            return -WorldLabels.sizeOf(s) * 0.95 + Math.min(0, s.bend * w);
+        }
         WorldAssets.Feature f = WorldAssets.get(s.feature);
-        double h = heightOf(s);
+        double h = heightOf(s, mapStyle);
         return f != null && f.centered() ? -h / 2 : -h;
     }
 
@@ -52,11 +69,16 @@ public final class WorldStampRenderer {
                             boolean showHidden) {
         for (WorldStamp s : inOrder(map)) {
             if (s.hidden && !showHidden) continue;
-            WorldAssets.Feature f = WorldAssets.get(s.feature);
-            if (f == null) continue;
-            double w = widthOf(s), h = heightOf(s);
+            boolean label = WorldLabels.isLabel(s);
+            WorldAssets.Feature f = label ? null : WorldAssets.get(s.feature);
+            if (f == null && !label) continue;
+            double w = widthOf(s, map.style), h = heightOf(s, map.style);
             double reach = Math.max(w, h);
             if (s.x + reach < x0 || s.x - reach > x1 || s.y + reach < y0 || s.y - reach > y1) continue;
+            if (label) {
+                WorldLabels.draw(g, map, s);
+                continue;
+            }
             WorldStyle style = s.style == null ? map.style : s.style;
             Image img = WorldAssets.image(lib, style, f.id(), w * pxPerCell);
             if (img == null) continue;
@@ -66,23 +88,38 @@ public final class WorldStampRenderer {
             if (s.flipX) g.scale(-1, 1);
             g.setImageSmoothing(style != WorldStyle.RETRO_PIXEL);
             if (s.hidden) g.setGlobalAlpha(0.45);
-            g.drawImage(img, -w / 2, topOf(s), w, h);
+            g.drawImage(img, -w / 2, topOf(s, map.style), w, h);
             g.restore();
+            if (WorldLabels.isBanner(s)) {
+                g.save();
+                g.translate(s.x, s.y);
+                g.rotate(s.rotation);
+                WorldLabels.drawBannerText(g, map, s, w, h, topOf(s, map.style));
+                g.restore();
+            }
         }
         g.setImageSmoothing(true);
     }
 
     /** True if the point (px, py) is on the symbol's picture (its box, allowing for rotation and flip). */
     public static boolean contains(WorldStamp s, double px, double py) {
+        return contains(s, WorldStyle.CLASSIC_INK, px, py);
+    }
+
+    public static boolean contains(WorldStamp s, WorldStyle mapStyle, double px, double py) {
         double[] l = toLocal(s, px, py);
-        double w = widthOf(s), top = topOf(s);
-        return l[0] >= -w / 2 && l[0] <= w / 2 && l[1] >= top && l[1] <= top + heightOf(s);
+        double w = widthOf(s, mapStyle), top = topOf(s, mapStyle);
+        return l[0] >= -w / 2 && l[0] <= w / 2 && l[1] >= top && l[1] <= top + heightOf(s, mapStyle);
     }
 
     /** The map position of the symbol's resize handle: the bottom right corner of its box. */
     public static double[] handleOf(WorldStamp s) {
-        double w = widthOf(s);
-        double lx = s.flipX ? -w / 2 : w / 2, ly = topOf(s) + heightOf(s);
+        return handleOf(s, WorldStyle.CLASSIC_INK);
+    }
+
+    public static double[] handleOf(WorldStamp s, WorldStyle mapStyle) {
+        double w = widthOf(s, mapStyle);
+        double lx = s.flipX ? -w / 2 : w / 2, ly = topOf(s, mapStyle) + heightOf(s, mapStyle);
         double a = Math.toRadians(s.rotation), cos = Math.cos(a), sin = Math.sin(a);
         return new double[]{s.x + lx * cos - ly * sin, s.y + lx * sin + ly * cos};
     }
@@ -97,7 +134,11 @@ public final class WorldStampRenderer {
 
     /** The corners of the symbol's box in map space (for drawing a selection outline). */
     public static double[][] corners(WorldStamp s) {
-        double w = widthOf(s), top = topOf(s), h = heightOf(s);
+        return corners(s, WorldStyle.CLASSIC_INK);
+    }
+
+    public static double[][] corners(WorldStamp s, WorldStyle mapStyle) {
+        double w = widthOf(s, mapStyle), top = topOf(s, mapStyle), h = heightOf(s, mapStyle);
         double[][] local = {{-w / 2, top}, {w / 2, top}, {w / 2, top + h}, {-w / 2, top + h}};
         double a = Math.toRadians(s.rotation), cos = Math.cos(a), sin = Math.sin(a);
         double[][] out = new double[4][2];
@@ -115,7 +156,7 @@ public final class WorldStampRenderer {
         for (int i = list.size() - 1; i >= 0; i--) {
             WorldStamp s = list.get(i);
             if (s.hidden && !includeHidden) continue;
-            if (contains(s, px, py)) return s;
+            if (contains(s, map.style, px, py)) return s;
         }
         return null;
     }

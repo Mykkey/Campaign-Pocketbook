@@ -28,4 +28,7 @@ final class WorldToolState {
     final IntegerProperty density = new SimpleIntegerProperty(5);
     /** The art style given to new symbols, or null to follow the map's style. */
     final ObjectProperty<dnd.model.WorldStyle> stampStyle = new SimpleObjectProperty<>();
+    /** The kind of label the label tool writes, and how much it bends. */
+    final ObjectProperty<dnd.map.world.WorldLabels.Kind> labelKind = new SimpleObjectProperty<>(dnd.map.world.WorldLabels.Kind.TOWN);
+    final javafx.beans.property.DoubleProperty labelBend = new javafx.beans.property.SimpleDoubleProperty(0);
 }

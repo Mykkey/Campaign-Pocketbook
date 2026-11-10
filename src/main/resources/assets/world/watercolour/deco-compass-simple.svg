@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+<polygon points="50.0,10.0 43.6,50.0 50.0,50.0" fill="#e3ddcf" fill-opacity="1.00" stroke="#5b4a52" stroke-width="0.42" stroke-opacity="0.55" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="50.0,10.0 56.4,50.0 50.0,50.0" fill="#ae6d68" fill-opacity="1.00" stroke="#5b4a52" stroke-width="0.42" stroke-opacity="0.55" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="90.0,50.0 50.0,43.6 50.0,50.0" fill="#e3ddcf" fill-opacity="1.00" stroke="#5b4a52" stroke-width="0.42" stroke-opacity="0.55" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="90.0,50.0 50.0,56.4 50.0,50.0" fill="#b8b5af" fill-opacity="1.00" stroke="#5b4a52" stroke-width="0.42" stroke-opacity="0.55" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="50.0,90.0 56.4,50.0 50.0,50.0" fill="#e3ddcf" fill-opacity="1.00" stroke="#5b4a52" stroke-width="0.42" stroke-opacity="0.55" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="50.0,90.0 43.6,50.0 50.0,50.0" fill="#b8b5af" fill-opacity="1.00" stroke="#5b4a52" stroke-width="0.42" stroke-opacity="0.55" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="10.0,50.0 50.0,56.4 50.0,50.0" fill="#e3ddcf" fill-opacity="1.00" stroke="#5b4a52" stroke-width="0.42" stroke-opacity="0.55" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="10.0,50.0 50.0,43.6 50.0,50.0" fill="#b8b5af" fill-opacity="1.00" stroke="#5b4a52" stroke-width="0.42" stroke-opacity="0.55" stroke-linejoin="round" stroke-linecap="round" />
+<circle cx="50.0" cy="50.0" r="2.4" fill="#ddc17e" fill-opacity="1.00" stroke="#5b4a52" stroke-width="0.36" stroke-opacity="0.55" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="50.0,7.0 46.0,15.0 54.0,15.0" fill="#c17974" fill-opacity="1.00" stroke="#5b4a52" stroke-width="0.36" stroke-opacity="0.55" stroke-linejoin="round" stroke-linecap="round" />
+</svg>

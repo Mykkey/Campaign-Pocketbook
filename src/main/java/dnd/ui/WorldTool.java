@@ -9,7 +9,8 @@ public enum WorldTool {
     STAMP("Stamp", "stamp", "Place the symbol chosen in the side panel (a mountain, a town...). Click as often as you like; Esc to stop"),
     PATH("Lines", "river", "Draw a river, road, trail, sea route, border or railway: drag to draw freehand, or click points and double-click to finish. Choose the kind next to the tool"),
     REGION("Region", "region", "Outline a named area (a kingdom, a forest): click the corners, double-click to close it, then name it"),
-    SCATTER("Scatter", "scatter", "Paint a whole forest, hills or a mountain range of the chosen symbol and its relatives; they are spread out naturally");
+    SCATTER("Scatter", "scatter", "Paint a whole forest, hills or a mountain range of the chosen symbol and its relatives; they are spread out naturally"),
+    LABEL("Label", "text", "Write a name on the map: a sea, a kingdom, a town. Choose the kind and the curve next to the tool; double-click a label to change its words");
 
     public final String label;
     public final String icon;

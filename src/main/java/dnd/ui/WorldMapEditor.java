@@ -193,7 +193,33 @@ public class WorldMapEditor extends BorderPane implements ItemView {
         pathBox.setAlignment(Pos.CENTER_LEFT);
         pathBox.visibleProperty().bind(ts.tool.isEqualTo(WorldTool.PATH).or(ts.tool.isEqualTo(WorldTool.SELECT)));
         pathBox.managedProperty().bind(pathBox.visibleProperty());
-        bar.getChildren().addAll(symbolBox, densityBox, pathBox, new Separator(Orientation.VERTICAL));
+        // ---- labels: what kind, and how much the text curves
+        ComboBox<dnd.map.world.WorldLabels.Kind> labelKind = new ComboBox<>(FXCollections.observableArrayList(dnd.map.world.WorldLabels.Kind.values()));
+        labelKind.setValue(ts.labelKind.get());
+        labelKind.setFocusTraversable(false);
+        labelKind.setTooltip(IconButtons.tip("Label kind: sets the size, spacing and look of the text"));
+        Spinner<Double> bend = new Spinner<>(-0.6, 0.6, ts.labelBend.get(), 0.05);
+        bend.setPrefWidth(76);
+        bend.setEditable(true);
+        bend.setTooltip(IconButtons.tip("Curve: 0 is straight; positive curves the text down in the middle, negative curves it up"));
+        Runnable labelChanged = () -> {
+            if (ts.tool.get() == WorldTool.SELECT && view.labelSelected()) view.updateSelectedLabels(ts.labelKind.get(), ts.labelBend.get());
+        };
+        labelKind.valueProperty().addListener((o, a, n) -> {
+            if (n == null) return;
+            ts.labelKind.set(n);
+            labelChanged.run();
+        });
+        bend.valueProperty().addListener((o, a, n) -> {
+            if (n == null) return;
+            ts.labelBend.set(Math.round(n * 100) / 100.0);
+            labelChanged.run();
+        });
+        HBox labelBox = new HBox(4, labelKind, new Label("Curve"), bend);
+        labelBox.setAlignment(Pos.CENTER_LEFT);
+        labelBox.visibleProperty().bind(ts.tool.isEqualTo(WorldTool.LABEL).or(ts.tool.isEqualTo(WorldTool.SELECT)));
+        labelBox.managedProperty().bind(labelBox.visibleProperty());
+        bar.getChildren().addAll(symbolBox, densityBox, pathBox, labelBox, new Separator(Orientation.VERTICAL));
 
         // ---- the art style of the whole map
         ComboBox<WorldStyle> style = new ComboBox<>(FXCollections.observableArrayList(WorldStyle.values()));

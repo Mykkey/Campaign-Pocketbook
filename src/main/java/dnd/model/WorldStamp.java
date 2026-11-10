@@ -24,6 +24,10 @@ public class WorldStamp {
     public String note;
     /** Text on banners and labels, or null. */
     public String text;
+    /** For a text label: its kind (title, region, sea...), or null. */
+    public String labelKind;
+    /** For a text label: how far its middle bends away from straight, as a fraction of its width (negative bends up). */
+    public double bend;
 
     public WorldStamp() { }
 
@@ -43,6 +47,8 @@ public class WorldStamp {
         s.link = link;
         s.note = note;
         s.text = text;
+        s.labelKind = labelKind;
+        s.bend = bend;
         return s;
     }
 }

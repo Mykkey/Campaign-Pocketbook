@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="80" viewBox="0 0 100 80">
+<ellipse cx="50.0" cy="72.0" rx="36.0" ry="4.0" fill="#000000" fill-opacity="0.14"/>
+<path d="M30,44 Q8,18 6,6 Q22,16 38,34 Z" fill="#ae6d68" fill-opacity="1.00" stroke="#5b4a52" stroke-width="0.54" stroke-opacity="0.55" stroke-linejoin="round" stroke-linecap="round"  />
+<path d="M60,44 Q86,16 94,4 Q80,14 66,36 Z" fill="#ae6d68" fill-opacity="1.00" stroke="#5b4a52" stroke-width="0.54" stroke-opacity="0.55" stroke-linejoin="round" stroke-linecap="round"  />
+<path d="M12,70 Q14,52 34,50 Q46,36 62,44 Q72,40 82,28 L92,26 L86,36 Q80,42 70,50 Q66,64 52,64 Q40,66 36,62 Q28,64 18,70 Z" fill="#c17974" fill-opacity="1.00" stroke="#5b4a52" stroke-width="0.60" stroke-opacity="0.55" stroke-linejoin="round" stroke-linecap="round"  />
+<path d="M12,70 Q4,72 2,64 Q6,66 10,64" fill="none" fill-opacity="1.00" stroke="#5b4a52" stroke-width="0.60" stroke-opacity="0.55" stroke-linejoin="round" stroke-linecap="round"  />
+<circle cx="80.0" cy="29.0" r="1.2" fill="#ebdab2" fill-opacity="1.00" stroke="none"/>
+<polygon points="82.0,26.0 88.0,18.0 84.0,28.0" fill="#eee9de" fill-opacity="1.00" stroke="#5b4a52" stroke-width="0.30" stroke-opacity="0.55" stroke-linejoin="round" stroke-linecap="round" />
+<path d="M92,26 q4,2 6,-1" fill="none" fill-opacity="1.00" stroke="#5b4a52" stroke-width="0.48" stroke-opacity="0.55" stroke-linejoin="round" stroke-linecap="round"  />
+<polygon points="34.0,46.0 37.0,40.0 40.0,46.0" fill="#9a615d" fill-opacity="1.00" stroke="#5b4a52" stroke-width="0.30" stroke-opacity="0.55" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="44.0,46.0 47.0,40.0 50.0,46.0" fill="#9a615d" fill-opacity="1.00" stroke="#5b4a52" stroke-width="0.30" stroke-opacity="0.55" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="54.0,46.0 57.0,40.0 60.0,46.0" fill="#9a615d" fill-opacity="1.00" stroke="#5b4a52" stroke-width="0.30" stroke-opacity="0.55" stroke-linejoin="round" stroke-linecap="round" />
+</svg>

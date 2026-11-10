@@ -1172,6 +1172,8 @@ final class WorldMapView extends Pane {
         g.setStroke(Color.web("#c2410c"));
         g.setLineWidth(1.2);
         g.strokeRoundRect(bx, by, bw, bh, 8, 8);
+        g.setTextAlign(javafx.scene.text.TextAlignment.LEFT); // earlier drawing may have left it centred
+        g.setTextBaseline(javafx.geometry.VPos.BASELINE);
         g.setFill(Color.web("#1f2937"));
         for (int i = 0; i < lines.size(); i++) g.fillText(lines.get(i), bx + 8, by + 18 + i * 17);
         g.restore();

@@ -39,17 +39,36 @@ public class App extends Application {
         stage.setMinWidth(Math.min(700, box[2]));
         stage.setMinHeight(Math.min(480, box[3]));
         stage.setOnCloseRequest(e -> {
+            closing = true;
+            rememberWindowState(); // as it is now, before closing changes it
             if (workspace != null) workspace.shutdown();
+        });
+        stage.maximizedProperty().addListener((o, a, b) -> {
+            if (!closing) rememberWindowState();
+        });
+        stage.fullScreenProperty().addListener((o, a, b) -> {
+            if (!closing) rememberWindowState();
         });
         if (dnd.ui.GeneralSettings.updateCheck()) UpdateBanner.startCheck();
         showLauncher();
         stage.show();
+        // reopen the way it was left: maximised or full screen
+        if (dnd.ui.AppSettings.getBoolean("window.maximized", false)) stage.setMaximized(true);
+        if (dnd.ui.AppSettings.getBoolean("window.fullscreen", false)) stage.setFullScreen(true);
         // the campaign that was open last time, if the settings say so
         String last = dnd.ui.AppSettings.getString(dnd.ui.GeneralSettings.LAST_PROJECT, "");
         if (dnd.ui.GeneralSettings.reopenLast() && !last.isBlank() && launcher != null
                 && java.nio.file.Files.isDirectory(ProjectStore.baseDir().resolve(last))) {
             javafx.application.Platform.runLater(() -> launcher.openProject(last));
         }
+    }
+
+    private boolean closing;
+
+    /** Notes whether the window is maximised or full screen, so the next start can open the same way. */
+    private void rememberWindowState() {
+        dnd.ui.AppSettings.setBoolean("window.maximized", stage.isMaximized());
+        dnd.ui.AppSettings.setBoolean("window.fullscreen", stage.isFullScreen());
     }
 
     /** Shows the current screen again, built afresh (after the text size changed); the open campaign and its tabs come back as they were. */

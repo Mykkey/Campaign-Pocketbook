@@ -17,7 +17,7 @@ The **top bar**, left to right: house = Projects (back to the campaign list), ar
 
 The whiteboard, battlemap and world map toolbars work the same way: the tools, colours and undo / redo stay in view, and the rest is grouped into dropdowns (whiteboard: **Insert**, **Line width and filled shapes**, **Links and notes**; battlemap: **View** for the grid, snapping and fit; world map: **View** for grid, scale bar, legend, relief shading, snapping and fit, **Links and hiding**, **Players** and **Map** for art style, season and year, travel speeds, generate and resize). Switches in a dropdown show a tick when they are on.
 
-**Resizing panels.** Drag the thin edge between two panels to make one wider or narrower: the project tree, the piece library and symbol panel beside a map, the creature cards and turn-order strip of a battle, the lists in the Library, NPC and Common enemies windows, and the form / preview split of each editor. Your sizes are remembered, and **Settings > General > Reset panel sizes** puts them all back.
+**Resizing panels.** Drag the thin edge between two panels to make one wider or narrower: the project tree, the piece library and symbol panel beside a map, the creature cards and turn-order strip of a battle, the lists in the Library, NPC and Common enemies windows, and the form / preview split of each editor. Your sizes are remembered (what you drag is kept; panels that shift by themselves when the window changes size, for example in full screen, do not overwrite it), and **Settings > General > Reset panel sizes** puts them all back. The window itself also reopens **maximised or full screen** if you closed the app that way.
 
 | Do this | How |
 |---------|-----|

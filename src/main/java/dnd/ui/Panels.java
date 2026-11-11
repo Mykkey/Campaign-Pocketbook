@@ -1,10 +1,8 @@
 package dnd.ui;
 
-import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.control.SplitPane;
-import javafx.util.Duration;
 
 /** Draggable panel edges whose positions are remembered between runs (as fractions, so text size and window size do not matter). */
 public final class Panels {
@@ -27,25 +25,27 @@ public final class Panels {
         AppSettings.resetPrefix(PREFIX);
     }
 
-    /** Makes the first divider of the split start where it was left, and remember where it is moved to. */
+    /**
+     * Makes the first divider of the split start where it was left, and remember where the person drags it to. Only a drag
+     * is remembered: the divider also moves by itself when the window changes size (full screen, maximise), and that must
+     * not overwrite what was chosen.
+     */
     static SplitPane remember(SplitPane split, String key, double standard) {
         double start = saved(key, standard);
         split.setDividerPositions(start);
-        PauseTransition later = new PauseTransition(Duration.millis(400));
-        boolean[] ready = {false};
-        later.setOnFinished(e -> {
-            if (!split.getDividers().isEmpty()) AppSettings.setDouble(PREFIX + key, split.getDividerPositions()[0]);
+        boolean[] dragging = {false};
+        split.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_PRESSED, e -> dragging[0] = isDivider(e.getTarget(), split));
+        split.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_RELEASED, e -> {
+            if (dragging[0] && !split.getDividers().isEmpty()) {
+                AppSettings.setDouble(PREFIX + key, clampFraction(split.getDividerPositions()[0], start));
+            }
+            dragging[0] = false;
         });
-        split.getDividers().get(0).positionProperty().addListener((o, a, b) -> {
-            if (ready[0]) later.playFromStart();
-        });
-        // positions are re-applied when the pane first gets a width (a split pane may move them while laying out)
-        Runnable apply = () -> {
-            split.setDividerPositions(start);
-            ready[0] = true;
-        };
-        if (split.getWidth() > 0 || split.getHeight() > 0) Platform.runLater(apply);
-        else {
+        // positions are applied again when the pane first gets a size (a split pane may move them while laying out)
+        Runnable apply = () -> split.setDividerPositions(start);
+        if (split.getWidth() > 0 || split.getHeight() > 0) {
+            Platform.runLater(apply);
+        } else {
             javafx.beans.value.ChangeListener<Number> once = new javafx.beans.value.ChangeListener<>() {
                 @Override
                 public void changed(javafx.beans.value.ObservableValue<? extends Number> o, Number a, Number b) {
@@ -59,6 +59,14 @@ public final class Panels {
             else split.heightProperty().addListener(once);
         }
         return split;
+    }
+
+    /** True if the event target is one of this split pane's divider bars (or something inside one). */
+    private static boolean isDivider(Object target, SplitPane split) {
+        for (Node n = target instanceof Node t ? t : null; n != null && n != split; n = n.getParent()) {
+            if (n.getStyleClass().contains("split-pane-divider")) return true;
+        }
+        return false;
     }
 
     /**

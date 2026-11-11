@@ -3,6 +3,7 @@ package dnd.ui;
 import dnd.model.Attack;
 import dnd.model.Card;
 import dnd.model.Feature;
+import dnd.rules.ChallengeRating;
 import dnd.rules.Dice;
 import dnd.storage.ProjectStore;
 import javafx.geometry.Insets;
@@ -76,6 +77,7 @@ public class CardEditor extends BorderPane implements ItemView {
 
     private void changed() {
         saver.run();
+        refreshChallenge();
         preview.refresh(card);
     }
 
@@ -229,6 +231,9 @@ public class CardEditor extends BorderPane implements ItemView {
         Spinner<Integer> hp = spinner(0, 9999, card.hpMax, v -> card.hpMax = v);
         Spinner<Integer> prof = spinner(0, 12, card.proficiency, v -> card.proficiency = v);
         Spinner<Integer> xp = spinner(0, 1_000_000, card.xp, v -> card.xp = v);
+        TextField challenge = field(card.challenge, v -> card.challenge = v, "1/4");
+        xpSpinner = xp;
+        challengeField = challenge;
 
         TextField hitDice = field(card.hitDice, v -> card.hitDice = v, "2d6+2");
         hitDice.setPrefWidth(110);
@@ -254,7 +259,60 @@ public class CardEditor extends BorderPane implements ItemView {
                         labelled("Hit points", hp), labelled("Hit dice", hitDice)),
                 row(labelled("Speed", field(card.speed, v -> card.speed = v, "30 ft.")), labelled("Proficiency", prof),
                         labelled("Initiative bonus", row(init, custom)),
-                        labelled("Challenge", field(card.challenge, v -> card.challenge = v, "1/4")), labelled("XP", xp)));
+                        labelled("Challenge", challenge), labelled("XP", xp)),
+                challengeHelper());
+    }
+
+    // ---- working out the challenge rating from the stats
+    private TextField challengeField;
+    private Spinner<Integer> xpSpinner;
+    private final Label challengeSuggestion = new Label();
+    private boolean settingChallenge;
+
+    /** A line under the Challenge box: what the stats work out to, a button to take it, and a switch to keep it up to date by itself. */
+    private Node challengeHelper() {
+        CheckBox auto = new CheckBox("Work out Challenge and XP automatically");
+        auto.setSelected(card.autoChallenge);
+        auto.setTooltip(IconButtons.tip("Keeps the Challenge rating and XP up to date from the hit points, armor class, attacks and breath weapon, using the guide in the Dungeon Master's Guide. Turn it off to write your own."));
+        Button use = new Button("Use suggestion");
+        use.setTooltip(IconButtons.tip("Put the suggested Challenge rating and XP in the boxes above (once)"));
+        use.setOnAction(e -> applyChallenge(ChallengeRating.of(card)));
+        auto.setOnAction(e -> {
+            card.autoChallenge = auto.isSelected();
+            use.setDisable(card.autoChallenge);
+            if (card.autoChallenge) applyChallenge(ChallengeRating.of(card));
+            changed();
+        });
+        use.setDisable(card.autoChallenge);
+        challengeSuggestion.setStyle("-fx-text-fill: -t-text2;");
+        challengeSuggestion.setWrapText(true);
+        refreshChallenge();
+        return new VBox(4, row(auto, use), challengeSuggestion);
+    }
+
+    private void applyChallenge(ChallengeRating.Result r) {
+        if (challengeField == null || xpSpinner == null) return;
+        settingChallenge = true;
+        try {
+            challengeField.setText(r.suggested());
+            xpSpinner.getValueFactory().setValue(r.xp());
+            card.challenge = r.suggested();
+            card.xp = r.xp();
+        } finally {
+            settingChallenge = false;
+        }
+        saver.run();
+    }
+
+    /** Works the suggestion out again (the stats changed), shows it, and writes it into the boxes if that is switched on. */
+    private void refreshChallenge() {
+        if (challengeSuggestion == null || settingChallenge) return;
+        ChallengeRating.Result r = ChallengeRating.of(card);
+        challengeSuggestion.setText("Suggested: CR " + r.suggested() + " (" + r.xp() + " XP). Defence works out to CR " + r.defensive() + ", offence to CR " + r.offensive() + ". Hover for how.");
+        Tooltip tip = IconButtons.tip(String.join(System.lineSeparator() + System.lineSeparator(), r.notes()));
+        tip.setMaxWidth(460);
+        challengeSuggestion.setTooltip(tip);
+        if (card.autoChallenge && (!r.suggested().equals(card.challenge) || card.xp != r.xp())) applyChallenge(r);
     }
 
     private Node abilitySection() {

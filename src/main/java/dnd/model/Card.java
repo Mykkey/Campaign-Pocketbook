@@ -39,6 +39,8 @@ public class Card {
     public String senses = "";
     public String languages = "";
     public String challenge = "0";
+    /** When true the challenge rating and XP are worked out from the stats (see ChallengeRating) every time they change. */
+    public boolean autoChallenge;
     public int xp = 0;
 
     /** File name inside the project's images folder, or null. */
@@ -107,7 +109,7 @@ public class Card {
         proficiency = o.proficiency; initiativeBonus = o.initiativeBonus;
         saves = o.saves; skills = o.skills; vulnerabilities = o.vulnerabilities; resistances = o.resistances;
         immunities = o.immunities; conditionImmunities = o.conditionImmunities;
-        senses = o.senses; languages = o.languages; challenge = o.challenge; xp = o.xp;
+        senses = o.senses; languages = o.languages; challenge = o.challenge; xp = o.xp; autoChallenge = o.autoChallenge;
         portrait = o.portrait; notes = o.notes;
         traits.clear(); attacks.clear(); actions.clear(); reactions.clear(); legendary.clear();
         for (Feature f : o.traits) traits.add(f.copy());

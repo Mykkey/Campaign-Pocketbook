@@ -13,7 +13,7 @@ import javafx.scene.layout.*;
 import static dnd.ui.FormKit.labelled;
 
 import java.util.ArrayList;
-import java.util.Optional;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -33,7 +33,7 @@ public class OrganisationEditor extends BorderPane implements ItemView {
      * @param memberPicker lets the user pick a character card or another organisation to add as a member
      */
     public OrganisationEditor(Organisation org, ProjectStore store, Consumer<String> onRename, Consumer<String> openItem,
-                              Supplier<Optional<String>> memberPicker) {
+                              Supplier<List<String>> memberPicker) {
         this.org = org;
         this.store = store;
         this.openItem = openItem;
@@ -54,13 +54,15 @@ public class OrganisationEditor extends BorderPane implements ItemView {
         TextArea notes = FormKit.area(org.notes, x -> org.notes = x, "Your own notes: secrets, rivals, who really runs it...", 4, this::changed);
 
         Button add = new Button("+ Add member...");
-        add.setTooltip(IconButtons.tip("Add a player character, NPC, monster or another organisation to this group"));
-        add.setOnAction(e -> memberPicker.get().ifPresent(id -> {
-            if (org.addMember(id, "")) {
+        add.setTooltip(IconButtons.tip("Add player characters, NPCs, monsters or other organisations to this group (Ctrl-click or Shift-click to pick several)"));
+        add.setOnAction(e -> {
+            boolean any = false;
+            for (String id : memberPicker.get()) any |= org.addMember(id, "");
+            if (any) {
                 rebuildMembers();
                 changed();
             }
-        }));
+        });
         Label hint = new Label("Double-click a member to open its card. Hover it for a preview.");
         hint.setStyle("-fx-font-size: 0.917em; -fx-text-fill: -t-text3;");
         rebuildMembers();

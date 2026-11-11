@@ -11,6 +11,7 @@ import javafx.scene.layout.*;
 
 import static dnd.ui.FormKit.labelled;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -20,7 +21,7 @@ public class QuestEditor extends BorderPane implements ItemView {
     private final Quest quest;
     private final ProjectStore store;
     private final Consumer<String> openItem;
-    private final Supplier<Optional<String>> picker;
+    private final Supplier<List<String>> picker;
     private final Supplier<Optional<String>> cardPicker;
     private final QuestCardView preview;
     private final VBox stepRows = new VBox(6);
@@ -31,7 +32,7 @@ public class QuestEditor extends BorderPane implements ItemView {
      * @param cardPicker lets the user pick one of their character cards (for "given by")
      */
     public QuestEditor(Quest quest, ProjectStore store, Consumer<String> onRename, Consumer<String> openItem,
-                       Supplier<Optional<String>> picker, Supplier<Optional<String>> cardPicker) {
+                       Supplier<List<String>> picker, Supplier<Optional<String>> cardPicker) {
         this.quest = quest;
         this.store = store;
         this.openItem = openItem;

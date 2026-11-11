@@ -467,7 +467,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
                     couldNotOpen(id, "That quest could not be found.");
                     return;
                 }
-                view = new QuestEditor(qu, store, newName -> renameFromEditor(id, newName), this::openItem, () -> pickBoard("Add to the quest..."), () -> pickCard("Who gave this quest?"));
+                view = new QuestEditor(qu, store, newName -> renameFromEditor(id, newName), this::openItem, () -> pickItems("Add to the quest...", "Choose what this quest involves (Ctrl-click or Shift-click to pick several)", n -> !n.folder), () -> pickCard("Who gave this quest?"));
             } else if (store.isOrganisation(id)) {
                 dnd.model.Organisation og = store.organisation(id);
                 if (og == null) {
@@ -481,7 +481,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
                     couldNotOpen(id, "That session could not be found.");
                     return;
                 }
-                view = new SessionEditor(se, store, newName -> renameFromEditor(id, newName), this::openItem, () -> pickBoard("Add to the session..."));
+                view = new SessionEditor(se, store, newName -> renameFromEditor(id, newName), this::openItem, () -> pickItems("Add to the session...", "Choose what came up in this session (Ctrl-click or Shift-click to pick several)", n -> !n.folder));
             } else if (store.isWorldMap(id)) {
                 dnd.model.WorldMap wm = store.worldMap(id);
                 if (wm == null) {
@@ -1278,9 +1278,47 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
     }
 
     /** Lets the user pick a character card or another organisation to be a member of the organisation {@code self}. */
-    private Optional<String> pickMember(String self) {
-        return pickItem("Add a member...", "Choose a character or another organisation",
+    private List<String> pickMember(String self) {
+        return pickItems("Add members...", "Choose characters or other organisations (Ctrl-click or Shift-click to pick several)",
                 n -> (n.isCard() || n.isOrganisation()) && !n.id.equals(self));
+    }
+
+    /** Lets the user pick one or more project items (Ctrl-click or Shift-click for several). Empty if they cancel. */
+    private List<String> pickItems(String title, String header, java.util.function.Predicate<TreeNode> pickable) {
+        Dialog<List<String>> d = new Dialog<>();
+        d.setTitle(title);
+        d.setHeaderText(header);
+        d.initOwner(getScene().getWindow());
+
+        TreeView<TreeNode> tv = new TreeView<>(buildItem(store.project.root, null));
+        tv.setCellFactory(v -> createTreeCell(false));
+        tv.setPrefSize(380, 440);
+        tv.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        d.getDialogPane().setContent(tv);
+        d.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        Node ok = d.getDialogPane().lookupButton(ButtonType.OK);
+        Runnable chosen = () -> ok.setDisable(pickedIds(tv, pickable).isEmpty());
+        ok.setDisable(true);
+        tv.getSelectionModel().getSelectedItems().addListener((javafx.collections.ListChangeListener<TreeItem<TreeNode>>) c -> chosen.run());
+        tv.setOnMouseClicked(e -> {
+            TreeItem<TreeNode> s = tv.getSelectionModel().getSelectedItem();
+            if (e.getClickCount() == 2 && e.getButton() == MouseButton.PRIMARY && s != null && pickable.test(s.getValue())
+                    && tv.getSelectionModel().getSelectedItems().size() == 1) {
+                d.setResult(List.of(s.getValue().id));
+                d.close();
+            }
+        });
+        d.setResultConverter(bt -> bt == ButtonType.OK ? pickedIds(tv, pickable) : null);
+        return d.showAndWait().orElse(List.of());
+    }
+
+    /** The ids of the selected rows that may be picked (folders and the like are skipped). */
+    private static List<String> pickedIds(TreeView<TreeNode> tv, java.util.function.Predicate<TreeNode> pickable) {
+        List<String> ids = new ArrayList<>();
+        for (TreeItem<TreeNode> it : tv.getSelectionModel().getSelectedItems()) {
+            if (it != null && pickable.test(it.getValue()) && !ids.contains(it.getValue().id)) ids.add(it.getValue().id);
+        }
+        return ids;
     }
 
     private Optional<String> pickItem(String title, String header, boolean mapsOnly) {

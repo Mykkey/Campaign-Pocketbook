@@ -287,9 +287,11 @@ public class EncounterEditor extends BorderPane implements ItemView {
     }
 
     private void addCreature() {
-        Optional<Card> picked = pickCard();
-        if (picked.isEmpty()) return;
-        Card c = picked.get();
+        List<Card> picked = pickCards();
+        for (Card c : picked) addCreature(c);
+    }
+
+    private void addCreature(Card c) {
         for (Encounter.Entry en : enc.entries) {
             if (c.id.equals(en.cardId)) { // already in the fight: one more of them
                 en.count++;
@@ -304,7 +306,7 @@ public class EncounterEditor extends BorderPane implements ItemView {
         rebuild();
     }
 
-    private Optional<Card> pickCard() {
+    private List<Card> pickCards() {
         List<Card> cards = new ArrayList<>();
         for (String id : store.allCardIds()) {
             Card c = store.card(id);
@@ -313,14 +315,15 @@ public class EncounterEditor extends BorderPane implements ItemView {
         cards.sort(Comparator.comparing((Card c) -> c.kind).thenComparing(c -> c.name.toLowerCase()));
         FilteredList<Card> shown = new FilteredList<>(FXCollections.observableArrayList(cards), c -> true);
 
-        Dialog<Card> d = new Dialog<>();
-        d.setTitle("Add creature");
-        d.setHeaderText("Pick a card to add to " + enc.name);
+        Dialog<List<Card>> d = new Dialog<>();
+        d.setTitle("Add creatures");
+        d.setHeaderText("Pick the cards to add to " + enc.name + " (Ctrl-click or Shift-click to pick several)");
         if (getScene() != null) d.initOwner(getScene().getWindow());
         TextField filter = new TextField();
         filter.setPromptText("Search by name...");
         ListView<Card> list = new ListView<>(shown);
         list.setPrefSize(420, 340);
+        list.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         list.setCellFactory(v -> new ListCell<>() {
             @Override
             protected void updateItem(Card c, boolean empty) {
@@ -335,7 +338,7 @@ public class EncounterEditor extends BorderPane implements ItemView {
         });
         list.setOnMouseClicked(e -> {
             if (e.getClickCount() == 2 && list.getSelectionModel().getSelectedItem() != null) {
-                d.setResult(list.getSelectionModel().getSelectedItem());
+                d.setResult(new ArrayList<>(list.getSelectionModel().getSelectedItems()));
                 d.close();
             }
         });
@@ -343,9 +346,9 @@ public class EncounterEditor extends BorderPane implements ItemView {
         d.getDialogPane().setContent(cards.isEmpty() ? new VBox(8, empty) : new VBox(8, filter, list));
         d.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
         d.getDialogPane().lookupButton(ButtonType.OK).disableProperty()
-                .bind(list.getSelectionModel().selectedItemProperty().isNull());
-        d.setResultConverter(b -> b == ButtonType.OK ? list.getSelectionModel().getSelectedItem() : null);
-        return d.showAndWait();
+                .bind(javafx.beans.binding.Bindings.isEmpty(list.getSelectionModel().getSelectedItems()));
+        d.setResultConverter(b -> b == ButtonType.OK ? new ArrayList<>(list.getSelectionModel().getSelectedItems()) : null);
+        return d.showAndWait().orElse(List.of());
     }
 
     // ================================================================ difficulty

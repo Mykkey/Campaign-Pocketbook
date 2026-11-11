@@ -10,7 +10,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -27,7 +26,7 @@ final class RelatedItemsList extends VBox {
      * @param picker  lets the user pick a project item to add
      * @param changed called after the list is edited
      */
-    RelatedItemsList(ProjectStore store, List<String> ids, Supplier<Optional<String>> picker, Consumer<String> openItem,
+    RelatedItemsList(ProjectStore store, List<String> ids, Supplier<List<String>> picker, Consumer<String> openItem,
                      Runnable changed, String addTooltip, double height) {
         super(6);
         this.store = store;
@@ -55,13 +54,19 @@ final class RelatedItemsList extends VBox {
 
         Button add = new Button("Add...");
         add.setTooltip(IconButtons.tip(addTooltip));
-        add.setOnAction(e -> picker.get().ifPresent(id -> {
-            if (!ids.contains(id)) {
-                ids.add(id);
+        add.setOnAction(e -> {
+            boolean any = false;
+            for (String id : picker.get()) {
+                if (!ids.contains(id)) {
+                    ids.add(id);
+                    any = true;
+                }
+            }
+            if (any) {
                 rebuild();
                 changed.run();
             }
-        }));
+        });
         Button open = new Button("Open");
         open.setOnAction(e -> openSelected());
         Button remove = new Button("Remove");

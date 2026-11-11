@@ -14,6 +14,7 @@ import static dnd.ui.FormKit.labelled;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -31,7 +32,7 @@ public class SessionEditor extends BorderPane implements ItemView {
     private final Label lastTimeText = new Label();
 
     public SessionEditor(Session session, ProjectStore store, Consumer<String> onRename, Consumer<String> openItem,
-                         Supplier<Optional<String>> picker) {
+                         Supplier<List<String>> picker) {
         this.session = session;
         this.store = store;
         this.openItem = openItem;

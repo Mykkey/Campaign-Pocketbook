@@ -119,6 +119,28 @@ public class Organisation extends ProjectEntry {
         return true;
     }
 
+    /** A member and how far down the chain of command it is (0 for the top). */
+    public record Ranked(Member member, int depth) { }
+
+    /**
+     * The members in the order of the chain of command: those who report to nobody first, each followed by the people who
+     * report to them (and theirs), so the list reads like the organisation chart from top to bottom. Within a level the order
+     * of the member list is kept.
+     */
+    public List<Ranked> inHierarchyOrder() {
+        List<Ranked> out = new ArrayList<>();
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        for (Member m : members) if (bossOf(m.id) == null) walk(m, 0, out, seen);
+        for (Member m : members) if (!seen.contains(m.id)) walk(m, 0, out, seen); // anything left over (a circle in an old file)
+        return out;
+    }
+
+    private void walk(Member m, int depth, List<Ranked> out, java.util.Set<String> seen) {
+        if (!seen.add(m.id)) return;
+        out.add(new Ranked(m, depth));
+        for (String id : directReports(m.id)) walk(member(id), depth + 1, out, seen);
+    }
+
     /** True if at least one member reports to another, so there is a hierarchy to draw. */
     public boolean hasHierarchy() {
         for (Member m : members) if (bossOf(m.id) != null) return true;

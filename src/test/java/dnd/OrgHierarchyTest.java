@@ -83,6 +83,40 @@ class OrgHierarchyTest {
     }
 
     @Test
+    void theMemberListReadsLikeTheChartFromTheTopDown() {
+        Organisation o = new Organisation();
+        o.id = "g";
+        for (String m : new String[]{"thug1", "lt2", "boss", "thug3", "lt1", "outsider"}) o.addMember(m, "");
+        o.setBoss("lt1", "boss");
+        o.setBoss("lt2", "boss");
+        o.setBoss("thug1", "lt1");
+        o.setBoss("thug3", "lt2");
+        List<String> order = new ArrayList<>(), depths = new ArrayList<>();
+        for (Organisation.Ranked r : o.inHierarchyOrder()) {
+            order.add(r.member().id);
+            depths.add(r.member().id + r.depth());
+        }
+        // top-level people in the order of the member list (boss, then outsider); each is followed by their own people
+        assertEquals(List.of("boss", "lt2", "thug3", "lt1", "thug1", "outsider"), order);
+        assertEquals(List.of("boss0", "lt21", "thug32", "lt11", "thug12", "outsider0"), depths);
+        o.setBoss("lt1", null);
+        Organisation.Ranked lt1 = o.inHierarchyOrder().stream().filter(r -> r.member().id.equals("lt1")).findFirst().orElseThrow();
+        assertEquals(0, lt1.depth(), "moved to the top, with their own people still beneath");
+        assertEquals(1, o.inHierarchyOrder().stream().filter(r -> r.member().id.equals("thug1")).findFirst().orElseThrow().depth());
+    }
+
+    @Test
+    void aCircleInAnOldFileStillListsEveryone() {
+        Organisation o = new Organisation();
+        o.id = "g";
+        o.addMember("a", "");
+        o.addMember("b", "");
+        o.members.get(0).reportsTo = "b";
+        o.members.get(1).reportsTo = "a";
+        assertEquals(2, o.inHierarchyOrder().size());
+    }
+
+    @Test
     void aCopyKeepsWhoReportsToWhom() {
         Organisation c = guild().copy();
         assertEquals("lt1", c.bossOf("thug1"));

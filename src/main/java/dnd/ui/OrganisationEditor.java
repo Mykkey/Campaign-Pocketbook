@@ -72,7 +72,7 @@ public class OrganisationEditor extends BorderPane implements ItemView {
                 changed();
             }
         });
-        Label hint = new Label("Double-click a member to open its card. Hover it for a preview. \"Reports to\" builds the chain of command shown on the Hierarchy tab.");
+        Label hint = new Label("Double-click a member to open its card. Hover it for a preview. \"Reports to\" builds the chain of command shown on the Hierarchy tab, and this list follows it: the top of the group first, then the people who report to them, indented.");
         hint.setStyle("-fx-font-size: 0.917em; -fx-text-fill: -t-text3;");
         hint.setWrapText(true);
         Theme.darkProperty().addListener(new WeakChangeListener<>(themeListener));
@@ -109,10 +109,10 @@ public class OrganisationEditor extends BorderPane implements ItemView {
 
     private void rebuildMembers() {
         memberRows.getChildren().clear();
-        for (Organisation.Member m : new ArrayList<>(org.members)) memberRows.getChildren().add(memberRow(m));
+        for (Organisation.Ranked r : org.inHierarchyOrder()) memberRows.getChildren().add(memberRow(r.member(), r.depth()));
     }
 
-    private Node memberRow(Organisation.Member m) {
+    private Node memberRow(Organisation.Member m, int depth) {
         TreeNode node = store.project.root.find(m.id);
         String found = node == null ? null : node.name;
 
@@ -198,7 +198,7 @@ public class OrganisationEditor extends BorderPane implements ItemView {
         bottom.setAlignment(Pos.CENTER_LEFT);
         bottom.setPadding(new Insets(0, 0, 0, 24));
         VBox row = new VBox(3, top, bottom);
-        row.setPadding(new Insets(4, 0, 6, 0));
+        row.setPadding(new Insets(4, 0, 6, Math.min(depth, 6) * 22)); // those who report to someone are indented under them
         row.setStyle("-fx-border-color: transparent transparent -t-border transparent;");
         return row;
     }

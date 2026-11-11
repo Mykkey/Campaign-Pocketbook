@@ -25,6 +25,8 @@ import java.util.function.IntConsumer;
 public class CardEditor extends BorderPane implements ItemView {
     private final Card card;
     private final ProjectStore store;
+    /** Rebuilds the relationship rows (the list of other cards changes while this tab is not showing). */
+    private Runnable relationsRefresh = () -> { };
     private final Consumer<String> onRename;
     private final StatBlockView preview;
     private final ImageView portraitView = new ImageView();
@@ -378,6 +380,7 @@ public class CardEditor extends BorderPane implements ItemView {
             rebuild[0].run();
         });
         rebuild[0].run();
+        relationsRefresh = rebuild[0];
         return section("Relationships", rows, add, incoming, hint);
     }
 
@@ -563,7 +566,9 @@ public class CardEditor extends BorderPane implements ItemView {
 
     @Override public void redo() { }
 
-    @Override public void activated() { }
+    @Override public void activated() {
+        relationsRefresh.run(); // cards may have been added, renamed or deleted since this tab was last shown
+    }
 
     @Override public boolean selectTool(int index) { return false; }
 }

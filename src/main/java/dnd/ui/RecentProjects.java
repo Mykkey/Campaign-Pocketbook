@@ -15,9 +15,13 @@ public final class RecentProjects {
     }
 
     /** Notes that the campaign was opened just now. */
-    public static void opened(String folderName) {
-        opened(folderName, System.currentTimeMillis());
+    public static synchronized void opened(String folderName) {
+        // always later than the last one noted, so two campaigns opened in the same millisecond still keep their order
+        lastStamp = Math.max(System.currentTimeMillis(), lastStamp + 1);
+        opened(folderName, lastStamp);
     }
+
+    private static long lastStamp;
 
     static void opened(String folderName, long when) {
         AppSettings.setString(key(folderName), Long.toString(when));

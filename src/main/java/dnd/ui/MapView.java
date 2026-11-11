@@ -424,6 +424,9 @@ public class MapView extends Pane implements ItemView {
         s.revealed = new java.util.LinkedHashSet<>(map.revealed);
         s.pins = map.pins;
         s.lights = map.lights;
+        s.cols = map.cols;
+        s.rows = map.rows;
+        s.cellSize = map.cellSize;
         return Json.write(s);
     }
 
@@ -468,9 +471,29 @@ public class MapView extends Pane implements ItemView {
         map.pins.addAll(s.pins);
         map.lights.clear();
         map.lights.addAll(s.lights);
+        boolean resized = s.cols > 0 && s.rows > 0 && s.cellSize > 0
+                && (map.cols != s.cols || map.rows != s.rows || map.cellSize != s.cellSize);
+        if (resized) {
+            map.cols = s.cols;
+            map.rows = s.rows;
+            map.cellSize = s.cellSize;
+        }
         selected.removeIf(id -> map.findObject(id) == null && map.findToken(id) == null);
         dnd.battle.BattleEngine.relinkTokens(map.battle, map);
         changed();
+        if (resized) fitToWindow();
+    }
+
+    /** Runs a change of the map size as one undoable step, then shows the whole map. */
+    public void resizeMap(Runnable change) {
+        checkpoint();
+        change.run();
+        selected.clear();
+        clearTemplate();
+        clearMeasures();
+        dnd.battle.BattleEngine.relinkTokens(map.battle, map);
+        changed();
+        fitToWindow();
     }
 
     private void changed() {

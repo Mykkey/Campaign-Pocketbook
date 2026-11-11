@@ -93,5 +93,8 @@ public class BattleMap {
         public Set<String> revealed = new LinkedHashSet<>();
         public List<MapPin> pins = new ArrayList<>();
         public List<MapLight> lights = new ArrayList<>();
+        /** The size of the map when the snapshot was taken, so undo also undoes a resize (0 in a copy-paste snapshot: not used). */
+        public int cols, rows;
+        public double cellSize;
     }
 }

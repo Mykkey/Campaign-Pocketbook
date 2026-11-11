@@ -131,6 +131,10 @@ public class MapEditor extends BorderPane implements ItemView {
                 }),
                 IconMenu.toggle("snap", "Snap pieces to the grid", null, ts.snap),
                 IconMenu.separator(),
+                IconMenu.action("resize", "Map size: add or cut rows and columns, change the cell size", null, () -> {
+                    BattleResizeDialog.show(getScene() == null ? null : getScene().getWindow(), map, view::resizeMap);
+                    view.requestFocus();
+                }),
                 IconMenu.action("fit", "Fit the whole map in the window", "item.fit", () -> {
                     view.fitToWindow();
                     view.requestFocus();

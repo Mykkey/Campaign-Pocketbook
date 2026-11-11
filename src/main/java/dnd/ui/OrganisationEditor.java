@@ -3,6 +3,8 @@ package dnd.ui;
 import dnd.model.Organisation;
 import dnd.model.TreeNode;
 import dnd.storage.ProjectStore;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.WeakChangeListener;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -18,19 +20,25 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * A tab for editing one organisation: a form on the left with the members (double-click a member to open its card)
- * and a live summary on the right.
+ * A tab for editing one organisation: a form on the left with the members (double-click a member to open its card, and say
+ * who each one reports to) and on the right a summary and a chart of the chain of command.
  */
 public class OrganisationEditor extends BorderPane implements ItemView {
+    private static final String TOP = "(nobody: top of the group)";
+
     private final Organisation org;
     private final ProjectStore store;
     private final Consumer<String> openItem;
     private final OrganisationCardView preview;
+    private final HierarchyChart chart;
     private final VBox memberRows = new VBox(4);
+    private final TabPane views = new TabPane();
+    /** Restyles the member links when the look changes; held here so the weak listener below stays alive. */
+    private final ChangeListener<Boolean> themeListener = (o, was, now) -> rebuildMembers();
 
     /**
      * @param openItem     opens a project item in a tab
-     * @param memberPicker lets the user pick a character card or another organisation to add as a member
+     * @param memberPicker lets the user pick character cards or other organisations to add as members
      */
     public OrganisationEditor(Organisation org, ProjectStore store, Consumer<String> onRename, Consumer<String> openItem,
                               Supplier<List<String>> memberPicker) {
@@ -38,6 +46,7 @@ public class OrganisationEditor extends BorderPane implements ItemView {
         this.store = store;
         this.openItem = openItem;
         this.preview = new OrganisationCardView(store);
+        this.chart = new HierarchyChart(store, openItem);
 
         TextField name = new TextField(org.name);
         name.setStyle("-fx-font-size: 1.500em; -fx-font-weight: bold;");
@@ -63,8 +72,10 @@ public class OrganisationEditor extends BorderPane implements ItemView {
                 changed();
             }
         });
-        Label hint = new Label("Double-click a member to open its card. Hover it for a preview.");
+        Label hint = new Label("Double-click a member to open its card. Hover it for a preview. \"Reports to\" builds the chain of command shown on the Hierarchy tab.");
         hint.setStyle("-fx-font-size: 0.917em; -fx-text-fill: -t-text3;");
+        hint.setWrapText(true);
+        Theme.darkProperty().addListener(new WeakChangeListener<>(themeListener));
         rebuildMembers();
 
         HBox typeAndBase = new HBox(12, labelled("Type", type), labelled("Based in", base));
@@ -83,11 +94,17 @@ public class OrganisationEditor extends BorderPane implements ItemView {
         previewScroll.setPadding(new Insets(10));
         previewScroll.setFitToWidth(true);
         previewScroll.setStyle("-fx-background: -t-paperbg;");
+        Tab summaryTab = new Tab("Summary", previewScroll);
+        Tab hierarchyTab = new Tab("Hierarchy", chart);
+        summaryTab.setClosable(false);
+        hierarchyTab.setClosable(false);
+        views.getTabs().addAll(summaryTab, hierarchyTab);
 
-        SplitPane split = new SplitPane(formScroll, previewScroll);
-        Panels.remember(split, "editor.organisation", 0.62);
+        SplitPane split = new SplitPane(formScroll, views);
+        Panels.remember(split, "editor.organisation", 0.55);
         setCenter(split);
         preview.refresh(org);
+        chart.refresh(org);
     }
 
     private void rebuildMembers() {
@@ -101,12 +118,10 @@ public class OrganisationEditor extends BorderPane implements ItemView {
 
         Node icon = node == null ? new Region() : NodeIcons.icon(node, false);
         Label who = new Label(found == null ? "(deleted item)" : found);
-        who.setMinWidth(150);
-        who.setPrefWidth(190);
+        who.setMinWidth(130);
+        who.setPrefWidth(170);
         if (found != null) {
-            Runnable colour = () -> who.setStyle("-fx-text-fill: " + (Theme.isDark() ? "#6aa5ff" : "#2563eb") + "; -fx-underline: true; -fx-cursor: hand;");
-            colour.run();
-            Theme.darkProperty().addListener((o, was, now) -> colour.run());
+            who.setStyle("-fx-text-fill: " + (Theme.isDark() ? "#6aa5ff" : "#2563eb") + "; -fx-underline: true; -fx-cursor: hand;");
             Tooltip tip = IconButtons.tip("");
             tip.setShowDelay(javafx.util.Duration.millis(350));
             tip.setShowDuration(javafx.util.Duration.minutes(5));
@@ -126,16 +141,41 @@ public class OrganisationEditor extends BorderPane implements ItemView {
         }
 
         Label kind = new Label(OrganisationCardView.memberKind(store, m.id));
-        kind.setMinWidth(70);
+        kind.setMinWidth(62);
         kind.setStyle("-fx-font-size: 0.833em; -fx-text-fill: -t-text3;");
 
         TextField role = new TextField(m.role);
         role.setPromptText("Role, e.g. Leader");
+        role.setPrefWidth(190);
         role.textProperty().addListener((o, a, n) -> {
             m.role = n;
             changed();
         });
-        HBox.setHgrow(role, Priority.ALWAYS);
+
+        ComboBox<String> boss = new ComboBox<>();
+        boss.getItems().add(TOP);
+        for (String id : org.possibleBosses(m.id)) boss.getItems().add(id);
+        boss.setConverter(new javafx.util.StringConverter<>() {
+            @Override public String toString(String id) {
+                if (id == null || TOP.equals(id)) return TOP;
+                String n = store.itemNameOrNull(id);
+                return n == null ? "(deleted item)" : n;
+            }
+
+            @Override public String fromString(String s) { return s; }
+        });
+        String current = org.bossOf(m.id);
+        boss.setValue(current == null ? TOP : current);
+        boss.setPrefWidth(170);
+        boss.setTooltip(IconButtons.tip("Who this member reports to. This builds the chain of command on the Hierarchy tab."));
+        boss.setOnAction(e -> {
+            String chosen = boss.getValue();
+            if (chosen == null) return;
+            if (org.setBoss(m.id, TOP.equals(chosen) ? null : chosen)) {
+                changed();
+                javafx.application.Platform.runLater(this::rebuildMembers); // what the others may report to has changed
+            }
+        });
 
         Button open = new Button("Open");
         open.setTooltip(IconButtons.tip("Open this member"));
@@ -148,14 +188,25 @@ public class OrganisationEditor extends BorderPane implements ItemView {
             rebuildMembers();
             changed();
         });
-        HBox row = new HBox(8, icon, who, kind, role, open, remove);
-        row.setAlignment(Pos.CENTER_LEFT);
+        Label reports = new Label("reports to");
+        reports.setStyle("-fx-font-size: 0.833em; -fx-text-fill: -t-text3;");
+        Region gap = new Region();
+        HBox.setHgrow(gap, Priority.ALWAYS);
+        HBox top = new HBox(8, icon, who, kind, gap, open, remove);
+        top.setAlignment(Pos.CENTER_LEFT);
+        HBox bottom = new HBox(8, role, reports, boss);
+        bottom.setAlignment(Pos.CENTER_LEFT);
+        bottom.setPadding(new Insets(0, 0, 0, 24));
+        VBox row = new VBox(3, top, bottom);
+        row.setPadding(new Insets(4, 0, 6, 0));
+        row.setStyle("-fx-border-color: transparent transparent -t-border transparent;");
         return row;
     }
 
     private void changed() {
         store.markOrganisationDirty(org);
         preview.refresh(org);
+        chart.refresh(org);
     }
 
     // ================================================================ ItemView
@@ -166,7 +217,12 @@ public class OrganisationEditor extends BorderPane implements ItemView {
 
     @Override public void redo() { }
 
-    @Override public void activated() { }
+    @Override public void activated() {
+        // members' names may have changed since this tab was last shown
+        rebuildMembers();
+        preview.refresh(org);
+        chart.refresh(org);
+    }
 
     @Override public boolean selectTool(int index) { return false; }
 }

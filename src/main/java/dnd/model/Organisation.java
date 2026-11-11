@@ -5,7 +5,8 @@ import java.util.List;
 
 /**
  * A group of characters: a guild, a faction, a family, a party, a villain's gang. Its members are other cards (player
- * characters, NPCs, monsters) and can also be other organisations, each with a role such as "Leader" or "Spy".
+ * characters, NPCs, monsters) and can also be other organisations, each with a role such as "Leader" or "Spy", and
+ * optionally who they report to, which makes the group's hierarchy.
  * Stored as organisations/&lt;id&gt;.organisation (JSON).
  */
 public class Organisation extends ProjectEntry {
@@ -15,6 +16,8 @@ public class Organisation extends ProjectEntry {
         public String id = "";
         /** What the member is here ("Leader", "Treasurer", "Spy"), as typed. */
         public String role = "";
+        /** The id of another member of this group this one reports to, or null for someone at the top. */
+        public String reportsTo;
 
         public Member() { }
 
@@ -39,8 +42,13 @@ public class Organisation extends ProjectEntry {
 
     /** True if the item is already a member. */
     public boolean hasMember(String itemId) {
-        for (Member m : members) if (m.id.equals(itemId)) return true;
-        return false;
+        return member(itemId) != null;
+    }
+
+    public Member member(String itemId) {
+        if (itemId == null) return null;
+        for (Member m : members) if (m.id.equals(itemId)) return m;
+        return null;
     }
 
     /** Adds a member unless it is already one (or is this group itself). Returns true if it was added. */
@@ -50,8 +58,71 @@ public class Organisation extends ProjectEntry {
         return true;
     }
 
+    /** Removes a member; the people who reported to it now report to its own boss (or to nobody if it had none). */
     public boolean removeMember(String itemId) {
-        return members.removeIf(m -> m.id.equals(itemId));
+        Member gone = member(itemId);
+        if (gone == null) return false;
+        String boss = bossOf(itemId);
+        for (Member m : members) if (itemId.equals(m.reportsTo)) m.reportsTo = boss;
+        members.remove(gone);
+        return true;
+    }
+
+    // ---------------------------------------------------------------- hierarchy
+
+    /** Who this member reports to: another member of this group, or null if it is at the top (or the boss is no longer a member). */
+    public String bossOf(String itemId) {
+        Member m = member(itemId);
+        if (m == null || m.reportsTo == null || m.reportsTo.equals(itemId) || !hasMember(m.reportsTo)) return null;
+        return m.reportsTo;
+    }
+
+    /** Everyone who reports to this member, in the order of the member list. */
+    public List<String> directReports(String itemId) {
+        List<String> out = new ArrayList<>();
+        for (Member m : members) if (itemId.equals(bossOf(m.id))) out.add(m.id);
+        return out;
+    }
+
+    /** True if {@code itemId} is below {@code ancestorId} in the hierarchy (reports to it, directly or through others). */
+    public boolean isUnder(String itemId, String ancestorId) {
+        String at = bossOf(itemId);
+        int guard = members.size() + 1;
+        while (at != null && guard-- > 0) {
+            if (at.equals(ancestorId)) return true;
+            at = bossOf(at);
+        }
+        return false;
+    }
+
+    /** The members this one could report to: everyone but itself and the people below it (that would go round in a circle). */
+    public List<String> possibleBosses(String itemId) {
+        List<String> out = new ArrayList<>();
+        for (Member m : members) if (!m.id.equals(itemId) && !isUnder(m.id, itemId)) out.add(m.id);
+        return out;
+    }
+
+    /**
+     * Sets who a member reports to ({@code bossId} null puts it at the top).
+     *
+     * @return false (and changes nothing) if either is not a member or the change would make a circle
+     */
+    public boolean setBoss(String itemId, String bossId) {
+        Member m = member(itemId);
+        if (m == null) return false;
+        if (bossId == null || bossId.isBlank()) {
+            m.reportsTo = null;
+            return true;
+        }
+        if (!possibleBosses(itemId).contains(bossId)) return false;
+        m.reportsTo = bossId;
+        return true;
+    }
+
+    /** True if at least one member reports to another, so there is a hierarchy to draw. */
+    public boolean hasHierarchy() {
+        for (Member m : members) if (bossOf(m.id) != null) return true;
+        return false;
     }
 
     /** "3 members", "1 member" or "No members yet". */
@@ -62,7 +133,11 @@ public class Organisation extends ProjectEntry {
     public Organisation copy() {
         Organisation o = new Organisation();
         o.id = id; o.name = name; o.type = type; o.base = base; o.summary = summary; o.goals = goals; o.notes = notes;
-        for (Member m : members) o.members.add(new Member(m.id, m.role));
+        for (Member m : members) {
+            Member c = new Member(m.id, m.role);
+            c.reportsTo = m.reportsTo;
+            o.members.add(c);
+        }
         return o;
     }
 }

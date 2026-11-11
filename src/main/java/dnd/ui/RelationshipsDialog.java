@@ -3,6 +3,8 @@ package dnd.ui;
 import dnd.model.Card;
 import dnd.model.RelationType;
 import dnd.relations.FamilyTreeLayout;
+import dnd.relations.GraphLayout;
+import dnd.relations.OverviewGraph;
 import dnd.relations.RelationGraph;
 import dnd.relations.RelationGraph.Edge;
 import dnd.relations.WebLayout;
@@ -65,10 +67,19 @@ public final class RelationshipsDialog {
         ToggleButton web = new ToggleButton("Web of relationships");
         family.setToggleGroup(mode);
         web.setToggleGroup(mode);
+        ToggleButton everything = new ToggleButton("Everything");
+        everything.setToggleGroup(mode);
+        everything.setTooltip(IconButtons.tip("One big map: the family tree, the web of relationships and the organisations with their chains of command, all together"));
         family.setSelected(true);
         mode.selectedToggleProperty().addListener((o, a, n) -> {
-            if (n == null) (a == web ? web : family).setSelected(true); // one must stay selected
+            if (n == null && a != null) a.setSelected(true); // one must stay selected
         });
+        CheckBox showFamily = new CheckBox("Family"), showRelations = new CheckBox("Relationships"), showOrgs = new CheckBox("Organisations");
+        for (CheckBox c : List.of(showFamily, showRelations, showOrgs)) c.setSelected(true);
+        HBox filters = new HBox(10, showFamily, showRelations, showOrgs);
+        filters.setAlignment(Pos.CENTER_LEFT);
+        filters.visibleProperty().bind(everything.selectedProperty());
+        filters.managedProperty().bind(everything.selectedProperty());
 
         ComboBox<Object> focus = new ComboBox<>();
         focus.setPrefWidth(240);
@@ -78,22 +89,37 @@ public final class RelationshipsDialog {
         message.setWrapText(true);
 
         Runnable[] redraw = new Runnable[1];
+        java.util.function.Supplier<OverviewGraph.Options> options = () ->
+                new OverviewGraph.Options(showFamily.isSelected(), showRelations.isSelected(), showOrgs.isSelected());
         Runnable refreshChoices = () -> {
-            RelationGraph g = graph(store);
-            boolean fam = family.isSelected();
             List<Object> items = new ArrayList<>();
             items.add("Everyone");
-            List<Card> people = new ArrayList<>();
-            for (List<String> comp : g.components(fam)) for (String id : comp) people.add(g.cards().get(id));
-            people.sort(Comparator.comparing(c -> c.name.toLowerCase()));
+            List<Object> people = new ArrayList<>();
+            if (everything.isSelected()) {
+                OverviewGraph og = overview(store, options.get());
+                for (String id : og.nodes().keySet()) {
+                    Object o = store.isOrganisation(id) ? store.organisation(id) : store.card(id);
+                    if (o != null) people.add(o);
+                }
+            } else {
+                RelationGraph g = graph(store);
+                for (List<String> comp : g.components(family.isSelected())) for (String id : comp) people.add(g.cards().get(id));
+            }
+            people.sort(Comparator.comparing(o -> nameOf(o).toLowerCase()));
             items.addAll(people);
             Object keep = focus.getValue();
+            String keepId = idOf(keep);
             focus.setItems(FXCollections.observableArrayList(items));
-            focus.setValue(keep instanceof Card c && people.stream().anyMatch(p -> p.id.equals(c.id)) ? keep : "Everyone");
+            Object back = null;
+            for (Object o : people) if (keepId != null && keepId.equals(idOf(o))) back = o;
+            focus.setValue(back != null ? back : "Everyone");
         };
-        redraw[0] = () -> draw(canvas, hits, graph(store), family.isSelected(), focus.getValue() instanceof Card c ? c.id : null, message);
+        redraw[0] = () -> {
+            if (everything.isSelected()) drawEverything(canvas, hits, overview(store, options.get()), idOf(focus.getValue()), message);
+            else draw(canvas, hits, graph(store), family.isSelected(), idOf(focus.getValue()), message);
+        };
         focus.setConverter(new javafx.util.StringConverter<>() {
-            @Override public String toString(Object o) { return o instanceof Card c ? c.name : String.valueOf(o); }
+            @Override public String toString(Object o) { return idOf(o) != null ? nameOf(o) : String.valueOf(o); }
 
             @Override public Object fromString(String s) { return s; }
         });
@@ -102,6 +128,10 @@ public final class RelationshipsDialog {
             redraw[0].run();
         });
         focus.setOnAction(e -> redraw[0].run());
+        for (CheckBox c : List.of(showFamily, showRelations, showOrgs)) c.setOnAction(e -> {
+            refreshChoices.run();
+            redraw[0].run();
+        });
 
         Button refresh = new Button("Refresh");
         refresh.setTooltip(IconButtons.tip("Pick up relationships you have just changed on cards"));
@@ -109,7 +139,7 @@ public final class RelationshipsDialog {
             refreshChoices.run();
             redraw[0].run();
         });
-        HBox bar = new HBox(8, family, web, new Label("Show"), focus, refresh);
+        HBox bar = new HBox(8, family, web, everything, new Label("Show"), focus, filters, refresh);
         bar.setAlignment(Pos.CENTER_LEFT);
         bar.setPadding(new Insets(8, 10, 4, 10));
         message.setPadding(new Insets(0, 10, 6, 10));
@@ -139,6 +169,28 @@ public final class RelationshipsDialog {
         stage.show();
         refreshChoices.run();
         redraw[0].run();
+    }
+
+    private static String idOf(Object o) {
+        return o instanceof Card c ? c.id : o instanceof dnd.model.Organisation g ? g.id : null;
+    }
+
+    private static String nameOf(Object o) {
+        return o instanceof Card c ? c.name : o instanceof dnd.model.Organisation g ? g.name : String.valueOf(o);
+    }
+
+    private static OverviewGraph overview(ProjectStore store, OverviewGraph.Options options) {
+        Map<String, Card> cards = new LinkedHashMap<>();
+        for (String id : store.allCardIds()) {
+            Card c = store.card(id);
+            if (c != null) cards.put(id, c);
+        }
+        Map<String, dnd.model.Organisation> orgs = new LinkedHashMap<>();
+        for (String id : store.allOrganisationIds()) {
+            dnd.model.Organisation o = store.organisation(id);
+            if (o != null) orgs.put(id, o);
+        }
+        return OverviewGraph.build(cards, orgs, options);
     }
 
     private static RelationGraph graph(ProjectStore store) {
@@ -395,6 +447,168 @@ public final class RelationshipsDialog {
         for (Map.Entry<String, double[]> en : at.entrySet()) {
             Card c = g.cards().get(en.getKey());
             if (c != null) node(gc, hits, c, en.getValue()[0], en.getValue()[1], text, dark);
+        }
+    }
+
+    // ---------------------------------------------------------------- everything in one map
+
+    private static Color overviewColor(OverviewGraph.EdgeKind k) {
+        return switch (k) {
+            case ALLY -> Color.web("#2f9e5f");
+            case RIVAL -> Color.web("#d64545");
+            case MENTOR -> Color.web("#8b5cf6");
+            case EMPLOYER -> Color.web("#1aa3a3");
+            case MEMBER -> Color.web("#a0568c");
+            case REPORTS -> Color.web("#d9731a");
+            case SPOUSE -> Color.web("#d6577f");
+            default -> Color.web("#8a94a3"); // parent, sibling, other
+        };
+    }
+
+    private static String overviewLabel(OverviewGraph.Edge e) {
+        if (!e.label().isBlank() && e.kind() != OverviewGraph.EdgeKind.PARENT) return e.label();
+        return switch (e.kind()) {
+            case ALLY -> "ally";
+            case RIVAL -> "rival";
+            case MENTOR -> "mentor";
+            case EMPLOYER -> "employer";
+            case OTHER -> "connected";
+            case REPORTS -> "reports to";
+            default -> "";
+        };
+    }
+
+    /** Where a line from the centre of a box towards a point leaves the box. */
+    private static double[] boxEdge(double cx, double cy, double tx, double ty) {
+        double dx = tx - cx, dy = ty - cy;
+        if (dx == 0 && dy == 0) return new double[]{cx, cy};
+        double t = Math.min(dx == 0 ? Double.MAX_VALUE : (NODE_W / 2 + 2) / Math.abs(dx), dy == 0 ? Double.MAX_VALUE : (NODE_H / 2 + 2) / Math.abs(dy));
+        return new double[]{cx + dx * t, cy + dy * t};
+    }
+
+    private static void drawEverything(Canvas canvas, List<Hit> hits, OverviewGraph g, String focusId, Label message) {
+        hits.clear();
+        boolean dark = Theme.isDark();
+        Color bg = dark ? Color.web("#1c1e22") : Color.web("#fbfaf6");
+        Color line = dark ? Color.web("#8d95a1") : Color.web("#6b6f78");
+
+        List<List<String>> comps = new ArrayList<>();
+        if (focusId != null) {
+            List<String> c = g.componentOf(focusId);
+            if (!c.isEmpty()) comps.add(c);
+        } else {
+            comps.addAll(g.components());
+        }
+        if (comps.isEmpty()) {
+            canvas.setWidth(900);
+            canvas.setHeight(600);
+            GraphicsContext gc = canvas.getGraphicsContext2D();
+            gc.setFill(bg);
+            gc.fillRect(0, 0, 900, 600);
+            message.setText("Nothing is connected yet (or the kinds of link you ticked have none). Add relationships on cards, or members to organisations.");
+            return;
+        }
+        message.setText("Click a person or organisation to open it. Arrows point from parent to child, mentor to student, employer to employee and boss to the person who reports to them. "
+                + "Double line: partners. Dashed: siblings. Purple: membership of an organisation; orange: reports to.");
+
+        // ---- place each connected group, then pack the groups into rows
+        Map<String, double[]> at = new LinkedHashMap<>(); // id -> {left, top}
+        double wrapAt = 1500, x = MARGIN, rowY = MARGIN, rowH = 0, totalW = 900;
+        for (List<String> comp : comps) {
+            List<String[]> pairs = new ArrayList<>();
+            for (OverviewGraph.Edge e : g.edgesWithin(comp)) pairs.add(new String[]{e.from(), e.to()});
+            Map<String, double[]> rel = GraphLayout.layout(comp, pairs, NODE_W + 110, NODE_W, NODE_H);
+            double maxX = 0, maxY = 0;
+            for (double[] p : rel.values()) {
+                maxX = Math.max(maxX, p[0]);
+                maxY = Math.max(maxY, p[1]);
+            }
+            double w = maxX + NODE_W, h = maxY + NODE_H;
+            if (x + w > wrapAt && x > MARGIN) {
+                x = MARGIN;
+                rowY += rowH + 50;
+                rowH = 0;
+            }
+            for (Map.Entry<String, double[]> en : rel.entrySet()) at.put(en.getKey(), new double[]{x + en.getValue()[0] - NODE_W / 2 + NODE_W / 2, rowY + en.getValue()[1]});
+            x += w + 60;
+            rowH = Math.max(rowH, h);
+            totalW = Math.max(totalW, x + MARGIN);
+        }
+        double h = Math.max(600, rowY + rowH + MARGIN + 40);
+        canvas.setWidth(totalW);
+        canvas.setHeight(h);
+        GraphicsContext gc = canvas.getGraphicsContext2D();
+        gc.setFill(bg);
+        gc.fillRect(0, 0, totalW, h);
+        gc.setLineCap(javafx.scene.shape.StrokeLineCap.ROUND);
+        gc.setFont(Font.font("System", 11));
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.setTextBaseline(VPos.CENTER);
+
+        // ---- links (several between the same two boxes are drawn side by side)
+        Map<String, Integer> seen = new LinkedHashMap<>();
+        for (OverviewGraph.Edge e : g.edges()) {
+            double[] a = at.get(e.from()), b = at.get(e.to());
+            if (a == null || b == null) continue;
+            String pair = e.from().compareTo(e.to()) < 0 ? e.from() + "|" + e.to() : e.to() + "|" + e.from();
+            int index = seen.merge(pair, 1, Integer::sum) - 1;
+            double acx = a[0] + NODE_W / 2, acy = a[1] + NODE_H / 2, bcx = b[0] + NODE_W / 2, bcy = b[1] + NODE_H / 2;
+            double ang = Math.atan2(bcy - acy, bcx - acx);
+            double off = (index % 2 == 0 ? 1 : -1) * ((index + 1) / 2) * 9; // 0, +9, -9, +18...
+            double ox = -Math.sin(ang) * off, oy = Math.cos(ang) * off;
+            double[] p1 = boxEdge(acx, acy, bcx + ox, bcy + oy), p2 = boxEdge(bcx, bcy, acx + ox, acy + oy);
+            double x1 = p1[0] + ox, y1 = p1[1] + oy, x2 = p2[0] + ox, y2 = p2[1] + oy;
+            Color c = e.kind() == OverviewGraph.EdgeKind.PARENT || e.kind() == OverviewGraph.EdgeKind.SIBLING ? line : overviewColor(e.kind());
+            gc.setStroke(c);
+            gc.setFill(c);
+            switch (e.kind()) {
+                case SIBLING -> {
+                    gc.setLineDashes(6, 5);
+                    gc.setLineWidth(1.6);
+                    gc.strokeLine(x1, y1, x2, y2);
+                    gc.setLineDashes((double[]) null);
+                }
+                case SPOUSE -> {
+                    gc.setLineWidth(2);
+                    double nx = -Math.sin(ang) * 3, ny = Math.cos(ang) * 3;
+                    gc.strokeLine(x1 + nx, y1 + ny, x2 + nx, y2 + ny);
+                    gc.strokeLine(x1 - nx, y1 - ny, x2 - nx, y2 - ny);
+                }
+                case MEMBER -> {
+                    gc.setLineWidth(1.8);
+                    gc.strokeLine(x1, y1, x2, y2);
+                }
+                default -> {
+                    gc.setLineWidth(e.kind() == OverviewGraph.EdgeKind.REPORTS ? 2.4 : 2.2);
+                    gc.strokeLine(x1, y1, x2, y2);
+                }
+            }
+            boolean arrow = switch (e.kind()) {
+                case PARENT, MENTOR, EMPLOYER, REPORTS -> true;
+                default -> false;
+            };
+            if (arrow) {
+                double a2 = Math.atan2(y2 - y1, x2 - x1);
+                gc.fillPolygon(new double[]{x2, x2 - 11 * Math.cos(a2 - 0.4), x2 - 11 * Math.cos(a2 + 0.4)},
+                        new double[]{y2, y2 - 11 * Math.sin(a2 - 0.4), y2 - 11 * Math.sin(a2 + 0.4)}, 3);
+            }
+            String label = overviewLabel(e);
+            if (!label.isBlank()) {
+                double mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+                Text t = new Text(label);
+                t.setFont(Font.font("System", 11));
+                double tw = Math.min(160, t.getLayoutBounds().getWidth()) + 10;
+                gc.setFill(bg);
+                gc.fillRoundRect(mx - tw / 2, my - 9, tw, 18, 8, 8);
+                gc.setFill(dark ? c.brighter() : c.darker());
+                gc.fillText(ChartKit.fit(label, 150, 11, false), mx, my);
+            }
+        }
+        for (Map.Entry<String, double[]> en : at.entrySet()) {
+            OverviewGraph.Node n = g.nodes().get(en.getKey());
+            if (n == null) continue;
+            ChartKit.box(gc, en.getValue()[0], en.getValue()[1], n.name(), n.subtitle(), ChartKit.accent(n.kind()), dark, n.kind() == OverviewGraph.NodeKind.ORGANISATION);
+            hits.add(new Hit(en.getValue()[0], en.getValue()[1], NODE_W, NODE_H, n.id()));
         }
     }
 

@@ -420,6 +420,10 @@ public class BoardView extends Pane implements ItemView {
                 dnd.model.MagicItem m = store.magicItem(id);
                 if (m != null) items.add(new dnd.text.NameHints.ItemNames(id, m.name, List.of()));
             }
+            for (String id : store.allOrganisationIds()) {
+                dnd.model.Organisation g = store.organisation(id);
+                if (g != null) items.add(new dnd.text.NameHints.ItemNames(id, g.name, List.of()));
+            }
             nameIndex = dnd.text.NameHints.index(dnd.text.NameHints.entriesFor(items));
             nameIndexVersion = store.namesVersion();
             hintCache.clear();
@@ -427,7 +431,7 @@ public class BoardView extends Pane implements ItemView {
         return nameIndex;
     }
 
-    /** The card and spell names in a text object that could be linked (none while editing or with hints off). */
+    /** The card, spell, magic item and organisation names in a text object that could be linked (none while editing or with hints off). */
     List<dnd.text.NameHints.Hint> hintsFor(BoardObject o) {
         if (!ts.nameHints.get() || o == editing || (o.type != Type.TEXT && o.type != Type.STICKY)) return List.of();
         List<dnd.text.NameHints.Entry> index = nameIndex();

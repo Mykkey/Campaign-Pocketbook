@@ -84,7 +84,7 @@ public class ProjectLauncher extends VBox {
     }
 
     private void refresh() {
-        list.setItems(FXCollections.observableArrayList(ProjectStore.listProjects(base)));
+        list.setItems(FXCollections.observableArrayList(RecentProjects.sorted(ProjectStore.listProjects(base))));
     }
 
     /**
@@ -262,6 +262,7 @@ public class ProjectLauncher extends VBox {
         if (r.isPresent() && r.get() == ButtonType.OK) {
             try {
                 ProjectStore.deleteProject(base, name);
+                RecentProjects.forget(name);
             } catch (IOException e) {
                 new Alert(Alert.AlertType.ERROR, "Could not delete: " + e.getMessage()).show();
             }

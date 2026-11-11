@@ -89,6 +89,7 @@ public class App extends Application {
 
     private void showWorkspace(ProjectStore store) {
         dnd.ui.AppSettings.setString(dnd.ui.GeneralSettings.LAST_PROJECT, store.dir.getFileName().toString());
+        dnd.ui.RecentProjects.opened(store.dir.getFileName().toString());
         workspace = new WorkspaceView(store, this::backToProjects, getHostServices());
         stage.setScene(new Scene(workspace, stage.getWidth(), stage.getHeight()));
         stage.setTitle(TITLE + " - " + store.project.name);

@@ -4,7 +4,6 @@ import dnd.model.Card;
 import dnd.model.Organisation;
 import dnd.model.RelationType;
 import dnd.relations.FamilyTreeLayout;
-import dnd.relations.GraphLayout;
 import dnd.relations.OrgHierarchy;
 import dnd.relations.OverviewGraph;
 import dnd.relations.OverviewGraph.EdgeKind;
@@ -141,38 +140,5 @@ class OrgHierarchyTest {
         o.addMember("ghost", "Deleted");
         o.setBoss("kid", "dad");
         return o;
-    }
-
-    @Test
-    void theForceLayoutKeepsEveryBoxApartAndIsRepeatable() {
-        List<String> ids = new ArrayList<>();
-        List<String[]> edges = new ArrayList<>();
-        for (int i = 0; i < 25; i++) {
-            ids.add("n" + i);
-            if (i > 0) edges.add(new String[]{"n" + (i - 1) / 2, "n" + i});
-        }
-        Map<String, double[]> a = GraphLayout.layout(ids, edges, 230, 150, 46);
-        Map<String, double[]> b = GraphLayout.layout(ids, edges, 230, 150, 46);
-        assertEquals(25, a.size());
-        for (String id : ids) {
-            assertArrayEquals(a.get(id), b.get(id), 1e-9, "same input, same picture");
-            assertTrue(a.get(id)[0] >= 0 && a.get(id)[1] >= 0);
-            assertFalse(Double.isNaN(a.get(id)[0]) || Double.isNaN(a.get(id)[1]));
-        }
-        for (int i = 0; i < ids.size(); i++) {
-            for (int j = i + 1; j < ids.size(); j++) {
-                double[] p = a.get(ids.get(i)), q = a.get(ids.get(j));
-                boolean overlap = Math.abs(p[0] - q[0]) < 150 && Math.abs(p[1] - q[1]) < 46;
-                assertFalse(overlap, ids.get(i) + " overlaps " + ids.get(j));
-            }
-        }
-    }
-
-    @Test
-    void tinyGraphsAreHandled() {
-        assertTrue(GraphLayout.layout(List.of(), List.of(), 200, 150, 46).isEmpty());
-        assertEquals(1, GraphLayout.layout(List.of("a"), List.of(), 200, 150, 46).size());
-        Map<String, double[]> two = GraphLayout.layout(List.of("a", "b"), java.util.Collections.singletonList(new String[]{"a", "b"}), 200, 150, 46);
-        assertEquals(200, two.get("b")[0] - two.get("a")[0], 1e-9);
     }
 }

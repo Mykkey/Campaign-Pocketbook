@@ -3,7 +3,7 @@ package dnd.ui;
 import dnd.model.Card;
 import dnd.model.RelationType;
 import dnd.relations.FamilyTreeLayout;
-import dnd.relations.GraphLayout;
+import dnd.relations.LayeredLayout;
 import dnd.relations.OverviewGraph;
 import dnd.relations.RelationGraph;
 import dnd.relations.RelationGraph.Edge;
@@ -524,17 +524,25 @@ public final class RelationshipsDialog {
         };
     }
 
+    /** What a link says: its kind, and the note or role written on it ("rival (since school)", "Leader"). */
     private static String overviewLabel(OverviewGraph.Edge e) {
-        if (!e.label().isBlank() && e.kind() != OverviewGraph.EdgeKind.PARENT) return e.label();
+        String note = e.label() == null ? "" : e.label().trim();
         return switch (e.kind()) {
-            case ALLY -> "ally";
-            case RIVAL -> "rival";
-            case MENTOR -> "mentor";
-            case EMPLOYER -> "employer";
-            case OTHER -> "connected";
+            case PARENT -> withNote("parent of", note);
+            case SPOUSE -> withNote("partner", note);
+            case SIBLING -> withNote("sibling", note);
+            case ALLY -> withNote("ally", note);
+            case RIVAL -> withNote("rival", note);
+            case MENTOR -> withNote("mentor of", note);
+            case EMPLOYER -> withNote("employer of", note);
+            case OTHER -> note.isEmpty() ? "connected" : note;
+            case MEMBER -> note.isEmpty() ? "member" : note;
             case REPORTS -> "reports to";
-            default -> "";
         };
+    }
+
+    private static String withNote(String word, String note) {
+        return note.isEmpty() ? word : word + " (" + note + ")";
     }
 
     /** Where a line from the centre of a box towards a point leaves the box. */
@@ -543,6 +551,20 @@ public final class RelationshipsDialog {
         if (dx == 0 && dy == 0) return new double[]{cx, cy};
         double t = Math.min(dx == 0 ? Double.MAX_VALUE : (NODE_W / 2 + 2) / Math.abs(dx), dy == 0 ? Double.MAX_VALUE : (NODE_H / 2 + 2) / Math.abs(dy));
         return new double[]{cx + dx * t, cy + dy * t};
+    }
+
+    private static final double SLOT = NODE_W + 50, ROW = NODE_H + 100;
+
+    /** True if a label centred at (cx, cy) overlaps no box and none of the labels already placed. */
+    private static boolean chipIsClear(double cx, double cy, double w, Map<String, double[]> boxes, List<double[]> chips) {
+        double l = cx - w / 2, t = cy - 9, r = cx + w / 2, b = cy + 9;
+        for (double[] box : boxes.values()) {
+            if (r > box[0] - 3 && l < box[0] + NODE_W + 3 && b > box[1] - 3 && t < box[1] + NODE_H + 3) return false;
+        }
+        for (double[] chip : chips) {
+            if (r > chip[0] - 2 && l < chip[0] + chip[2] + 2 && b > chip[1] - 2 && t < chip[1] + chip[3] + 2) return false;
+        }
+        return true;
     }
 
     private static void drawEverything(Canvas canvas, List<Hit> hits, OverviewGraph g, String focusId, Label message) {
@@ -567,29 +589,39 @@ public final class RelationshipsDialog {
             message.setText("Nothing is connected yet (or the kinds of link you ticked have none). Add relationships on cards, or members to organisations.");
             return;
         }
-        message.setText("Click a person or organisation to open it. Arrows point from parent to child, mentor to student, employer to employee and boss to the person who reports to them. "
-                + "Double line: partners. Dashed: siblings. Purple: membership of an organisation; orange: reports to.");
+        message.setText("Click a person or organisation to open it. Like the family tree and the hierarchy, whoever is above someone (a parent, mentor, employer, boss, or an organisation over its members) is higher up. "
+                + "Arrows point down. Double line: partners. Dashed: siblings. Purple: membership of an organisation; orange: reports to.");
 
-        // ---- place each connected group, then pack the groups into rows
+        // ---- place each connected group top-down, then pack the groups side by side
         Map<String, double[]> at = new LinkedHashMap<>(); // id -> {left, top}
-        double wrapAt = 1500, x = MARGIN, rowY = MARGIN, rowH = 0, totalW = 900;
+        double wrapAt = 1600, x = MARGIN, rowY = MARGIN, rowH = 0, totalW = 900;
         for (List<String> comp : comps) {
-            List<String[]> pairs = new ArrayList<>();
-            for (OverviewGraph.Edge e : g.edgesWithin(comp)) pairs.add(new String[]{e.from(), e.to()});
-            Map<String, double[]> rel = GraphLayout.layout(comp, pairs, NODE_W + 110, NODE_W, NODE_H);
-            double maxX = 0, maxY = 0;
-            for (double[] p : rel.values()) {
-                maxX = Math.max(maxX, p[0]);
-                maxY = Math.max(maxY, p[1]);
+            List<String[]> down = new ArrayList<>(), level = new ArrayList<>(), loose = new ArrayList<>();
+            for (OverviewGraph.Edge e : g.edgesWithin(comp)) {
+                String[] pair = {e.from(), e.to()};
+                switch (e.kind()) {
+                    case PARENT, MENTOR, EMPLOYER, REPORTS, MEMBER -> down.add(pair);
+                    case SPOUSE, SIBLING -> level.add(pair);
+                    default -> loose.add(pair);
+                }
             }
-            double w = maxX + NODE_W, h = maxY + NODE_H;
+            Map<String, LayeredLayout.Spot> spots = LayeredLayout.layout(comp, down, level, loose);
+            double maxX = 0;
+            int maxRank = 0;
+            for (LayeredLayout.Spot sp : spots.values()) {
+                maxX = Math.max(maxX, sp.x());
+                maxRank = Math.max(maxRank, sp.rank());
+            }
+            double w = maxX * SLOT + NODE_W, h = maxRank * ROW + NODE_H;
             if (x + w > wrapAt && x > MARGIN) {
                 x = MARGIN;
-                rowY += rowH + 50;
+                rowY += rowH + 60;
                 rowH = 0;
             }
-            for (Map.Entry<String, double[]> en : rel.entrySet()) at.put(en.getKey(), new double[]{x + en.getValue()[0] - NODE_W / 2 + NODE_W / 2, rowY + en.getValue()[1]});
-            x += w + 60;
+            for (Map.Entry<String, LayeredLayout.Spot> en : spots.entrySet()) {
+                at.put(en.getKey(), new double[]{x + en.getValue().x() * SLOT, rowY + en.getValue().rank() * ROW});
+            }
+            x += w + 70;
             rowH = Math.max(rowH, h);
             totalW = Math.max(totalW, x + MARGIN);
         }
@@ -604,64 +636,110 @@ public final class RelationshipsDialog {
         gc.setTextAlign(TextAlignment.CENTER);
         gc.setTextBaseline(VPos.CENTER);
 
-        // ---- links (several between the same two boxes are drawn side by side)
+        // ---- links (several between the same two boxes are drawn side by side; two in the same row that are not neighbours arc underneath)
         Map<String, Integer> seen = new LinkedHashMap<>();
+        List<Runnable> labels = new ArrayList<>();
+        List<double[]> chips = new ArrayList<>(); // {left, top, width, height} of the labels placed so far
         for (OverviewGraph.Edge e : g.edges()) {
             double[] a = at.get(e.from()), b = at.get(e.to());
             if (a == null || b == null) continue;
             String pair = e.from().compareTo(e.to()) < 0 ? e.from() + "|" + e.to() : e.to() + "|" + e.from();
             int index = seen.merge(pair, 1, Integer::sum) - 1;
             double acx = a[0] + NODE_W / 2, acy = a[1] + NODE_H / 2, bcx = b[0] + NODE_W / 2, bcy = b[1] + NODE_H / 2;
-            double ang = Math.atan2(bcy - acy, bcx - acx);
-            double off = (index % 2 == 0 ? 1 : -1) * ((index + 1) / 2) * 9; // 0, +9, -9, +18...
-            double ox = -Math.sin(ang) * off, oy = Math.cos(ang) * off;
-            double[] p1 = boxEdge(acx, acy, bcx + ox, bcy + oy), p2 = boxEdge(bcx, bcy, acx + ox, acy + oy);
-            double x1 = p1[0] + ox, y1 = p1[1] + oy, x2 = p2[0] + ox, y2 = p2[1] + oy;
+            boolean sameRow = Math.abs(acy - bcy) < 1, far = Math.abs(acx - bcx) > SLOT * 1.5;
             Color c = e.kind() == OverviewGraph.EdgeKind.PARENT || e.kind() == OverviewGraph.EdgeKind.SIBLING ? line : overviewColor(e.kind());
             gc.setStroke(c);
             gc.setFill(c);
-            switch (e.kind()) {
-                case SIBLING -> {
-                    gc.setLineDashes(6, 5);
-                    gc.setLineWidth(1.6);
-                    gc.strokeLine(x1, y1, x2, y2);
-                    gc.setLineDashes((double[]) null);
+            double x1, y1, x2, y2, mx, my, ang;
+            if (sameRow && far) { // an arc under the row, so it does not run behind the boxes in between
+                double sag = 34 + 16 * index + Math.min(60, Math.abs(acx - bcx) / 8);
+                x1 = acx;
+                y1 = a[1] + NODE_H;
+                x2 = bcx;
+                y2 = b[1] + NODE_H;
+                double cxm = (x1 + x2) / 2, cym = y1 + sag * 2;
+                gc.setLineWidth(e.kind() == OverviewGraph.EdgeKind.SIBLING ? 1.6 : 2.2);
+                if (e.kind() == OverviewGraph.EdgeKind.SIBLING) gc.setLineDashes(6, 5);
+                gc.beginPath();
+                gc.moveTo(x1, y1);
+                gc.quadraticCurveTo(cxm, cym, x2, y2);
+                gc.stroke();
+                gc.setLineDashes((double[]) null);
+                mx = cxm;
+                my = y1 + sag;
+                ang = 0;
+            } else {
+                double aang = Math.atan2(bcy - acy, bcx - acx);
+                double off = (index % 2 == 0 ? 1 : -1) * ((index + 1) / 2) * 16; // 0, +16, -16, +32...
+                double ox = -Math.sin(aang) * off, oy = Math.cos(aang) * off;
+                double[] p1 = boxEdge(acx, acy, bcx + ox, bcy + oy), p2 = boxEdge(bcx, bcy, acx + ox, acy + oy);
+                x1 = p1[0] + ox;
+                y1 = p1[1] + oy;
+                x2 = p2[0] + ox;
+                y2 = p2[1] + oy;
+                ang = Math.atan2(y2 - y1, x2 - x1);
+                switch (e.kind()) {
+                    case SIBLING -> {
+                        gc.setLineDashes(6, 5);
+                        gc.setLineWidth(1.6);
+                        gc.strokeLine(x1, y1, x2, y2);
+                        gc.setLineDashes((double[]) null);
+                    }
+                    case SPOUSE -> {
+                        gc.setLineWidth(2);
+                        double nx = -Math.sin(ang) * 3, ny = Math.cos(ang) * 3;
+                        gc.strokeLine(x1 + nx, y1 + ny, x2 + nx, y2 + ny);
+                        gc.strokeLine(x1 - nx, y1 - ny, x2 - nx, y2 - ny);
+                    }
+                    case MEMBER -> {
+                        gc.setLineWidth(1.8);
+                        gc.strokeLine(x1, y1, x2, y2);
+                    }
+                    default -> {
+                        gc.setLineWidth(e.kind() == OverviewGraph.EdgeKind.REPORTS ? 2.4 : 2.2);
+                        gc.strokeLine(x1, y1, x2, y2);
+                    }
                 }
-                case SPOUSE -> {
-                    gc.setLineWidth(2);
-                    double nx = -Math.sin(ang) * 3, ny = Math.cos(ang) * 3;
-                    gc.strokeLine(x1 + nx, y1 + ny, x2 + nx, y2 + ny);
-                    gc.strokeLine(x1 - nx, y1 - ny, x2 - nx, y2 - ny);
-                }
-                case MEMBER -> {
-                    gc.setLineWidth(1.8);
-                    gc.strokeLine(x1, y1, x2, y2);
-                }
-                default -> {
-                    gc.setLineWidth(e.kind() == OverviewGraph.EdgeKind.REPORTS ? 2.4 : 2.2);
-                    gc.strokeLine(x1, y1, x2, y2);
-                }
+                mx = (x1 + x2) / 2;
+                my = (y1 + y2) / 2;
             }
-            boolean arrow = switch (e.kind()) {
+            boolean arrow = !(sameRow && far) && switch (e.kind()) {
                 case PARENT, MENTOR, EMPLOYER, REPORTS -> true;
                 default -> false;
             };
             if (arrow) {
-                double a2 = Math.atan2(y2 - y1, x2 - x1);
-                gc.fillPolygon(new double[]{x2, x2 - 11 * Math.cos(a2 - 0.4), x2 - 11 * Math.cos(a2 + 0.4)},
-                        new double[]{y2, y2 - 11 * Math.sin(a2 - 0.4), y2 - 11 * Math.sin(a2 + 0.4)}, 3);
+                gc.fillPolygon(new double[]{x2, x2 - 11 * Math.cos(ang - 0.4), x2 - 11 * Math.cos(ang + 0.4)},
+                        new double[]{y2, y2 - 11 * Math.sin(ang - 0.4), y2 - 11 * Math.sin(ang + 0.4)}, 3);
             }
-            String label = overviewLabel(e);
-            if (!label.isBlank()) {
-                double mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+            final Color lc = c;
+            final String label = ChartKit.fit(overviewLabel(e), 150, 11, false);
+            Text measure = new Text(label);
+            measure.setFont(Font.font("System", 11));
+            double chipW = measure.getLayoutBounds().getWidth() + 10;
+            double[] spot = {mx, my};
+            if (!(sameRow && far)) { // slide the label along the line to where it covers neither a box nor another label
+                for (double t : new double[]{0.5, 0.42, 0.58, 0.34, 0.66, 0.26, 0.74, 0.18, 0.82, 0.12, 0.88}) {
+                    double cx = x1 + (x2 - x1) * t, cy = y1 + (y2 - y1) * t;
+                    if (chipIsClear(cx, cy, chipW, at, chips)) {
+                        spot = new double[]{cx, cy};
+                        break;
+                    }
+                }
+            }
+            chips.add(new double[]{spot[0] - chipW / 2, spot[1] - 9, chipW, 18});
+            final double lx = spot[0], ly = spot[1];
+            labels.add(() -> { // drawn last, on top of the boxes, so a long line never hides what it is
                 Text t = new Text(label);
                 t.setFont(Font.font("System", 11));
-                double tw = Math.min(160, t.getLayoutBounds().getWidth()) + 10;
+                double tw = t.getLayoutBounds().getWidth() + 10;
                 gc.setFill(bg);
-                gc.fillRoundRect(mx - tw / 2, my - 9, tw, 18, 8, 8);
-                gc.setFill(dark ? c.brighter() : c.darker());
-                gc.fillText(ChartKit.fit(label, 150, 11, false), mx, my);
-            }
+                gc.fillRoundRect(lx - tw / 2, ly - 9, tw, 18, 8, 8);
+                gc.setStroke(lc);
+                gc.setLineWidth(1);
+                gc.strokeRoundRect(lx - tw / 2, ly - 9, tw, 18, 8, 8);
+                gc.setFill(dark ? lc.brighter() : lc.darker());
+                gc.fillText(label, lx, ly);
+            });
         }
         for (Map.Entry<String, double[]> en : at.entrySet()) {
             OverviewGraph.Node n = g.nodes().get(en.getKey());
@@ -669,6 +747,7 @@ public final class RelationshipsDialog {
             ChartKit.box(gc, en.getValue()[0], en.getValue()[1], n.name(), n.subtitle(), ChartKit.accent(n.kind()), dark, n.kind() == OverviewGraph.NodeKind.ORGANISATION);
             hits.add(new Hit(en.getValue()[0], en.getValue()[1], NODE_W, NODE_H, n.id()));
         }
+        for (Runnable r : labels) r.run();
     }
 
     private static String shortLabel(RelationType t) {

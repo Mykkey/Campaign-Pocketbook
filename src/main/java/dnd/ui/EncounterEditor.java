@@ -464,7 +464,10 @@ public class EncounterEditor extends BorderPane implements ItemView {
 
     @Override public void redo() { }
 
-    @Override public void activated() { }
+    @Override public void activated() {
+        // a creature's card may have been edited (its Challenge rating, XP, name...) since this tab was last shown
+        rebuild();
+    }
 
     @Override public boolean selectTool(int index) { return false; }
 }

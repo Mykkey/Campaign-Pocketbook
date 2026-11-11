@@ -28,15 +28,16 @@ import java.util.function.Consumer;
  * beneath it, and each person's reports beneath them. Click a member to open it.
  */
 final class HierarchyChart extends BorderPane {
-    private static final double H_GAP = 26, V_GAP = 70, MARGIN = 30;
+    static final double H_GAP = 26, V_GAP = 70, MARGIN = 30;
 
-    private record Hit(double x, double y, String id) { }
+    /** Where a clickable box was drawn (its top-left corner) and what it opens. */
+    record Placed(double x, double y, String id) { }
 
     private final ProjectStore store;
     private final Consumer<String> openItem;
     private final Canvas canvas = new Canvas(400, 300);
     private final Label message = new Label();
-    private final List<Hit> hits = new ArrayList<>();
+    private final List<Placed> hits = new ArrayList<>();
     private Organisation shown;
     private final ScrollPane scroll;
     private boolean centred;
@@ -57,60 +58,47 @@ final class HierarchyChart extends BorderPane {
         Theme.darkProperty().addListener(new WeakChangeListener<>(themeListener));
         canvas.setOnMouseMoved(e -> canvas.setCursor(hitAt(e.getX(), e.getY()) != null ? Cursor.HAND : Cursor.DEFAULT));
         canvas.setOnMouseClicked(e -> {
-            Hit h = hitAt(e.getX(), e.getY());
+            Placed h = hitAt(e.getX(), e.getY());
             if (h != null && e.isStillSincePress() && store.itemExists(h.id())) openItem.accept(h.id());
         });
     }
 
-    private Hit hitAt(double x, double y) {
-        for (Hit h : hits) {
+    private Placed hitAt(double x, double y) {
+        for (Placed h : hits) {
             if (x >= h.x() && x <= h.x() + ChartKit.NODE_W && y >= h.y() && y <= h.y() + ChartKit.NODE_H) return h;
         }
         return null;
     }
 
-    /** Draws the organisation again (after a member, a role or a boss changed). */
-    void refresh(Organisation o) {
-        shown = o;
-        hits.clear();
-        boolean dark = Theme.isDark();
-        Color bg = dark ? Color.web("#1c1e22") : Color.web("#fbfaf6");
-        Color line = dark ? Color.web("#8d95a1") : Color.web("#6b6f78");
-        GraphicsContext gc = canvas.getGraphicsContext2D();
-        if (o.members.isEmpty()) {
-            canvas.setWidth(400);
-            canvas.setHeight(200);
-            gc.setFill(bg);
-            gc.fillRect(0, 0, 400, 200);
-            message.setText("No members yet. Add some, then say who each one reports to.");
-            return;
-        }
-        message.setText(o.hasHierarchy()
-                ? "Click a member to open it. Lines run from a boss down to the people who report to them."
-                : "Everyone is at the top for now. Choose \"Reports to\" for a member (on the left) to build the chain of command.");
-
+    /** The size of the picture of one organisation, as {width, height}. */
+    static double[] size(Organisation o) {
         FamilyTreeLayout.Layout layout = OrgHierarchy.layout(o);
         double slot = ChartKit.NODE_W + H_GAP;
         double rowH = ChartKit.NODE_H + V_GAP;
-        double w = Math.max(400, layout.width() * slot + 2 * MARGIN);
-        double h = Math.max(300, (layout.generations() + 1) * rowH + 2 * MARGIN);
-        canvas.setWidth(w);
-        canvas.setHeight(h);
-        gc.setFill(bg);
-        gc.fillRect(0, 0, w, h);
+        return new double[]{Math.max(ChartKit.NODE_W + 2 * MARGIN, layout.width() * slot + 2 * MARGIN),
+                layout.generations() * rowH + ChartKit.NODE_H + 2 * MARGIN};
+    }
+
+    /**
+     * Draws one organisation's chain of command with its top-left corner at {@code (ox, oy)}.
+     *
+     * @return the boxes that open something when clicked
+     */
+    static List<Placed> draw(GraphicsContext gc, ProjectStore store, Organisation o, double ox, double oy, boolean dark) {
+        List<Placed> placed = new ArrayList<>();
+        Color line = dark ? Color.web("#8d95a1") : Color.web("#6b6f78");
+        FamilyTreeLayout.Layout layout = OrgHierarchy.layout(o);
+        double slot = ChartKit.NODE_W + H_GAP;
+        double rowH = ChartKit.NODE_H + V_GAP;
         gc.setLineCap(javafx.scene.shape.StrokeLineCap.ROUND);
         gc.setStroke(line);
         gc.setLineWidth(2);
-        if (!centred) { // the first time, show the middle of the chart (where the group and its leaders are)
-            centred = true;
-            javafx.application.Platform.runLater(() -> scroll.setHvalue(0.5));
-        }
 
         Map<String, double[]> at = new LinkedHashMap<>(); // member -> {left, top}; the group itself is the first row
         double minX = Double.MAX_VALUE, maxX = -Double.MAX_VALUE;
         for (Map.Entry<String, FamilyTreeLayout.Spot> en : layout.spots().entrySet()) {
-            double left = MARGIN + en.getValue().x() * slot - slot / 2 + H_GAP / 2.0;
-            double top = MARGIN + (en.getValue().generation() + 1) * rowH;
+            double left = ox + MARGIN + en.getValue().x() * slot - ChartKit.NODE_W / 2;
+            double top = oy + MARGIN + (en.getValue().generation() + 1) * rowH;
             at.put(en.getKey(), new double[]{left, top});
         }
         for (Organisation.Member m : o.members) {
@@ -120,7 +108,7 @@ final class HierarchyChart extends BorderPane {
             minX = Math.min(minX, p[0]);
             maxX = Math.max(maxX, p[0]);
         }
-        double orgLeft = (minX + maxX) / 2, orgTop = MARGIN;
+        double orgLeft = (minX + maxX) / 2, orgTop = oy + MARGIN;
         // lines: the group to the people at the top, then each boss to their reports
         for (Organisation.Member m : o.members) {
             double[] p = at.get(m.id);
@@ -132,6 +120,7 @@ final class HierarchyChart extends BorderPane {
         }
         ChartKit.box(gc, orgLeft, orgTop, o.name == null || o.name.isBlank() ? "(unnamed)" : o.name,
                 o.type == null || o.type.isBlank() ? "organisation" : o.type, ChartKit.accent(OverviewGraph.NodeKind.ORGANISATION), dark, true);
+        placed.add(new Placed(orgLeft, orgTop, o.id));
         for (Organisation.Member m : o.members) {
             double[] p = at.get(m.id);
             if (p == null) continue;
@@ -145,7 +134,39 @@ final class HierarchyChart extends BorderPane {
             };
             String sub = m.role == null || m.role.isBlank() ? kind : m.role.trim();
             ChartKit.box(gc, p[0], p[1], name == null ? "(deleted item)" : name, sub, ChartKit.accent(nk), dark, nk == OverviewGraph.NodeKind.ORGANISATION);
-            if (name != null) hits.add(new Hit(p[0], p[1], m.id));
+            if (name != null) placed.add(new Placed(p[0], p[1], m.id));
         }
+        return placed;
+    }
+
+    /** Draws the organisation again (after a member, a role or a boss changed). */
+    void refresh(Organisation o) {
+        shown = o;
+        hits.clear();
+        boolean dark = Theme.isDark();
+        Color bg = dark ? Color.web("#1c1e22") : Color.web("#fbfaf6");
+        GraphicsContext gc = canvas.getGraphicsContext2D();
+        if (o.members.isEmpty()) {
+            canvas.setWidth(400);
+            canvas.setHeight(200);
+            gc.setFill(bg);
+            gc.fillRect(0, 0, 400, 200);
+            message.setText("No members yet. Add some, then say who each one reports to.");
+            return;
+        }
+        message.setText(o.hasHierarchy()
+                ? "Click a member to open it. Lines run from a boss down to the people who report to them."
+                : "Everyone is at the top for now. Choose \"Reports to\" for a member (on the left) to build the chain of command.");
+        double[] size = size(o);
+        double w = Math.max(400, size[0]), h = Math.max(300, size[1]);
+        canvas.setWidth(w);
+        canvas.setHeight(h);
+        gc.setFill(bg);
+        gc.fillRect(0, 0, w, h);
+        if (!centred) { // the first time, show the middle of the chart (where the group and its leaders are)
+            centred = true;
+            javafx.application.Platform.runLater(() -> scroll.setHvalue(0.5));
+        }
+        hits.addAll(draw(gc, store, o, 0, 0, dark));
     }
 }

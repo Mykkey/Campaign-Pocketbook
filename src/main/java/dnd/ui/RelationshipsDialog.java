@@ -67,6 +67,9 @@ public final class RelationshipsDialog {
         ToggleButton web = new ToggleButton("Web of relationships");
         family.setToggleGroup(mode);
         web.setToggleGroup(mode);
+        ToggleButton hierarchy = new ToggleButton("Organisation hierarchy");
+        hierarchy.setToggleGroup(mode);
+        hierarchy.setTooltip(IconButtons.tip("The chain of command of each organisation: who reports to whom"));
         ToggleButton everything = new ToggleButton("Everything");
         everything.setToggleGroup(mode);
         everything.setTooltip(IconButtons.tip("One big map: the family tree, the web of relationships and the organisations with their chains of command, all together"));
@@ -95,7 +98,12 @@ public final class RelationshipsDialog {
             List<Object> items = new ArrayList<>();
             items.add("Everyone");
             List<Object> people = new ArrayList<>();
-            if (everything.isSelected()) {
+            if (hierarchy.isSelected()) {
+                for (String id : store.allOrganisationIds()) {
+                    dnd.model.Organisation o = store.organisation(id);
+                    if (o != null && !o.members.isEmpty()) people.add(o);
+                }
+            } else if (everything.isSelected()) {
                 OverviewGraph og = overview(store, options.get());
                 for (String id : og.nodes().keySet()) {
                     Object o = store.isOrganisation(id) ? store.organisation(id) : store.card(id);
@@ -115,7 +123,8 @@ public final class RelationshipsDialog {
             focus.setValue(back != null ? back : "Everyone");
         };
         redraw[0] = () -> {
-            if (everything.isSelected()) drawEverything(canvas, hits, overview(store, options.get()), idOf(focus.getValue()), message);
+            if (hierarchy.isSelected()) drawHierarchies(canvas, hits, store, idOf(focus.getValue()), message);
+            else if (everything.isSelected()) drawEverything(canvas, hits, overview(store, options.get()), idOf(focus.getValue()), message);
             else draw(canvas, hits, graph(store), family.isSelected(), idOf(focus.getValue()), message);
         };
         focus.setConverter(new javafx.util.StringConverter<>() {
@@ -139,7 +148,7 @@ public final class RelationshipsDialog {
             refreshChoices.run();
             redraw[0].run();
         });
-        HBox bar = new HBox(8, family, web, everything, new Label("Show"), focus, filters, refresh);
+        HBox bar = new HBox(8, family, web, hierarchy, everything, new Label("Show"), focus, filters, refresh);
         bar.setAlignment(Pos.CENTER_LEFT);
         bar.setPadding(new Insets(8, 10, 4, 10));
         message.setPadding(new Insets(0, 10, 6, 10));
@@ -447,6 +456,56 @@ public final class RelationshipsDialog {
         for (Map.Entry<String, double[]> en : at.entrySet()) {
             Card c = g.cards().get(en.getKey());
             if (c != null) node(gc, hits, c, en.getValue()[0], en.getValue()[1], text, dark);
+        }
+    }
+
+    // ---------------------------------------------------------------- the hierarchy of the organisations
+
+    private static void drawHierarchies(Canvas canvas, List<Hit> hits, ProjectStore store, String focusId, Label message) {
+        hits.clear();
+        boolean dark = Theme.isDark();
+        Color bg = dark ? Color.web("#1c1e22") : Color.web("#fbfaf6");
+        List<dnd.model.Organisation> orgs = new ArrayList<>();
+        for (String id : store.allOrganisationIds()) {
+            dnd.model.Organisation o = store.organisation(id);
+            if (o != null && !o.members.isEmpty() && (focusId == null || focusId.equals(id))) orgs.add(o);
+        }
+        orgs.sort(Comparator.comparing((dnd.model.Organisation o) -> o.members.size()).reversed().thenComparing(o -> o.name == null ? "" : o.name.toLowerCase()));
+        if (orgs.isEmpty()) {
+            canvas.setWidth(900);
+            canvas.setHeight(600);
+            GraphicsContext gc = canvas.getGraphicsContext2D();
+            gc.setFill(bg);
+            gc.fillRect(0, 0, 900, 600);
+            message.setText("No organisations with members yet. Make one with + Organisation in the project tree, add members, and say who each one reports to.");
+            return;
+        }
+        message.setText("Click a person or organisation to open it. Each organisation is drawn with its leaders under it and the people who report to them beneath. "
+                + "Set who reports to whom on the organisation itself (\"reports to\").");
+        double wrapAt = 1500, x = 0, y = 0, rowH = 0, totalW = 900;
+        List<double[]> spots = new ArrayList<>();
+        for (dnd.model.Organisation o : orgs) {
+            double[] size = HierarchyChart.size(o);
+            if (x + size[0] > wrapAt && x > 0) {
+                x = 0;
+                y += rowH;
+                rowH = 0;
+            }
+            spots.add(new double[]{x, y});
+            x += size[0];
+            rowH = Math.max(rowH, size[1]);
+            totalW = Math.max(totalW, x);
+        }
+        double h = Math.max(600, y + rowH);
+        canvas.setWidth(totalW);
+        canvas.setHeight(h);
+        GraphicsContext gc = canvas.getGraphicsContext2D();
+        gc.setFill(bg);
+        gc.fillRect(0, 0, totalW, h);
+        for (int i = 0; i < orgs.size(); i++) {
+            for (HierarchyChart.Placed p : HierarchyChart.draw(gc, store, orgs.get(i), spots.get(i)[0], spots.get(i)[1], dark)) {
+                hits.add(new Hit(p.x(), p.y(), NODE_W, NODE_H, p.id()));
+            }
         }
     }
 

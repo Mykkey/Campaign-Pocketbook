@@ -34,7 +34,7 @@ final class ItemExport {
 
     /** True for the kinds of item that can be exported as Markdown and printed. */
     static boolean isTextItem(TreeNode n) {
-        return n != null && !n.folder && (n.isCard() || n.isSpell() || n.isMagicItem() || n.isQuest() || n.isSession() || n.isEncounter());
+        return n != null && !n.folder && (n.isCard() || n.isSpell() || n.isMagicItem() || n.isQuest() || n.isSession() || n.isEncounter() || n.isOrganisation());
     }
 
     /** The item as Markdown, or null if it cannot be loaded. */
@@ -54,6 +54,10 @@ final class ItemExport {
         if (n.isQuest()) {
             dnd.model.Quest q = store.quest(n.id);
             return q == null ? null : MarkdownExport.quest(q, store::itemName);
+        }
+        if (n.isOrganisation()) {
+            dnd.model.Organisation o = store.organisation(n.id);
+            return o == null ? null : MarkdownExport.organisation(o, store::itemNameOrNull);
         }
         if (n.isSession()) {
             dnd.model.Session s = store.session(n.id);

@@ -26,6 +26,7 @@ public final class NodeColors {
     public static final String QUEST = "#e2823a";
     public static final String SESSION = "#6b7fd6";
     public static final String WORLD_MAP = "#2f9e8f";
+    public static final String ORGANISATION = "#a0568c";
 
     /** The colour a node has unless the DM picked one. */
     public static String defaultFor(TreeNode n) {
@@ -38,6 +39,7 @@ public final class NodeColors {
         if (n.isQuest()) return QUEST;
         if (n.isSession()) return SESSION;
         if (n.isWorldMap()) return WORLD_MAP;
+        if (n.isOrganisation()) return ORGANISATION;
         return BOARD;
     }
 

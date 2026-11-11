@@ -176,6 +176,36 @@ public final class MarkdownExport {
         return sb.toString().trim() + "\n";
     }
 
+    /** @param nameOf the name of the item with an id (the members), or null if there is no such item */
+    public static String organisation(dnd.model.Organisation o, Function<String, String> nameOf) {
+        StringBuilder sb = new StringBuilder();
+        line(sb, "# " + o.name);
+        if (has(o.type)) line(sb, "*" + o.type.trim() + "*");
+        line(sb, "");
+        field(sb, "Based in", o.base);
+        field(sb, "Wants", o.goals);
+        if (has(o.summary)) {
+            line(sb, "");
+            line(sb, o.summary.trim());
+        }
+        if (!o.members.isEmpty()) {
+            line(sb, "");
+            line(sb, "## Members");
+            line(sb, "");
+            for (dnd.model.Organisation.Member m : o.members) {
+                String n = nameOf.apply(m.id);
+                line(sb, "- " + (n == null ? "(deleted item)" : n) + (has(m.role) ? " - " + m.role.trim() : ""));
+            }
+        }
+        if (has(o.notes)) {
+            line(sb, "");
+            line(sb, "## Notes");
+            line(sb, "");
+            line(sb, o.notes.trim());
+        }
+        return sb.toString().trim() + "\n";
+    }
+
     public static String session(Session s, Function<String, String> nameOf) {
         StringBuilder sb = new StringBuilder();
         line(sb, "# " + s.label());

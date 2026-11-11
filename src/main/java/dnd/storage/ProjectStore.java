@@ -35,6 +35,7 @@ import java.util.stream.Stream;
  *   quests/&lt;id&gt;.quest        one file per quest
  *   sessions/&lt;id&gt;.session    one file per session log
  *   worldmaps/&lt;id&gt;.worldmap  one file per world map
+ *   organisations/&lt;id&gt;.organisation  one file per organisation (a group of cards)
  *   assets/&lt;file&gt;        imported SVG/PNG pieces for battlemaps
  *   images/&lt;file&gt;        imported pictures
  * </pre>
@@ -69,6 +70,7 @@ public final class ProjectStore {
     private final Kind<Quest> quests = register(new Kind<>("quests", "quest", TreeNode.KIND_QUEST, Quest.class));
     private final Kind<Session> sessions = register(new Kind<>("sessions", "session", TreeNode.KIND_SESSION, Session.class));
     private final Kind<WorldMap> worldMaps = register(new Kind<>("worldmaps", "worldmap", TreeNode.KIND_WORLDMAP, WorldMap.class));
+    private final Kind<dnd.model.Organisation> organisations = register(new Kind<>("organisations", "organisation", TreeNode.KIND_ORGANISATION, dnd.model.Organisation.class));
 
     private ProjectStore(Path dir, Project project) {
         this.dir = dir;
@@ -129,6 +131,7 @@ public final class ProjectStore {
         Files.createDirectories(dir.resolve("quests"));
         Files.createDirectories(dir.resolve("sessions"));
         Files.createDirectories(dir.resolve("worldmaps"));
+        Files.createDirectories(dir.resolve("organisations"));
         Files.createDirectories(dir.resolve("images"));
         Files.createDirectories(dir.resolve("assets"));
     }
@@ -606,6 +609,47 @@ public final class ProjectStore {
         quests.markDirty(quest);
     }
 
+    public boolean isOrganisation(String id) {
+        return organisations.is(id);
+    }
+
+    /** Loads (and caches) an organisation; null if it doesn't exist or can't be read. */
+    public dnd.model.Organisation organisation(String id) {
+        return organisations.get(id);
+    }
+
+    public dnd.model.Organisation createOrganisation(TreeNode parent, dnd.model.Organisation organisation) {
+        return organisations.create(parent, organisation);
+    }
+
+    public List<String> allOrganisationIds() {
+        return organisations.ids();
+    }
+
+    public void markOrganisationDirty(dnd.model.Organisation organisation) {
+        organisations.markDirty(organisation);
+    }
+
+    /** Copies an organisation next to the original (name + " (copy)"), with the same members. */
+    public dnd.model.Organisation duplicateOrganisation(TreeNode node) {
+        dnd.model.Organisation original = organisation(node.id);
+        if (original == null) return null;
+        dnd.model.Organisation copy = original.copy();
+        copy.name = original.name + " (copy)";
+        TreeNode parent = project.root.parentOf(node.id);
+        return createOrganisation(parent == null ? project.root : parent, copy);
+    }
+
+    /** The organisations that have this item (a card, or another organisation) as a member. */
+    public List<dnd.model.Organisation> organisationsOf(String itemId) {
+        List<dnd.model.Organisation> out = new ArrayList<>();
+        for (String oid : organisations.ids()) {
+            dnd.model.Organisation o = organisations.get(oid);
+            if (o != null && o.hasMember(itemId)) out.add(o);
+        }
+        return out;
+    }
+
     public boolean isSession(String id) {
         return sessions.is(id);
     }
@@ -747,6 +791,7 @@ public final class ProjectStore {
             else if (isQuest(id)) quest(id);
             else if (isSession(id)) session(id);
             else if (isWorldMap(id)) worldMap(id);
+            else if (isOrganisation(id)) organisation(id);
             else if (boardExists(id)) board(id);
         }
         assets();

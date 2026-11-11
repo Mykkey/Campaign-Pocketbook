@@ -109,6 +109,9 @@ final class ItemPreview {
         } else if (node.isSession()) {
             dnd.model.Session se = store.session(id);
             if (se != null) return new SessionCardView(store, se);
+        } else if (node.isOrganisation()) {
+            dnd.model.Organisation og = store.organisation(id);
+            if (og != null) return new OrganisationCardView(store, og);
         } else if (node.isQuest()) {
             dnd.model.Quest qu = store.quest(id);
             if (qu != null) return new QuestCardView(store, qu);

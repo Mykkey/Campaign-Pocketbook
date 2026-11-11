@@ -44,7 +44,7 @@ final class LinkNoteDialog {
         store.project.root.collectItems(nodes);
         for (TreeNode n : nodes) {
             String kind = n.isBattleMap() ? "battlemap" : n.isCard() ? "card" : n.isEncounter() ? "encounter" : n.isSpell() ? "spell" : n.isMagicItem() ? "magic item"
-                    : n.isQuest() ? "quest" : n.isSession() ? "session" : n.isWorldMap() ? "world map" : "whiteboard";
+                    : n.isQuest() ? "quest" : n.isSession() ? "session" : n.isWorldMap() ? "world map" : n.isOrganisation() ? "organisation" : "whiteboard";
             items.add(new Item(n.id, n.name + "  (" + kind + ")"));
         }
         ComboBox<Item> combo = new ComboBox<>(FXCollections.observableArrayList(items));

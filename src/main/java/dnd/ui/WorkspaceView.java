@@ -85,6 +85,9 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Button newQuest = new Button("+ Quest");
         newQuest.setTooltip(IconButtons.tip("Create a quest or plot thread with steps, clues and the people and places it involves"));
         newQuest.setOnAction(e -> newQuest(selectedFolder()));
+        Button newOrg = new Button("+ Organisation");
+        newOrg.setTooltip(IconButtons.tip("Create an organisation: a guild, faction, family or party, with its members"));
+        newOrg.setOnAction(e -> newOrganisation(selectedFolder()));
         Button newSession = new Button("+ Session");
         newSession.setTooltip(IconButtons.tip("Write up a game session: what happened, a recap for next time, and what came up"));
         newSession.setOnAction(e -> newSession(selectedFolder()));
@@ -100,6 +103,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         newButton(newSpell, TreeNode.KIND_SPELL, "New spell: your own homebrew spell, or edit one imported from the library");
         newButton(newItem, TreeNode.KIND_ITEM, "New magic item: your own homebrew item, or one from your loot");
         newButton(newQuest, TreeNode.KIND_QUEST, "New quest: a plot thread with steps, clues and the people and places it involves");
+        newButton(newOrg, TreeNode.KIND_ORGANISATION, "New organisation: a guild, faction, family or party, with its members (double-click a member to open its card)");
         newButton(newSession, TreeNode.KIND_SESSION, "New session: what happened, a recap for next time, and what came up");
         newButton(newWorld, TreeNode.KIND_WORLDMAP, "New world map: paint land, sea and biomes, then add mountains, forests, towns and labels");
         newButton(newEncounter, TreeNode.KIND_ENCOUNTER, "New encounter: pick creatures and see how hard the fight is for your party");
@@ -110,7 +114,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
                 treeDivider(),
                 new HBox(4, newWorld, newMap, newEncounter),
                 treeDivider(),
-                new HBox(4, newCard, newSpell, newItem, new Separator(javafx.geometry.Orientation.VERTICAL), newFolder));
+                new HBox(4, newCard, newOrg, newSpell, newItem, new Separator(javafx.geometry.Orientation.VERTICAL), newFolder));
         tree.setCellFactory(v -> createTreeCell(true));
         tree.setOnMouseClicked(e -> {
             if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2) {
@@ -464,6 +468,13 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
                     return;
                 }
                 view = new QuestEditor(qu, store, newName -> renameFromEditor(id, newName), this::openItem, () -> pickBoard("Add to the quest..."), () -> pickCard("Who gave this quest?"));
+            } else if (store.isOrganisation(id)) {
+                dnd.model.Organisation og = store.organisation(id);
+                if (og == null) {
+                    couldNotOpen(id, "That organisation could not be found.");
+                    return;
+                }
+                view = new OrganisationEditor(og, store, newName -> renameFromEditor(id, newName), this::openItem, () -> pickMember(id));
             } else if (store.isSession(id)) {
                 dnd.model.Session se = store.session(id);
                 if (se == null) {
@@ -964,7 +975,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         m.setOnShowing(e -> {
             TreeItem<TreeNode> it = tree.getSelectionModel().getSelectedItem();
             boolean isRoot = it == null || it.getValue() == store.project.root;
-            dup.setDisable(it == null || !(it.getValue().isCard() || it.getValue().isEncounter() || it.getValue().isSpell() || it.getValue().isMagicItem() || it.getValue().isWorldMap()));
+            dup.setDisable(it == null || !(it.getValue().isCard() || it.getValue().isEncounter() || it.getValue().isSpell() || it.getValue().isMagicItem() || it.getValue().isWorldMap() || it.getValue().isOrganisation()));
             TreeNode sel = it == null ? null : it.getValue();
             exportMd.setDisable(!ItemExport.isTextItem(sel));
             printItem.setDisable(!ItemExport.isTextItem(sel));
@@ -1094,6 +1105,16 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         });
     }
 
+    private void newOrganisation(TreeNode parent) {
+        ask("New organisation", "Organisation name:", "New Organisation").ifPresent(name -> {
+            dnd.model.Organisation og = new dnd.model.Organisation();
+            og.name = name;
+            store.createOrganisation(parent, og);
+            refreshTree();
+            openItem(og.id);
+        });
+    }
+
     private void newSession(TreeNode parent) {
         int number = dnd.model.Session.nextNumber(store.allSessions());
         ask("New session", "Session title:", "Session " + number).ifPresent(name -> {
@@ -1145,6 +1166,9 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             newId = copy == null ? null : copy.id;
         } else if (it.getValue().isMagicItem()) {
             dnd.model.MagicItem copy = store.duplicateMagicItem(it.getValue());
+            newId = copy == null ? null : copy.id;
+        } else if (it.getValue().isOrganisation()) {
+            dnd.model.Organisation copy = store.duplicateOrganisation(it.getValue());
             newId = copy == null ? null : copy.id;
         } else if (it.getValue().isWorldMap()) {
             dnd.model.WorldMap copy = store.duplicateWorldMap(it.getValue());
@@ -1214,7 +1238,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Alert a = new Alert(Alert.AlertType.CONFIRMATION,
                 "Delete \"" + n.name + "\"" + (n.folder ? " and everything inside it" : "") + "? This cannot be undone.",
                 ButtonType.OK, ButtonType.CANCEL);
-        a.setHeaderText("Delete " + (n.folder ? "folder" : n.isBattleMap() ? "battlemap" : n.isCard() ? "card" : n.isEncounter() ? "encounter" : n.isSpell() ? "spell" : n.isMagicItem() ? "magic item" : n.isQuest() ? "quest" : n.isSession() ? "session" : n.isWorldMap() ? "world map" : "whiteboard"));
+        a.setHeaderText("Delete " + (n.folder ? "folder" : n.isBattleMap() ? "battlemap" : n.isCard() ? "card" : n.isEncounter() ? "encounter" : n.isSpell() ? "spell" : n.isMagicItem() ? "magic item" : n.isQuest() ? "quest" : n.isSession() ? "session" : n.isWorldMap() ? "world map" : n.isOrganisation() ? "organisation" : "whiteboard"));
         Optional<ButtonType> r = a.showAndWait();
         if (r.isEmpty() || r.get() != ButtonType.OK) return;
         }
@@ -1251,6 +1275,12 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
     /** Lets the user pick one of their character cards (for a quest's giver). */
     private Optional<String> pickCard(String title) {
         return pickItem(title, "Choose a character", TreeNode::isCard);
+    }
+
+    /** Lets the user pick a character card or another organisation to be a member of the organisation {@code self}. */
+    private Optional<String> pickMember(String self) {
+        return pickItem("Add a member...", "Choose a character or another organisation",
+                n -> (n.isCard() || n.isOrganisation()) && !n.id.equals(self));
     }
 
     private Optional<String> pickItem(String title, String header, boolean mapsOnly) {

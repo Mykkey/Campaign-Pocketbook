@@ -123,6 +123,23 @@ public final class SearchService {
             }
         }
 
+        // organisations: by name, then by type, base, goals, summary, notes and the roles of the members
+        List<TreeNode> orgNodes = new ArrayList<>();
+        store.project.root.collectKind(TreeNode.KIND_ORGANISATION, orgNodes);
+        for (TreeNode n : orgNodes) {
+            if (n.name.toLowerCase(Locale.ROOT).contains(q)) {
+                out.add(new Result(n.id, n.name, null, "Organisation"));
+                if (out.size() >= limit) return out;
+                continue;
+            }
+            dnd.model.Organisation og = store.organisation(n.id);
+            String hit = og == null ? null : organisationMatch(og, q, store::itemNameOrNull);
+            if (hit != null) {
+                out.add(new Result(n.id, n.name, null, "Organisation - " + hit));
+                if (out.size() >= limit) return out;
+            }
+        }
+
         // sessions: by name, then by recap, what happened and next steps
         List<TreeNode> sessionNodes = new ArrayList<>();
         store.project.root.collectKind(TreeNode.KIND_SESSION, sessionNodes);
@@ -259,6 +276,21 @@ public final class SearchService {
         if (has(se.summary, q)) return "what happened: " + excerpt(se.summary, q);
         if (has(se.nextSteps, q)) return "next: " + excerpt(se.nextSteps, q);
         if (has(se.inWorldDate, q)) return "in-world date: " + se.inWorldDate;
+        return null;
+    }
+
+    /** Where on an organisation the text was found, or null. */
+    static String organisationMatch(dnd.model.Organisation og, String q, java.util.function.Function<String, String> nameOf) {
+        if (has(og.type, q)) return "type: " + og.type;
+        if (has(og.base, q)) return "base: " + og.base;
+        if (has(og.summary, q)) return "summary: " + excerpt(og.summary, q);
+        if (has(og.goals, q)) return "goals: " + excerpt(og.goals, q);
+        for (dnd.model.Organisation.Member m : og.members) {
+            String who = nameOf.apply(m.id);
+            if (has(who, q)) return "member: " + who;
+            if (has(m.role, q)) return "role: " + m.role + (who == null ? "" : " (" + who + ")");
+        }
+        if (has(og.notes, q)) return "notes: " + excerpt(og.notes, q);
         return null;
     }
 

@@ -59,6 +59,9 @@ public final class NodeIcons {
         } else if (n.isWorldMap()) { // a globe
             p.getChildren().addAll(fill("M8 1.5 A6.5 6.5 0 1 1 7.99 1.5 Z", c),
                     line("M1.5 8 H14.5 M8 1.5 C5 4.5 5 11.5 8 14.5 M8 1.5 C11 4.5 11 11.5 8 14.5", Color.web("#ffffff", 0.8), 1));
+        } else if (n.isOrganisation()) { // a shield with a small crest
+            p.getChildren().addAll(fill("M8 1.5 L14 3.4 V8 C14 11.4 11.4 13.6 8 14.8 C4.6 13.6 2 11.4 2 8 V3.4 Z", c),
+                    fill("M8 4.6 A1.5 1.5 0 1 1 7.99 4.6 Z M5 11 C5 8.8 6.4 7.8 8 7.8 C9.6 7.8 11 8.8 11 11 Z", Color.web("#ffffff", 0.9)));
         } else if (n.isEncounter()) {
             p.getChildren().addAll(line("M3.2 3.2 L12.8 12.8 M12.8 3.2 L3.2 12.8", c, 2),
                     line("M9.2 13 L13 9.2 M2.9 9.2 L6.8 13", c, 1.6));

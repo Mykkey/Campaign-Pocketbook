@@ -36,10 +36,10 @@ public class ToolbarPanel extends FlowPane {
         ts.tool.addListener((o, a, n) -> buttons.get(n).setSelected(true));
         getChildren().add(new Separator(Orientation.VERTICAL));
 
-        MenuButton insert = IconMenu.create("image", "Insert: a picture or a live battlemap preview");
+        MenuButton insert = IconMenu.create("image", "Insert: a picture, or a live preview of any item in the project");
         insert.getItems().addAll(
                 row("image", "Picture (or drag files in, or paste)", null, v -> v.addImageFromChooser(), current),
-                row("map", "Battlemap preview (double-click it to open the map)", null, v -> v.insertMapPreview(), current));
+                row("map", "Preview of an item: a character, map, spell, quest... (double-click it to open the item)", null, v -> v.insertItemPreview(), current));
         getChildren().addAll(insert, new Separator(Orientation.VERTICAL));
 
         // --- style

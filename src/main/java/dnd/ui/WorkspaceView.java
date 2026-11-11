@@ -1264,7 +1264,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
 
     @Override
     public Optional<String> pickBoard(String title) {
-        return pickItem(title, "Choose the whiteboard or battlemap to link to", false);
+        return pickItem(title, "Choose the item to link to", false);
     }
 
     @Override

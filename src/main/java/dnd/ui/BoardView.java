@@ -1210,7 +1210,7 @@ public class BoardView extends Pane implements ItemView {
         menu.getItems().add(item("Bring to front", !has, () -> reorder(true)));
         menu.getItems().add(item("Send to back", !has, () -> reorder(false)));
         menu.getItems().add(new SeparatorMenuItem());
-        menu.getItems().add(item("Insert battlemap preview...", false, this::insertMapPreview));
+        menu.getItems().add(item("Insert item preview...", false, this::insertItemPreview));
         menu.getItems().add(item("Add text here", false, () -> createText(ctxWX, ctxWY, "")));
         menu.getItems().add(item("Add sticky note here", false, () -> createSticky(ctxWX, ctxWY)));
         menu.show(this, e.getScreenX(), e.getScreenY());
@@ -1556,29 +1556,56 @@ public class BoardView extends Pane implements ItemView {
         }
     }
 
-    // ---- battlemap previews
+    // ---- previews of items (battlemaps, world maps, characters, spells, quests... anything in the project)
 
-    private void drawMapPreview(GraphicsContext g, BoardObject o) {
-        dnd.model.BattleMap m = store.isBattleMap(o.link) ? store.battleMap(o.link) : null;
-        if (m == null) {
-            g.setFill(Color.web("#fde8e8"));
-            g.fillRect(o.x, o.y, o.w, o.h);
-            g.setStroke(Color.web("#dc2626"));
-            g.setLineWidth(2);
-            g.strokeRect(o.x, o.y, o.w, o.h);
-            g.setFill(Color.web("#dc2626"));
-            g.setFont(Font.font(16));
-            g.setTextBaseline(VPos.CENTER);
-            g.setTextAlign(TextAlignment.CENTER);
-            g.fillText("(battlemap was deleted)", o.x + o.w / 2, o.y + o.h / 2);
-            return;
-        }
-        Image img = dnd.map.MapRenderer.thumbnail(m, store.assets(), o.w * zoom());
-        g.drawImage(img, o.x, o.y, o.w, o.h);
-        g.setStroke(Color.web("#3a2e28"));
+    /** Pictures of previews already drawn: key -> {version, time it was made, image}. */
+    private final java.util.Map<String, Object[]> previewImages = new java.util.HashMap<>();
+
+    /**
+     * A picture, made again when {@code version} changes or (if {@code maxAgeMs} is positive) when it is older than that.
+     * Drawing the board many times a second must not rebuild a stat block each time.
+     */
+    private Image cachedPicture(String key, int version, long maxAgeMs, java.util.function.Supplier<Image> make) {
+        Object[] c = previewImages.get(key);
+        long now = System.currentTimeMillis();
+        if (c != null && (int) c[0] == version && (maxAgeMs <= 0 || now - (long) c[1] < maxAgeMs)) return (Image) c[2];
+        Image img = make.get();
+        previewImages.put(key, new Object[]{version, now, img});
+        return img;
+    }
+
+    /** The item's preview card (as when you hover a link to it), drawn to a picture at twice the size so it stays sharp. */
+    private Image itemCardPicture(String id) {
+        return cachedPicture("card|" + id, store.namesVersion(), 4000, () -> {
+            javafx.scene.Node card = ItemPreview.build(store, id);
+            javafx.scene.layout.Pane holder = new javafx.scene.layout.Pane(card);
+            javafx.scene.Scene scene = new javafx.scene.Scene(holder);
+            Theme.apply(scene);
+            holder.applyCss();
+            holder.layout();
+            card.autosize();
+            holder.layout();
+            javafx.scene.SnapshotParameters params = new javafx.scene.SnapshotParameters();
+            params.setFill(Color.TRANSPARENT);
+            params.setTransform(javafx.scene.transform.Transform.scale(2, 2));
+            return card.snapshot(params, null);
+        });
+    }
+
+    private void drawMissingPreview(GraphicsContext g, BoardObject o) {
+        g.setFill(Color.web("#fde8e8"));
+        g.fillRect(o.x, o.y, o.w, o.h);
+        g.setStroke(Color.web("#dc2626"));
         g.setLineWidth(2);
         g.strokeRect(o.x, o.y, o.w, o.h);
-        // caption strip
+        g.setFill(Color.web("#dc2626"));
+        g.setFont(Font.font(16));
+        g.setTextBaseline(VPos.CENTER);
+        g.setTextAlign(TextAlignment.CENTER);
+        g.fillText("(item was deleted)", o.x + o.w / 2, o.y + o.h / 2);
+    }
+
+    private void drawCaption(GraphicsContext g, BoardObject o, String text) {
         double bar = Math.min(26, o.h * 0.25);
         g.setFill(Color.web("#000000a0"));
         g.fillRect(o.x, o.y + o.h - bar, o.w, bar);
@@ -1586,26 +1613,74 @@ public class BoardView extends Pane implements ItemView {
         g.setFont(Font.font("System", FontWeight.BOLD, Math.max(9, bar * 0.55)));
         g.setTextBaseline(VPos.CENTER);
         g.setTextAlign(TextAlignment.LEFT);
-        g.fillText(m.name + "  (" + (m.gridType == dnd.model.BattleMap.GridType.HEX ? "hex" : "square") + " battlemap)",
-                o.x + 8, o.y + o.h - bar / 2);
+        g.fillText(text, o.x + 8, o.y + o.h - bar / 2);
     }
 
-    /** Inserts a live preview of a battlemap at the centre of the view; double-clicking it opens the map. */
-    public void insertMapPreview() {
-        if (store.allMapIds().isEmpty()) {
-            Alert a = new Alert(Alert.AlertType.INFORMATION,
-                    "There are no battlemaps in this project yet. Create one with + Battlemap in the project tree.");
-            a.setHeaderText(null);
-            a.showAndWait();
+    private void drawMapPreview(GraphicsContext g, BoardObject o) {
+        if (!store.itemExists(o.link)) {
+            drawMissingPreview(g, o);
             return;
         }
-        host.pickMap("Insert battlemap preview").ifPresent(mapId -> {
-            dnd.model.BattleMap m = store.battleMap(mapId);
-            if (m == null) return;
+        dnd.model.BattleMap m = store.isBattleMap(o.link) ? store.battleMap(o.link) : null;
+        dnd.model.WorldMap wm = m == null && store.isWorldMap(o.link) ? store.worldMap(o.link) : null;
+        if (m != null) {
+            Image img = dnd.map.MapRenderer.thumbnail(m, store.assets(), o.w * zoom());
+            g.drawImage(img, o.x, o.y, o.w, o.h);
+            g.setStroke(Color.web("#3a2e28"));
+            g.setLineWidth(2);
+            g.strokeRect(o.x, o.y, o.w, o.h);
+            drawCaption(g, o, m.name + "  (" + (m.gridType == dnd.model.BattleMap.GridType.HEX ? "hex" : "square") + " battlemap)");
+        } else if (wm != null) {
+            int width = (int) Math.max(200, Math.min(1600, Math.ceil(o.w * zoom() / 100) * 100));
+            Image img = cachedPicture("world|" + wm.id + "|" + width, wm.revision, 0, () -> dnd.map.world.WorldThumbnail.of(wm, store.assets(), width));
+            g.drawImage(img, o.x, o.y, o.w, o.h);
+            g.setStroke(Color.web("#3a2e28"));
+            g.setLineWidth(2);
+            g.strokeRect(o.x, o.y, o.w, o.h);
+            drawCaption(g, o, wm.name + "  (world map)");
+        } else {
+            Image img = itemCardPicture(o.link);
+            if (img == null || img.getWidth() <= 0) {
+                drawMissingPreview(g, o);
+                return;
+            }
+            double h = o.w * img.getHeight() / img.getWidth(); // the card's own proportions
+            if (Math.abs(h - o.h) > 0.5) o.h = h;
+            g.drawImage(img, o.x, o.y, o.w, o.h);
+        }
+    }
+
+    /**
+     * Inserts a live preview of any item of the project (a battlemap, world map, character, spell, magic item, quest,
+     * session, organisation, encounter or another whiteboard) at the centre of the view. Double-clicking it opens the item.
+     */
+    public void insertItemPreview() {
+        host.pickBoard("Insert a preview of an item").ifPresent(id -> {
+            if (!store.itemExists(id)) return;
+            if (id.equals(board.id)) {
+                Alert a = new Alert(Alert.AlertType.INFORMATION, "A whiteboard cannot show a preview of itself. Pick another item.");
+                a.setHeaderText(null);
+                a.showAndWait();
+                return;
+            }
             BoardObject o = new BoardObject(Type.MAP_PREVIEW);
-            o.link = mapId;
+            o.link = id;
             o.w = 360;
-            o.h = o.w / dnd.map.MapRenderer.aspect(m);
+            dnd.model.BattleMap m = store.isBattleMap(id) ? store.battleMap(id) : null;
+            dnd.model.WorldMap wm = m == null && store.isWorldMap(id) ? store.worldMap(id) : null;
+            if (m != null) {
+                o.h = o.w / dnd.map.MapRenderer.aspect(m);
+            } else if (wm != null) {
+                o.h = o.w * wm.rows / Math.max(1, wm.cols);
+            } else {
+                Image img = itemCardPicture(id);
+                if (img != null && img.getWidth() > 0) {
+                    o.w = Math.max(220, Math.min(460, img.getWidth() / 2));
+                    o.h = o.w * img.getHeight() / img.getWidth();
+                } else {
+                    o.h = 240;
+                }
+            }
             o.x = viewCenterX() - o.w / 2;
             o.y = viewCenterY() - o.h / 2;
             checkpoint();

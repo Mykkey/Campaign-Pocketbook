@@ -401,7 +401,7 @@ public final class SearchService {
     }
 
     static String snippet(BoardObject o) {
-        if (o.type == BoardObject.Type.MAP_PREVIEW) return "battlemap preview";
+        if (o.type == BoardObject.Type.MAP_PREVIEW) return "item preview";
         if (o.text == null || o.text.isBlank()) return o.type.name().toLowerCase(Locale.ROOT);
         String s = dnd.text.RichText.plain(o.text).replace('\n', ' ').trim();
         return s.length() > 60 ? s.substring(0, 57) + "..." : s;

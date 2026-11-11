@@ -958,6 +958,58 @@ public final class ProjectStore {
     }
 
     /**
+     * The ids that would really move if these were moved together: each must exist, must not be the root, and must not
+     * be inside another one in the list (that one takes it along). The order given is kept; duplicates are dropped.
+     */
+    public List<String> movable(List<String> ids) {
+        List<TreeNode> nodes = new ArrayList<>();
+        for (String id : ids) {
+            TreeNode n = project.root.find(id);
+            if (n != null && n != project.root && !nodes.contains(n)) nodes.add(n);
+        }
+        List<String> out = new ArrayList<>();
+        for (TreeNode n : nodes) {
+            boolean inside = false;
+            for (TreeNode other : nodes) if (other != n && other.find(n.id) != null) inside = true;
+            if (!inside) out.add(n.id);
+        }
+        return out;
+    }
+
+    /**
+     * Moves several items into a folder at once, keeping their order, as one block starting at {@code index}
+     * (a position among the folder's children as the list is before the move; clamped to the list).
+     *
+     * @return how many items were moved; 0 (and nothing changes) if the target is not a folder or lies inside one of them
+     */
+    public int moveNodesTo(List<String> ids, TreeNode targetFolder, int index) {
+        if (targetFolder == null || !targetFolder.folder) return 0;
+        List<String> ok = movable(ids);
+        List<TreeNode> nodes = new ArrayList<>();
+        for (String id : ok) {
+            TreeNode n = project.root.find(id);
+            if (n.find(targetFolder.id) != null) return 0; // into itself or a descendant
+            nodes.add(n);
+        }
+        if (nodes.isEmpty()) return 0;
+        int at = Math.max(0, Math.min(targetFolder.children.size(), index));
+        int pos = 0; // where the block goes once the items being moved are out of the folder's list
+        for (int i = 0; i < at; i++) if (!nodes.contains(targetFolder.children.get(i))) pos++;
+        List<String> before = new ArrayList<>();
+        for (TreeNode c : targetFolder.children) before.add(c.id);
+        for (TreeNode n : nodes) {
+            TreeNode parent = project.root.parentOf(n.id);
+            if (parent != null) parent.children.remove(n);
+        }
+        targetFolder.children.addAll(Math.min(pos, targetFolder.children.size()), nodes);
+        List<String> after = new ArrayList<>();
+        for (TreeNode c : targetFolder.children) after.add(c.id);
+        boolean changed = !before.equals(after) || nodes.stream().anyMatch(n -> !before.contains(n.id));
+        if (changed) markProjectDirty();
+        return nodes.size();
+    }
+
+    /**
      * Moves an item one place up (delta -1) or down (delta 1) among the items in its folder.
      *
      * @return false if it is already first or last, or is the root

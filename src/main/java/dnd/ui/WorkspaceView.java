@@ -115,6 +115,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
                 new HBox(4, newWorld, newMap, newEncounter),
                 treeDivider(),
                 new HBox(4, newCard, newOrg, newSpell, newItem, new Separator(javafx.geometry.Orientation.VERTICAL), newFolder));
+        tree.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE); // Ctrl-click or Shift-click to pick several and move them together
         tree.setCellFactory(v -> createTreeCell(true));
         tree.setOnMouseClicked(e -> {
             if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2) {
@@ -803,7 +804,28 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
 
     private void selectInTree(String boardId) {
         TreeItem<TreeNode> it = findItem(tree.getRoot(), boardId);
-        if (it != null) tree.getSelectionModel().select(it);
+        if (it != null) {
+            tree.getSelectionModel().clearSelection();
+            tree.getSelectionModel().select(it);
+        }
+    }
+
+    /** Selects these items (and only these) in the tree. */
+    private void selectInTree(List<String> ids) {
+        tree.getSelectionModel().clearSelection();
+        for (String id : ids) {
+            TreeItem<TreeNode> it = findItem(tree.getRoot(), id);
+            if (it != null) tree.getSelectionModel().select(it);
+        }
+    }
+
+    /** The ids of the selected rows (the root excluded), top to bottom as shown. */
+    private List<String> selectedIds() {
+        List<String> ids = new ArrayList<>();
+        for (TreeItem<TreeNode> it : tree.getSelectionModel().getSelectedItems()) {
+            if (it != null && it.getValue() != store.project.root && !ids.contains(it.getValue().id)) ids.add(it.getValue().id);
+        }
+        return ids;
     }
 
     private TreeItem<TreeNode> findItem(TreeItem<TreeNode> from, String id) {
@@ -849,9 +871,12 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             cell.setOnDragDetected(e -> {
                 TreeNode n = cell.getItem();
                 if (n == null || n == store.project.root) return;
+                // dragging one of several selected rows takes all of them; otherwise just this one
+                List<String> ids = selectedIds();
+                if (!ids.contains(n.id)) ids = List.of(n.id);
                 Dragboard db = cell.startDragAndDrop(TransferMode.MOVE);
                 ClipboardContent c = new ClipboardContent();
-                c.putString(n.id);
+                c.putString(String.join("\n", ids));
                 db.setContent(c);
                 e.consume();
             });
@@ -867,18 +892,20 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
                 boolean done = false;
                 cell.setStyle("");
                 if (e.getDragboard().hasString()) {
-                    String dragged = e.getDragboard().getString();
+                    List<String> dragged = store.movable(List.of(e.getDragboard().getString().split("\n")));
                     TreeNode over = cell.getItem() == null ? store.project.root : cell.getItem();
                     int zone = dropZone(cell, e.getY());
                     TreeNode parent = over == store.project.root ? null : store.project.root.parentOf(over.id);
-                    if (zone == 0 || parent == null) {
-                        // onto a folder (or the empty part of the tree): put it inside, at the end
-                        TreeNode target = over.folder ? over : parent == null ? store.project.root : parent;
-                        done = store.moveNode(dragged, target) || store.moveNodeTo(dragged, target, target.children.size());
-                    } else {
-                        // between two items: before (-1) or after (1) the one it was dropped on
-                        int at = parent.children.indexOf(over) + (zone > 0 ? 1 : 0);
-                        done = store.moveNodeTo(dragged, parent, at);
+                    if (!dragged.contains(over.id)) { // dropping something onto itself does nothing
+                        if (zone == 0 || parent == null) {
+                            // onto a folder (or the empty part of the tree): put them inside, at the end
+                            TreeNode target = over.folder ? over : parent == null ? store.project.root : parent;
+                            done = store.moveNodesTo(dragged, target, target.children.size()) > 0;
+                        } else {
+                            // between two items: before (-1) or after (1) the one it was dropped on
+                            int at = parent.children.indexOf(over) + (zone > 0 ? 1 : 0);
+                            done = store.moveNodesTo(dragged, parent, at) > 0;
+                        }
                     }
                     if (done) {
                         refreshTree();
@@ -980,9 +1007,16 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             exportMd.setDisable(!ItemExport.isTextItem(sel));
             printItem.setDisable(!ItemExport.isTextItem(sel));
             exportImage.setDisable(sel == null || sel.folder || !(sel.isBattleMap() || sel.isWorldMap() || sel.isBoard()));
-            rn.setDisable(it == null);
-            up.setDisable(isRoot || !canMove(it, -1));
-            down.setDisable(isRoot || !canMove(it, 1));
+            boolean several = selectedIds().size() > 1;
+            if (several) { // these work on one item at a time
+                dup.setDisable(true);
+                exportMd.setDisable(true);
+                printItem.setDisable(true);
+                exportImage.setDisable(true);
+            }
+            rn.setDisable(it == null || several);
+            up.setDisable(isRoot || (!several && !canMove(it, -1)));
+            down.setDisable(isRoot || (!several && !canMove(it, 1)));
             colour.setDisable(it == null);
             del.setDisable(isRoot);
         });
@@ -1028,12 +1062,23 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
 
     /** Moves the selected item up or down among its neighbours in the same folder, and keeps it selected. */
     private void moveSelected(int delta) {
-        TreeItem<TreeNode> it = tree.getSelectionModel().getSelectedItem();
-        if (it == null || it.getValue() == store.project.root) return;
-        String id = it.getValue().id;
-        if (!store.moveWithinParent(id, delta)) return;
+        List<String> ids = selectedIds();
+        if (ids.isEmpty()) return;
+        boolean any = false;
+        // the ones at the edge go first, so a block of neighbours moves as a block
+        List<String> order = new ArrayList<>(ids);
+        if (delta > 0) java.util.Collections.reverse(order);
+        for (String id : order) {
+            TreeNode node = store.project.root.find(id);
+            TreeNode parent = node == null ? null : store.project.root.parentOf(id);
+            if (parent == null) continue;
+            int next = parent.children.indexOf(node) + delta;
+            if (next >= 0 && next < parent.children.size() && ids.contains(parent.children.get(next).id)) continue; // blocked by a selected neighbour
+            any |= store.moveWithinParent(id, delta);
+        }
+        if (!any) return;
         refreshTree();
-        selectInTree(id);
+        selectInTree(ids);
     }
 
     /** The folder new items should go into: the selected folder, the selected board's parent, or the root. */
@@ -1210,11 +1255,15 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
 
     /** Gives the selected folder or item a colour (null = back to its default) and refreshes everything that shows it. */
     private void setSelectedColour(String hex) {
-        TreeItem<TreeNode> it = tree.getSelectionModel().getSelectedItem();
-        if (it == null) return;
-        it.getValue().color = hex;
+        List<String> ids = selectedIds();
+        if (ids.isEmpty()) return;
+        for (String id : ids) {
+            TreeNode n = store.project.root.find(id);
+            if (n != null) n.color = hex;
+        }
         store.markProjectDirty();
         refreshTree();
+        selectInTree(ids);
     }
 
     private void renameSelected() {
@@ -1231,28 +1280,46 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
     }
 
     private void deleteSelected() {
-        TreeItem<TreeNode> it = tree.getSelectionModel().getSelectedItem();
-        if (it == null || it.getValue() == store.project.root) return;
-        TreeNode n = it.getValue();
+        List<TreeNode> doomed = new ArrayList<>();
+        for (String id : store.movable(selectedIds())) { // one inside another selected folder goes with it
+            TreeNode found = store.project.root.find(id);
+            if (found != null) doomed.add(found);
+        }
+        if (doomed.isEmpty()) return;
         if (GeneralSettings.confirmDelete()) {
-        Alert a = new Alert(Alert.AlertType.CONFIRMATION,
-                "Delete \"" + n.name + "\"" + (n.folder ? " and everything inside it" : "") + "? This cannot be undone.",
-                ButtonType.OK, ButtonType.CANCEL);
-        a.setHeaderText("Delete " + (n.folder ? "folder" : n.isBattleMap() ? "battlemap" : n.isCard() ? "card" : n.isEncounter() ? "encounter" : n.isSpell() ? "spell" : n.isMagicItem() ? "magic item" : n.isQuest() ? "quest" : n.isSession() ? "session" : n.isWorldMap() ? "world map" : n.isOrganisation() ? "organisation" : "whiteboard"));
-        Optional<ButtonType> r = a.showAndWait();
-        if (r.isEmpty() || r.get() != ButtonType.OK) return;
+            Alert a;
+            if (doomed.size() == 1) {
+                TreeNode n = doomed.get(0);
+                a = new Alert(Alert.AlertType.CONFIRMATION,
+                        "Delete \"" + n.name + "\"" + (n.folder ? " and everything inside it" : "") + "? This cannot be undone.",
+                        ButtonType.OK, ButtonType.CANCEL);
+                a.setHeaderText("Delete " + (n.folder ? "folder" : n.isBattleMap() ? "battlemap" : n.isCard() ? "card" : n.isEncounter() ? "encounter" : n.isSpell() ? "spell" : n.isMagicItem() ? "magic item" : n.isQuest() ? "quest" : n.isSession() ? "session" : n.isWorldMap() ? "world map" : n.isOrganisation() ? "organisation" : "whiteboard"));
+            } else {
+                boolean folders = doomed.stream().anyMatch(n -> n.folder);
+                StringBuilder names = new StringBuilder();
+                for (int k = 0; k < Math.min(8, doomed.size()); k++) names.append("\n  ").append(doomed.get(k).name);
+                if (doomed.size() > 8) names.append("\n  ... and ").append(doomed.size() - 8).append(" more");
+                a = new Alert(Alert.AlertType.CONFIRMATION,
+                        "Delete these " + doomed.size() + " items" + (folders ? " (and everything inside the folders)" : "") + "?" + names + "\n\nThis cannot be undone.",
+                        ButtonType.OK, ButtonType.CANCEL);
+                a.setHeaderText("Delete " + doomed.size() + " items");
+            }
+            Optional<ButtonType> r = a.showAndWait();
+            if (r.isEmpty() || r.get() != ButtonType.OK) return;
         }
         dnd.storage.ProjectBackups.beforeDelete(store); // a way back if it was a mistake
 
-        List<TreeNode> boards = new ArrayList<>();
-        n.collectItems(boards);
-        for (TreeNode b : boards) {
-            closeTab(b.id);
-            PlayerWindow.close(b.id); // a deleted map must not stay up on the table screen
-            WorldPlayerWindow.close(b.id);
-            history.forget(b.id);
+        for (TreeNode n : doomed) {
+            List<TreeNode> boards = new ArrayList<>();
+            n.collectItems(boards);
+            for (TreeNode b : boards) {
+                closeTab(b.id);
+                PlayerWindow.close(b.id); // a deleted map must not stay up on the table screen
+                WorldPlayerWindow.close(b.id);
+                history.forget(b.id);
+            }
+            store.deleteNode(n);
         }
-        store.deleteNode(n);
         refreshTree();
         updateTrail();
         updateNavButtons();

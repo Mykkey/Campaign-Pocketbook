@@ -55,3 +55,56 @@
 .color-picker > .color-picker-label > .picker-color > .picker-color-rect { -fx-stroke: -t-text3; }
 .color-picker { -fx-border-color: #000000; }
 .color-picker > .arrow-button > .arrow { -fx-background-color: #000000; }
+
+/* standard controls (buttons, drop-downs, ticks, number boxes, text boxes): flat and rounded, with the theme's own border, like the colour buttons */
+.root { -fx-text-box-border: -t-border; -fx-focus-color: -t-blue-border; -fx-faint-focus-color: transparent; -fx-mark-color: -t-blue-text; }
+.button:not(.icon-button), .toggle-button:not(.icon-button) { -fx-background-color: -t-surface; -fx-background-insets: 0; -fx-background-radius: 6; -fx-border-color: -t-border; -fx-border-radius: 6; -fx-padding: 4 12 4 12; -fx-text-fill: -t-text; }
+.button:not(.icon-button):hover, .toggle-button:not(.icon-button):hover { -fx-background-color: -t-surface2; }
+.button:not(.icon-button):armed, .toggle-button:not(.icon-button):armed { -fx-background-color: -t-border; }
+.button:not(.icon-button):disabled, .toggle-button:not(.icon-button):disabled { -fx-opacity: 0.5; }
+.button:not(.icon-button):focused, .toggle-button:not(.icon-button):focused { -fx-border-color: -t-blue-border; }
+.button:default:not(.icon-button) { -fx-background-color: -t-blue; -fx-border-color: -t-blue-border; -fx-text-fill: -t-blue-text; }
+.button:default:not(.icon-button):hover { -fx-background-color: -t-blue-border; }
+.toggle-button:not(.icon-button):selected { -fx-background-color: -t-blue; -fx-border-color: -t-blue-border; -fx-text-fill: -t-blue-text; }
+
+.combo-box-base:not(.color-picker) { -fx-background-color: -t-surface; -fx-background-insets: 0; -fx-background-radius: 6; -fx-border-color: -t-border; -fx-border-radius: 6; }
+.combo-box-base:not(.color-picker):hover, .combo-box-base:not(.color-picker):showing { -fx-background-color: -t-surface2; }
+.combo-box-base:not(.color-picker):focused { -fx-border-color: -t-blue-border; }
+.combo-box-base:not(.color-picker):disabled { -fx-opacity: 0.5; }
+.combo-box-base:not(.color-picker) > .arrow-button { -fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0 6 0 2; }
+.combo-box-base:not(.color-picker) > .arrow-button > .arrow { -fx-background-color: -t-text2; }
+.combo-box-base:not(.color-picker) > .list-cell { -fx-text-fill: -t-text; -fx-background-color: transparent; }
+.combo-box-popup > .list-view { -fx-background-color: -t-surface; -fx-background-insets: 0; -fx-border-color: -t-border; }
+.combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell { -fx-text-fill: -t-text; -fx-background-color: -t-surface; }
+.combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:hover { -fx-background-color: -t-surface2; }
+.combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected { -fx-background-color: -t-blue; -fx-text-fill: -t-blue-text; }
+
+.check-box, .radio-button { -fx-text-fill: -t-text; }
+.check-box > .box { -fx-background-color: -t-surface; -fx-background-insets: 0; -fx-background-radius: 4; -fx-border-color: -t-border; -fx-border-radius: 4; -fx-padding: 3; }
+.check-box:hover > .box { -fx-border-color: -t-text3; }
+.check-box:selected > .box { -fx-background-color: -t-blue; -fx-border-color: -t-blue-border; }
+.check-box:indeterminate > .box { -fx-background-color: -t-blue; -fx-border-color: -t-blue-border; }
+.check-box:disabled, .radio-button:disabled { -fx-opacity: 0.5; }
+.check-box:focused > .box, .radio-button:focused > .radio { -fx-border-color: -t-blue-border; }
+.radio-button > .radio { -fx-background-color: -t-surface; -fx-background-insets: 0; -fx-border-color: -t-border; -fx-border-radius: 1em; -fx-background-radius: 1em; }
+.radio-button:hover > .radio { -fx-border-color: -t-text3; }
+.radio-button:selected > .radio { -fx-background-color: -t-blue; -fx-border-color: -t-blue-border; }
+.radio-button > .radio > .dot { -fx-background-color: -t-blue-text; }
+
+.spinner > .text-field { -fx-background-color: -t-surface; -fx-background-insets: 0; -fx-background-radius: 6 0 0 6; -fx-border-color: -t-border; -fx-border-radius: 6 0 0 6; }
+.spinner > .increment-arrow-button, .spinner > .decrement-arrow-button { -fx-background-color: -t-surface; -fx-background-insets: 0; -fx-border-color: -t-border; }
+.spinner > .increment-arrow-button { -fx-background-radius: 0 6 0 0; -fx-border-radius: 0 6 0 0; }
+.spinner > .decrement-arrow-button { -fx-background-radius: 0 0 6 0; -fx-border-radius: 0 0 6 0; }
+.spinner > .increment-arrow-button:hover, .spinner > .decrement-arrow-button:hover { -fx-background-color: -t-surface2; }
+.spinner > .increment-arrow-button > .increment-arrow, .spinner > .decrement-arrow-button > .decrement-arrow { -fx-background-color: -t-text2; }
+.spinner:focused > .text-field { -fx-border-color: -t-blue-border; }
+
+.text-field, .text-area > .scroll-pane > .viewport > .content { -fx-text-fill: -t-text; }
+.text-field { -fx-background-color: -t-surface; -fx-background-insets: 0; -fx-background-radius: 6; -fx-border-color: -t-border; -fx-border-radius: 6; }
+.text-field:focused { -fx-border-color: -t-blue-border; }
+.text-area { -fx-background-color: -t-surface; -fx-background-insets: 0; -fx-background-radius: 6; -fx-border-color: -t-border; -fx-border-radius: 6; }
+.text-area:focused { -fx-border-color: -t-blue-border; }
+.text-area .content { -fx-background-color: -t-surface; -fx-background-radius: 6; }
+.text-area > .scroll-pane { -fx-background-color: transparent; -fx-background-radius: 6; }
+.combo-box > .list-cell:filled:selected, .combo-box > .list-cell:filled:focused, .combo-box > .list-cell:filled:selected:focused { -fx-background-color: transparent; -fx-text-fill: -t-text; }
+.combo-box > .list-cell:filled:selected .label, .combo-box > .list-cell:filled:focused .label { -fx-text-fill: -t-text; }

@@ -41,7 +41,9 @@ public final class ProjectArchive {
         if (!Files.isRegularFile(projectDir.resolve(PROJECT_FILE))) throw new IOException("That folder is not a project.");
         List<Path> files = new ArrayList<>();
         try (Stream<Path> s = Files.walk(projectDir)) {
-            s.filter(Files::isRegularFile).filter(p -> !p.getFileName().toString().endsWith(".tmp")).forEach(files::add);
+            s.filter(Files::isRegularFile).filter(p -> !p.getFileName().toString().endsWith(".tmp"))
+                    .filter(p -> !projectDir.relativize(p).startsWith("trash")) // deleted items stay out of backups and shared copies
+                    .forEach(files::add);
         }
         Collections.sort(files);
         Path tmp = zip.resolveSibling(zip.getFileName() + ".tmp");

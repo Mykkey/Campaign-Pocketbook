@@ -75,6 +75,45 @@ public final class ProjectStore {
     private ProjectStore(Path dir, Project project) {
         this.dir = dir;
         this.project = project;
+        this.trash = new TrashBin(dir);
+    }
+
+    private final TrashBin trash;
+
+    /** The bin of deleted items (they can be brought back until they have been in it for {@link TrashBin#KEEP_DAYS} days). */
+    public TrashBin trash() {
+        return trash;
+    }
+
+    /** The files that make up one item (not a folder): its saved file in whichever folder its kind lives in. */
+    private List<Path> filesOf(TreeNode item) {
+        List<Path> out = new ArrayList<>();
+        String id = item.id;
+        if (item.isBattleMap()) out.add(mapPath(id));
+        else if (item.isCard()) out.add(cardPath(id));
+        else if (item.isEncounter()) out.add(encounterPath(id));
+        else if (item.isSpell()) out.add(spellPath(id));
+        else if (item.kind != null && kindFor(item.kind) != null) out.add(kindFor(item.kind).path(id));
+        else out.add(boardPath(id));
+        return out;
+    }
+
+    /**
+     * Brings an item (or folder) back from the bin, to the folder it was deleted from (or the top of the project if that
+     * folder is gone), at its old place.
+     *
+     * @return the restored node, or null if the entry is unknown or something with the same id is already in the project
+     */
+    public TreeNode restoreFromTrash(String entryId) {
+        TrashBin.Entry e = trash.find(entryId);
+        if (e == null || e.node == null || project.root.find(e.node.id) != null) return null;
+        TreeNode parent = e.parentId == null ? null : project.root.find(e.parentId);
+        if (parent == null || !parent.folder) parent = project.root;
+        parent.children.add(Math.max(0, Math.min(parent.children.size(), e.index)), e.node);
+        trash.restoreFiles(e);
+        namesVersion++;
+        markProjectDirty();
+        return e.node;
     }
 
     // ---------------------------------------------------------------- project management
@@ -118,7 +157,9 @@ public final class ProjectStore {
         Path dir = base.resolve(folderName);
         Project p = Json.readFile(dir.resolve(PROJECT_FILE), Project.class);
         createSubfolders(dir);
-        return new ProjectStore(dir, p);
+        ProjectStore opened = new ProjectStore(dir, p);
+        opened.trash.purgeOlderThan(TrashBin.KEEP_DAYS, System.currentTimeMillis()); // what has been in the bin a month is erased for good
+        return opened;
     }
 
     private static void createSubfolders(Path dir) throws IOException {
@@ -892,6 +933,12 @@ public final class ProjectStore {
         if (node == project.root) return;
         List<TreeNode> items = new ArrayList<>();
         node.collectItems(items);
+        // keep it in the bin of deleted items: save anything not yet written, then move the files there
+        flush();
+        TreeNode where = project.root.parentOf(node.id);
+        List<Path> files = new ArrayList<>();
+        for (TreeNode b : items) files.addAll(filesOf(b));
+        trash.add(node, where == null ? null : where.id, where == null ? 0 : where.children.indexOf(node), files, System.currentTimeMillis());
         for (TreeNode b : items) {
             cache.remove(b.id);
             dirtyBoards.remove(b.id);
@@ -918,6 +965,7 @@ public final class ProjectStore {
         TreeNode parent = project.root.parentOf(node.id);
         if (parent != null) parent.children.remove(node);
         markProjectDirty();
+        flush(); // the tree and the bin agree on disk straight away
     }
 
     /** Moves a node into a folder. Returns false if that would be invalid (e.g. into itself). */

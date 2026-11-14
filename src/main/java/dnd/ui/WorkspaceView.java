@@ -138,7 +138,13 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
                 e.consume();
             }
         });
-        VBox left = new VBox(6, treeTitle, treeButtons, tree);
+        Button trashBtn = IconButtons.decorate(new Button(), "delete", "Deleted items: bring back something you deleted (kept for 30 days)");
+        trashBtn.setOnAction(e -> openTrash());
+        Region titleGap = new Region();
+        HBox.setHgrow(titleGap, Priority.ALWAYS);
+        HBox titleRow = new HBox(4, treeTitle, titleGap, trashBtn);
+        titleRow.setAlignment(Pos.CENTER_LEFT);
+        VBox left = new VBox(6, titleRow, treeButtons, tree);
         left.setPadding(new Insets(8));
         VBox.setVgrow(tree, Priority.ALWAYS);
         left.setMinWidth(180);
@@ -998,7 +1004,9 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         colour.getItems().addAll(new SeparatorMenuItem(), defaultColour);
         MenuItem del = new MenuItem("Delete");
         del.setOnAction(e -> deleteSelected());
-        ContextMenu m = new ContextMenu(nb, nse, nq, new SeparatorMenuItem(), nw, nm, ne, new SeparatorMenuItem(), nc, nsp, nmi, new SeparatorMenuItem(), nf, new SeparatorMenuItem(), up, down, dup, new SeparatorMenuItem(), exportMd, printItem, exportImage, new SeparatorMenuItem(), rn, colour, del);
+        MenuItem bin = new MenuItem("Deleted items...");
+        bin.setOnAction(e -> openTrash());
+        ContextMenu m = new ContextMenu(nb, nse, nq, new SeparatorMenuItem(), nw, nm, ne, new SeparatorMenuItem(), nc, nsp, nmi, new SeparatorMenuItem(), nf, new SeparatorMenuItem(), up, down, dup, new SeparatorMenuItem(), exportMd, printItem, exportImage, new SeparatorMenuItem(), rn, colour, del, bin);
         m.setOnShowing(e -> {
             TreeItem<TreeNode> it = tree.getSelectionModel().getSelectedItem();
             boolean isRoot = it == null || it.getValue() == store.project.root;
@@ -1279,6 +1287,14 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         });
     }
 
+    /** Opens the bin of deleted items; an item brought back shows up in the tree and is selected. */
+    private void openTrash() {
+        TrashDialog.show(getScene().getWindow(), store, id -> {
+            refreshTree();
+            selectInTree(id);
+        });
+    }
+
     private void deleteSelected() {
         List<TreeNode> doomed = new ArrayList<>();
         for (String id : store.movable(selectedIds())) { // one inside another selected folder goes with it
@@ -1291,7 +1307,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             if (doomed.size() == 1) {
                 TreeNode n = doomed.get(0);
                 a = new Alert(Alert.AlertType.CONFIRMATION,
-                        "Delete \"" + n.name + "\"" + (n.folder ? " and everything inside it" : "") + "? This cannot be undone.",
+                        "Delete \"" + n.name + "\"" + (n.folder ? " and everything inside it" : "") + "? It goes to the bin of deleted items (the button above the tree), where you can bring it back for 30 days.",
                         ButtonType.OK, ButtonType.CANCEL);
                 a.setHeaderText("Delete " + (n.folder ? "folder" : n.isBattleMap() ? "battlemap" : n.isCard() ? "card" : n.isEncounter() ? "encounter" : n.isSpell() ? "spell" : n.isMagicItem() ? "magic item" : n.isQuest() ? "quest" : n.isSession() ? "session" : n.isWorldMap() ? "world map" : n.isOrganisation() ? "organisation" : "whiteboard"));
             } else {
@@ -1300,7 +1316,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
                 for (int k = 0; k < Math.min(8, doomed.size()); k++) names.append("\n  ").append(doomed.get(k).name);
                 if (doomed.size() > 8) names.append("\n  ... and ").append(doomed.size() - 8).append(" more");
                 a = new Alert(Alert.AlertType.CONFIRMATION,
-                        "Delete these " + doomed.size() + " items" + (folders ? " (and everything inside the folders)" : "") + "?" + names + "\n\nThis cannot be undone.",
+                        "Delete these " + doomed.size() + " items" + (folders ? " (and everything inside the folders)" : "") + "?" + names + "\n\nThey go to the bin of deleted items (the button above the tree), where you can bring them back for 30 days.",
                         ButtonType.OK, ButtonType.CANCEL);
                 a.setHeaderText("Delete " + doomed.size() + " items");
             }

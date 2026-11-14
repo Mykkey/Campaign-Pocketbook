@@ -2,6 +2,84 @@
 
 The full user guide and developer notes. For a short introduction and how to install, see the [README](../README.md).
 
+## Getting started: a first tour
+This tour takes about twenty minutes and touches everything you will use most. Each lesson is short and stands on its own, so you can skip around. Anywhere in the app, press **F1** (or the **?** button in the top bar) to open this guide as a searchable help book.
+
+### 1. Make a campaign
+1. Start the app. On the first screen press **New project...** and type a name for your campaign.
+2. You arrive in the **workspace**. The **project tree** is on the left (everything in your campaign lives here, in folders if you like) and your open items are **tabs** in the middle. A whiteboard called **Campaign Overview** is already there.
+3. The small icons above the tree each make a new kind of item (the icon shows the kind, with a green plus): whiteboard, session, quest, world map, battlemap, encounter, card, organisation, spell, magic item and folder. Hover one to see its name.
+4. Your work is saved automatically a moment after you stop changing things. You never need to press Save. See *Backing up and sharing a campaign* for safety copies.
+
+### 2. Write down your people (cards)
+1. Press the **card** icon above the tree. Pick a template (a blank player character, a blank creature, or one of the example creatures such as a goblin or a guard) and give it a name.
+2. The card opens in a tab: a form on the left and the finished stat block on the right, which updates as you type. Set **Kind** to Player, NPC or Monster.
+3. For a custom monster, fill in armor class, hit points and abilities, then add its **attacks**. Under the Challenge box, tick **Work out Challenge and XP automatically** and the app suggests a Challenge rating from the stats.
+4. Make a few more: your players, a villain, an innkeeper. Cards can be dragged into folders in the tree (Ctrl-click or Shift-click to pick several and move them together).
+
+### 3. Plan on a whiteboard
+1. Double-click **Campaign Overview** in the tree. The toolbar has the **tools** (Select, Hand, Text, Sticky note, Pen, Eraser, shapes and arrows). They also have number keys: 1 selects the first tool, 2 the second, and so on.
+2. Choose the **Text** tool (key 3), click on the board and type. Press Esc to finish.
+3. **Link a name to a card:** double-click your text to edit it, select a name, press **Ctrl+K** and pick the card. The words turn blue. Hover them for a preview of the card; double-click to open it. If you just type a card's name, a faint dotted underline offers to link it for you (**Name hints**).
+4. Drag pictures in from your computer, or use the **Insert** dropdown to add a picture or a live preview of any item in the project (a map, a card, a quest...).
+
+### 4. Group people into an organisation
+1. Press the **shield** icon above the tree and name the group (a guild, a noble house, your party).
+2. Press **+ Add member...** and pick several people at once (Ctrl-click). Give each a **role**, and use **reports to** to say who answers to whom.
+3. The **Hierarchy** tab on the right draws the chain of command like a family tree, and the Members list sorts itself the same way. Double-click any member to open its card.
+
+### 5. Draw a battlemap and run a fight
+1. Press the **battlemap** icon, choose squares or hexes and a size. (You can change the size later from the **View** dropdown.)
+2. Use the **Terrain** tool (key 3) to paint ground and the **Piece** tool (key 4) to place buildings and scenery. The **Token** tool (key 5) adds creatures.
+3. Press **Battle** in the toolbar. In the battle screen choose **+ Add creatures...**, tick the cards you want (and how many), enter or roll initiative, and press **Start battle**.
+4. Press **N** for the next turn. Type damage in a creature's HP box as `-7` or healing as `+5`. The **...** menu adds conditions, notes and more.
+5. Press **Player view** (or **Pop out**) to open a second window for the table screen. Turn on **Fog** to hide the map until you reveal it.
+
+### 6. Make a world map
+1. Press the **world map** icon, name it, pick an art style and a size.
+2. The **Land and sea** tool paints land, water and ice; **Biomes** colours the land; **Stamp** and **Scatter** place mountains, forests and towns from the side panel; **Label** writes names along curves.
+3. In a hurry? Open the **Map** dropdown and choose **Generate** for a random world you can then edit.
+4. Link places to your notes: select a symbol and press **Ctrl+K**. Hide secrets from players and open a **Player view** from the **Players** dropdown.
+
+### 7. Plan an encounter
+1. Press the **encounter** icon. Pick creatures from your cards (several at once) or from the common enemies list.
+2. Set your party's size and level. The summary shows the **difficulty** (Easy to Deadly), the XP, and what each character earns. It refreshes when a creature's card changes.
+3. Roll treasure for the fight, then load the encounter into a battle with **Load encounter...**.
+
+### 8. Keep track of the story
+1. **Sessions** hold your recap and what happened; the **Timeline...** window (in the top bar's **Reference** dropdown) lists them in order. **Quests** hold steps and clues, and the **Quest board** shows them by status.
+2. Add a **Relationships** section to cards (parent, rival, mentor...). **Relations...** draws family trees, a web of relationships, organisation hierarchies and an Everything map.
+3. Use the search box in the top bar to find anything in the project, and **History** in the top bar to jump back to what you had open.
+
+### 9. Look after your campaign
+1. Settings (the **gear**, or **Ctrl+,**) has text size, colours, accessibility and every keyboard shortcut (you can rebind them all).
+2. Deleted something by mistake? The **bin** button above the project tree brings it back for 30 days.
+3. **Export backup...** on the first screen saves the whole campaign as one zip, which you can also share.
+
+## How do I...?
+A quick index of common tasks. Type any of these words into the help search to find the full explanation.
+
+| How do I... | Do this |
+|---|---|
+| Move around the app | The **top bar**: house = project list, arrows = back / forward, then Generators, Reference and History dropdowns. Search the whole campaign with the box on the right (**Ctrl+F**). |
+| Link some text to a card, map or quest | Select the words, press **Ctrl+K**, pick the item. See *Links and notes in text*. |
+| Add a hover note | Select an object or words, use **Links and notes > Write a note** on the whiteboard toolbar. |
+| Change a battlemap's size | **View > Map size...** on the battlemap toolbar. See *Battlemaps*. |
+| Find a monster's Challenge rating | On its card, tick **Work out Challenge and XP automatically**. See *Cards*. |
+| Roll names, NPCs or treasure | The **Generators** dropdown in the top bar (Ctrl+G, Ctrl+Shift+N, Ctrl+L). |
+| Look up a rule | **Rules...** in the **Reference** dropdown (Ctrl+R). |
+| Import the monsters and spells of the SRD | **Library...** in the **Reference** dropdown. See *Monster and spell library*. |
+| Show the players a map | **Pop out** on a battlemap, or **Players > Player view** on a world map. See *Fog of war*. |
+| Hide part of a map from the players | **Fog** tool on a battlemap; **Hide unexplored** on a world map. |
+| Print or export a card, quest or session | Right-click it in the tree > **Export as Markdown...** or **Print...**. See *Exporting and printing*. |
+| Move or delete several items | Ctrl-click or Shift-click rows in the project tree. See *Organising your project*. |
+| Get back something I deleted | The **bin** button above the tree. See *Organising your project*. |
+| Make the text bigger or use a high-contrast look | **Settings > Appearance** and **Accessibility**. See *Settings*. |
+| Change a keyboard shortcut | **Settings > Shortcuts**. See *Keyboard shortcuts*. |
+| Make a desktop shortcut that survives updates | Run **make-shortcut.bat** again after unzipping a new version. See *Updating*. |
+| Back up or share a campaign | **Export backup...** on the project list. See *Backing up and sharing a campaign*. |
+| Resize a panel | Drag the thin edge between two panels. It is remembered. |
+
 ## Updating
 If you cloned with Git, double-click **`update.bat`** (or run `git pull`) to get the latest version, then start the app as normal - it rebuilds itself automatically. Your campaigns are not affected by updates.
 
@@ -47,6 +125,7 @@ One rule: **Ctrl+letter acts on what you are editing, and a few Ctrl keys open t
 | Ctrl+W, Ctrl+F | Close the tab, search the campaign |
 | Ctrl+G, Ctrl+L, Ctrl+Shift+N, Ctrl+R | Name generator, loot generator, NPC generator, quick reference |
 | Ctrl+, | Settings |
+| F1 | Help: this guide as a searchable book |
 | Ctrl+Z, Ctrl+Y (or Ctrl+Shift+Z) | Undo, redo |
 | Ctrl+C, Ctrl+X, Ctrl+V, Ctrl+D, Ctrl+A | Copy, cut, paste, duplicate, select all (on all three kinds of map and board) |
 | **Ctrl+K** | **Link and note** the selected thing (whiteboard objects and words, world map items, battlemap tokens and pieces) |

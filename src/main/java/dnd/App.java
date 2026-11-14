@@ -94,11 +94,15 @@ public class App extends Application {
         root.setTop(new UpdateBanner(getHostServices()));
         ProjectLauncher launcher = new ProjectLauncher(this::showWorkspace);
         this.launcher = launcher;
+        launcher.hostServices = getHostServices();
         root.setCenter(new StackPane(launcher, launcher.loadingOverlay()));
         Scene scene = new Scene(root, stage.getWidth(), stage.getHeight());
         scene.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, ev -> {
             if (dnd.keys.Shortcuts.matches(ev, "global.settings")) {
                 dnd.ui.SettingsDialog.show(stage);
+                ev.consume();
+            } else if (dnd.keys.Shortcuts.matches(ev, "global.help")) {
+                dnd.ui.HelpDialog.show(stage, getHostServices());
                 ev.consume();
             }
         });

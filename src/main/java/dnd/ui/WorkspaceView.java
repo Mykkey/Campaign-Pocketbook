@@ -189,6 +189,8 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Button settings = new Button("Settings...");
         settings.setTooltip(IconButtons.tip(dnd.keys.Shortcuts.tip("Settings for the whole app: text size, colours, accessibility and keyboard shortcuts", "global.settings")));
         settings.setOnAction(e -> SettingsDialog.show(getScene().getWindow()));
+        Button helpBtn = IconButtons.decorate(new Button(), "help", dnd.keys.Shortcuts.tip("Help: the guide as a searchable book, with tutorials", "global.help"));
+        helpBtn.setOnAction(e -> HelpDialog.show(getScene().getWindow(), hostServices));
         Button relations = new Button("Relations...");
         relations.setTooltip(IconButtons.tip("Family tree and relationship web of your cards"));
         relations.setOnAction(e -> RelationshipsDialog.show(getScene().getWindow(), store, this::openItem));
@@ -229,7 +231,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         });
         rebuildRecent();
         rebuildBacklinks();
-        HBox nav = new HBox(4, projects, backBtn, fwdBtn, trail, spacer, generators, reference, historyMenu, Theme.toggleButton(), settings, search);
+        HBox nav = new HBox(4, projects, backBtn, fwdBtn, trail, spacer, generators, reference, historyMenu, Theme.toggleButton(), helpBtn, settings, search);
         nav.setAlignment(Pos.CENTER_LEFT);
         nav.setPadding(new Insets(6, 8, 0, 8));
 
@@ -314,6 +316,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             case "global.rules" -> RulesReferenceDialog.show(getScene().getWindow());
             case "global.npc" -> openNpcGenerator();
             case "global.settings" -> SettingsDialog.show(getScene().getWindow());
+            case "global.help" -> HelpDialog.show(getScene().getWindow(), hostServices);
             default -> {
                 if (v == null) return false;
                 switch (a.id()) {

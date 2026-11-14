@@ -30,6 +30,9 @@ public class ProjectLauncher extends VBox {
     private final Label overlayText = new Label();
     private boolean busy;
 
+    /** Lets the help button open links in the browser (set by the app). */
+    public javafx.application.HostServices hostServices;
+
     public ProjectLauncher(Consumer<ProjectStore> onOpen) {
         this(ProjectStore.baseDir(), onOpen);
     }
@@ -60,7 +63,9 @@ public class ProjectLauncher extends VBox {
         delete.disableProperty().bind(list.getSelectionModel().selectedItemProperty().isNull());
         Button settings = IconButtons.decorate(new Button(), "gear", "Settings for the whole app: text size, colours, accessibility and keyboard shortcuts (Ctrl+,)");
         settings.setOnAction(e -> SettingsDialog.show(getScene() == null ? null : getScene().getWindow()));
-        HBox buttons = new HBox(8, open, create, delete, Theme.toggleButton(), settings);
+        Button help = IconButtons.decorate(new Button(), "help", "Help: the guide as a searchable book, with tutorials (F1)");
+        help.setOnAction(e -> HelpDialog.show(getScene() == null ? null : getScene().getWindow(), hostServices));
+        HBox buttons = new HBox(8, open, create, delete, Theme.toggleButton(), help, settings);
         buttons.setAlignment(Pos.CENTER);
 
         list.setPlaceholder(new Label("No projects yet - create one!"));

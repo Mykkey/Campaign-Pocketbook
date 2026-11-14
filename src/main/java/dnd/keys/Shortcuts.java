@@ -87,6 +87,7 @@ public final class Shortcuts {
         add("global.rules", "Quick reference (rules)", g, Context.GLOBAL, true, false, "Shortcut+R");
         add("global.npc", "NPC generator", g, Context.GLOBAL, true, false, "Shortcut+Shift+N");
         add("global.settings", "Settings", g, Context.GLOBAL, true, false, "Shortcut+Comma");
+        add("global.help", "Help (the guide)", g, Context.GLOBAL, true, false, "F1");
 
         String it = "On the open item";
         add("item.undo", "Undo", it, Context.ITEM, "Shortcut+Z");

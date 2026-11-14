@@ -56,6 +56,15 @@
                 </includes>
             </resource>
             <resource>
+                <!-- the user guide is packaged with the app as the help book -->
+                <directory>docs</directory>
+                <filtering>false</filtering>
+                <targetPath>help</targetPath>
+                <includes>
+                    <include>GUIDE.md</include>
+                </includes>
+            </resource>
+            <resource>
                 <directory>src/main/resources</directory>
                 <filtering>false</filtering>
                 <excludes>

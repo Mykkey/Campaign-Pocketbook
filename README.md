@@ -10,6 +10,7 @@
 - **Whiteboards:** text, sticky notes, drawings, curved arrows and images, with links and hover previews.
 - **Battlemaps:** square or hex grids, fog of war, dynamic lighting, tokens and a battle tracker.
 - **Cards and rules:** characters and monsters as 5e-style stat blocks (with a suggested Challenge rating worked out from the stats of a custom monster), spells, magic items, organisations (guilds, factions, families and parties, with their members), quests, session logs, encounters with difficulty, a family tree and relationship web, and an SRD monster and spell library.
+- **Gods and pantheons:** a Deity card with domains, alignment, holy symbol, holy days and tenets; a Pantheon overview by alignment, domain, rank and organisation; organisations that contain other organisations; and over thirty kinds of relationship plus custom links in your own colours.
 - **Help:** the whole user guide is built in as a searchable help book with a step-by-step tutorial: press F1 or the ? button.
 - **Settings:** text size, fonts, high contrast, colour-blind-safe colours, reduced motion, rebindable keyboard shortcuts, backups, defaults for new things and more, all in one Settings window (the gear button).
 - **Tidy toolbars and resizable panels:** related buttons are grouped into small icon dropdowns (each row has an icon and a label), and the edges between panels can be dragged; the sizes are remembered.

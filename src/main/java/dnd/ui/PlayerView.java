@@ -28,7 +28,9 @@ public class PlayerView extends Pane {
     private static final double MARGIN = 24;
 
     private final BattleMap map;
-    private final Grid grid;
+    private Grid grid;
+    private int gridCols, gridRows;
+    private double gridCell;
     private final AssetLibrary lib;
     private final Canvas canvas = new Canvas();
 
@@ -43,7 +45,7 @@ public class PlayerView extends Pane {
 
     public PlayerView(BattleMap map, ProjectStore store) {
         this.map = map;
-        this.grid = Grid.of(map);
+        syncGrid();
         this.lib = store.assets();
         this.showGrid = map.showGrid;
         getChildren().add(canvas);
@@ -177,7 +179,17 @@ public class PlayerView extends Pane {
         if (dirty || map.revision != drawnRevision) redraw();
     }
 
+    /** The map may have been made bigger or smaller (or its cells resized) while this window was open: use a grid that fits. */
+    private void syncGrid() {
+        if (grid != null && gridCols == map.cols && gridRows == map.rows && gridCell == map.cellSize) return;
+        grid = Grid.of(map);
+        gridCols = map.cols;
+        gridRows = map.rows;
+        gridCell = map.cellSize;
+    }
+
     public void redraw() {
+        syncGrid();
         GraphicsContext g = canvas.getGraphicsContext2D();
         g.setTransform(1, 0, 0, 1, 0, 0);
         g.setFill(Color.web("#0d0d0f"));

@@ -44,7 +44,11 @@ public class MapView extends Pane implements ItemView {
     private final ProjectStore store;
     private final MapToolState ts;
     private final AssetLibrary lib;
-    private final Grid grid;
+    /** The grid of the map as it is now. It is rebuilt when the map's size or cell size changes (see {@link #syncGrid}). */
+    private Grid grid;
+    private int gridCols, gridRows;
+    private double gridCell;
+    private BattleMap.GridType gridKind;
 
     private final Canvas canvas = new Canvas();
     private final Set<String> selected = new LinkedHashSet<>();
@@ -84,7 +88,7 @@ public class MapView extends Pane implements ItemView {
         this.store = store;
         this.ts = ts;
         this.lib = store.assets();
-        this.grid = Grid.of(map);
+        syncGrid();
 
         getChildren().add(canvas);
         setMinSize(0, 0);
@@ -232,7 +236,18 @@ public class MapView extends Pane implements ItemView {
 
     // ================================================================ rendering
 
+    /** Makes the grid match the map: after the map was made bigger or smaller (or its cells resized) the old grid would cut it off. */
+    private void syncGrid() {
+        if (grid != null && gridCols == map.cols && gridRows == map.rows && gridCell == map.cellSize && gridKind == map.gridType) return;
+        grid = Grid.of(map);
+        gridCols = map.cols;
+        gridRows = map.rows;
+        gridCell = map.cellSize;
+        gridKind = map.gridType;
+    }
+
     public void redraw() {
+        syncGrid();
         GraphicsContext g = canvas.getGraphicsContext2D();
         double W = canvas.getWidth(), H = canvas.getHeight();
         g.setTransform(1, 0, 0, 1, 0, 0);
@@ -477,6 +492,7 @@ public class MapView extends Pane implements ItemView {
             map.cols = s.cols;
             map.rows = s.rows;
             map.cellSize = s.cellSize;
+            syncGrid();
         }
         selected.removeIf(id -> map.findObject(id) == null && map.findToken(id) == null);
         dnd.battle.BattleEngine.relinkTokens(map.battle, map);
@@ -488,6 +504,7 @@ public class MapView extends Pane implements ItemView {
     public void resizeMap(Runnable change) {
         checkpoint();
         change.run();
+        syncGrid();
         selected.clear();
         clearTemplate();
         clearMeasures();

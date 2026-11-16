@@ -105,7 +105,13 @@ public class ToolbarPanel extends FlowPane {
         lines.getItems().addAll(
                 IconMenu.control("pen", "Line / pen width", width),
                 IconMenu.toggle("fill-shapes", "Fill rectangles and ellipses with the fill colour", null, ts.useFill));
-        getChildren().addAll(labelled("Colour", color), labelled("Fill", fill), labelled("Font size", font), bold, italic, lines, new Separator(Orientation.VERTICAL));
+        MenuButton snap = IconMenu.create("snap", "Snap: what things line up with while you move, resize or draw them");
+        snap.getItems().addAll(
+                IconMenu.toggle("grid", "Snap to the dot grid", null, ts.snapGrid),
+                IconMenu.toggle("snap", "Snap to other objects (their edges and middles, with guide lines)", null, ts.snapObjects),
+                IconMenu.separator(),
+                IconMenu.disableWhen(new MenuItem("Hold Alt while dragging to move freely"), new javafx.beans.property.SimpleBooleanProperty(true)));
+        getChildren().addAll(labelled("Colour", color), labelled("Fill", fill), labelled("Font size", font), bold, italic, lines, snap, new Separator(Orientation.VERTICAL));
 
         // --- links and notes
         MenuButton links = IconMenu.create("link", "Links and notes: link words or objects to other items, add hover notes");

@@ -211,6 +211,8 @@ public class BoardView extends Pane implements ItemView {
     private boolean gestureCheckpointed, dragStarted, spaceDown;
     private double pressSX, pressSY, lastSX, lastSY, pressWX, pressWY, resizeRatio = 1;
     private double mqX0, mqY0, mqX1, mqY1;
+    /** How far the selection has been moved since the drag began (including what snapping added), and the guide lines being shown. */
+    private double movedX, movedY, guideX = Double.NaN, guideY = Double.NaN;
     private double ctxWX, ctxWY;
     private BoardObject tmp;
 
@@ -473,6 +475,16 @@ public class BoardView extends Pane implements ItemView {
             drawObject(g, o);
         }
         if (tmp != null) drawObject(g, tmp);
+
+        // snap guides while something is held against another object's edge or middle
+        if (!Double.isNaN(guideX) || !Double.isNaN(guideY)) {
+            g.setStroke(Color.web("#e11d48"));
+            g.setLineWidth(1.2 / zoom());
+            g.setLineDashes(5 / zoom(), 4 / zoom());
+            if (!Double.isNaN(guideX)) g.strokeLine(guideX, wy(0), guideX, wy(H));
+            if (!Double.isNaN(guideY)) g.strokeLine(wx(0), guideY, wx(W), guideY);
+            g.setLineDashes((double[]) null);
+        }
 
         // selection
         g.setStroke(SELECT_COLOR);
@@ -829,6 +841,8 @@ public class BoardView extends Pane implements ItemView {
         lastSY = pressSY = e.getY();
         pressWX = wx(pressSX);
         pressWY = wy(pressSY);
+        movedX = movedY = 0;
+        clearGuides();
         gestureCheckpointed = false;
         dragStarted = false;
         mode = Mode.NONE;
@@ -881,8 +895,10 @@ public class BoardView extends Pane implements ItemView {
             }
             case TEXT -> { // a click makes a text that takes its own width; dragging out a box sets the width it wraps at
                 mode = Mode.TEXTBOX;
-                mqX0 = mqX1 = pressWX;
-                mqY0 = mqY1 = pressWY;
+                double[] at = snapPoint(e.isAltDown(), pressWX, pressWY, java.util.Set.of());
+                clearGuides();
+                mqX0 = mqX1 = at[0];
+                mqY0 = mqY1 = at[1];
             }
             case STICKY -> {
                 createSticky(pressWX, pressWY);
@@ -904,8 +920,10 @@ public class BoardView extends Pane implements ItemView {
             case RECT, ELLIPSE, LINE, ARROW -> {
                 Type type = Type.valueOf(tool.name());
                 tmp = new BoardObject(type);
-                tmp.x = pressWX;
-                tmp.y = pressWY;
+                double[] at = snapPoint(e.isAltDown(), pressWX, pressWY, java.util.Set.of());
+                clearGuides();
+                tmp.x = at[0];
+                tmp.y = at[1];
                 tmp.color = hex(ts.color.get());
                 tmp.strokeWidth = ts.width.get();
                 if ((type == Type.RECT || type == Type.ELLIPSE) && ts.useFill.get()) tmp.fill = hex(ts.fill.get());
@@ -929,11 +947,36 @@ public class BoardView extends Pane implements ItemView {
             }
             case MOVE -> {
                 gestureCheckpoint();
-                double dx = (sx - lastSX) / zoom(), dy = (sy - lastSY) / zoom();
+                // where the pointer has taken the selection since the press, then nudged to line up with the grid or other objects
+                double totalX = (sx - pressSX) / zoom(), totalY = (sy - pressSY) / zoom();
+                double wantX = totalX, wantY = totalY;
+                clearGuides();
+                if (snapping(e.isAltDown()) && !selected.isEmpty()) {
+                    double l = Double.MAX_VALUE, t = Double.MAX_VALUE, r = -Double.MAX_VALUE, b = -Double.MAX_VALUE;
+                    for (String id : selected) {
+                        BoardObject o = board.find(id);
+                        if (o == null) continue;
+                        l = Math.min(l, o.left());
+                        t = Math.min(t, o.top());
+                        r = Math.max(r, o.right());
+                        b = Math.max(b, o.bottom());
+                    }
+                    if (l != Double.MAX_VALUE) {
+                        double ex = totalX - movedX, ey = totalY - movedY; // where the box would be without snapping
+                        dnd.map.BoardSnap.Result s = dnd.map.BoardSnap.box(l + ex, r + ex, t + ey, b + ey, targets(selected, true), targets(selected, false),
+                                ts.snapGrid.get() ? gridStepUnits() : 0, ts.snapObjects.get(), 8 / zoom());
+                        wantX += s.dx();
+                        wantY += s.dy();
+                        guideX = s.guideX();
+                        guideY = s.guideY();
+                    }
+                }
                 for (String id : selected) {
                     BoardObject o = board.find(id);
-                    if (o != null) o.move(dx, dy);
+                    if (o != null) o.move(wantX - movedX, wantY - movedY);
                 }
+                movedX = wantX;
+                movedY = wantY;
                 store.markDirty(board);
             }
             case MARQUEE -> {
@@ -946,10 +989,14 @@ public class BoardView extends Pane implements ItemView {
                     if (o.right() >= l && o.left() <= r && o.bottom() >= t && o.top() <= b) selected.add(o.id);
                 }
             }
-            case RESIZE -> resizeSelected(px, py);
+            case RESIZE -> {
+                double[] at = snapPoint(e.isAltDown(), px, py, selected);
+                resizeSelected(at[0], at[1]);
+            }
             case TEXTBOX -> {
-                mqX1 = px;
-                mqY1 = py;
+                double[] at = snapPoint(e.isAltDown(), px, py, java.util.Set.of());
+                mqX1 = at[0];
+                mqY1 = at[1];
             }
             case BEND -> {
                 BoardObject o = singleResizable();
@@ -969,8 +1016,9 @@ public class BoardView extends Pane implements ItemView {
                 }
             }
             case SHAPE -> {
-                tmp.w = px - tmp.x;
-                tmp.h = py - tmp.y;
+                double[] at = snapPoint(e.isAltDown(), px, py, java.util.Set.of());
+                tmp.w = at[0] - tmp.x;
+                tmp.h = at[1] - tmp.y;
             }
             case ERASE -> eraseAt(px, py);
             default -> { }
@@ -1025,7 +1073,57 @@ public class BoardView extends Pane implements ItemView {
         tmp = null;
         mode = Mode.NONE;
         gestureCheckpointed = false;
+        clearGuides();
         redraw();
+    }
+
+    // ---- snapping: lining things up with the dot grid and with the other objects
+
+    private void clearGuides() {
+        guideX = Double.NaN;
+        guideY = Double.NaN;
+    }
+
+    private boolean snapping(boolean alt) {
+        return !alt && (ts.snapGrid.get() || ts.snapObjects.get());
+    }
+
+    /** The distance between the dots of the grid, in board units (what drawGrid shows at this zoom). */
+    private double gridStepUnits() {
+        double step = 40 * zoom();
+        while (step < 14) step *= 2;
+        return step / zoom();
+    }
+
+    /** The x (or y) places of every other object's left/middle/right (or top/middle/bottom). */
+    private double[] targets(java.util.Collection<String> exclude, boolean horizontal) {
+        java.util.List<Double> out = new java.util.ArrayList<>();
+        for (BoardObject o : board.objects) {
+            if (exclude.contains(o.id)) continue;
+            if (horizontal) {
+                out.add(o.left());
+                out.add((o.left() + o.right()) / 2);
+                out.add(o.right());
+            } else {
+                out.add(o.top());
+                out.add((o.top() + o.bottom()) / 2);
+                out.add(o.bottom());
+            }
+        }
+        double[] a = new double[out.size()];
+        for (int i = 0; i < a.length; i++) a[i] = out.get(i);
+        return a;
+    }
+
+    /** A point moved to the grid or to another object's edge or middle if it is close (and snapping is on and Alt is not held); shows the guide lines. */
+    private double[] snapPoint(boolean alt, double px, double py, java.util.Collection<String> exclude) {
+        clearGuides();
+        if (!snapping(alt)) return new double[]{px, py};
+        dnd.map.BoardSnap.Result s = dnd.map.BoardSnap.point(px, py, targets(exclude, true), targets(exclude, false),
+                ts.snapGrid.get() ? gridStepUnits() : 0, ts.snapObjects.get(), 8 / zoom());
+        guideX = s.guideX();
+        guideY = s.guideY();
+        return new double[]{px + s.dx(), py + s.dy()};
     }
 
     private void resizeSelected(double px, double py) {

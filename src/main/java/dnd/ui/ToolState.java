@@ -21,6 +21,12 @@ public class ToolState {
     /** Show a preview of the linked item when hovering a link (remembered between sessions). */
     public final BooleanProperty linkPreviews = new SimpleBooleanProperty(AppSettings.getBoolean("linkPreviews", true));
 
+    /** Snap things to the dots of the grid while they are moved, resized or drawn (remembered between sessions). */
+    public final BooleanProperty snapGrid = new SimpleBooleanProperty(AppSettings.getBoolean("board.snapGrid", false));
+
+    /** Snap things to the edges and middles of the other objects, with guide lines (remembered between sessions). */
+    public final BooleanProperty snapObjects = new SimpleBooleanProperty(AppSettings.getBoolean("board.snapObjects", true));
+
     private static Color colourSetting(String key, String standard) {
         try {
             return Color.web(AppSettings.getString(key, standard));
@@ -32,5 +38,7 @@ public class ToolState {
     public ToolState() {
         nameHints.addListener((o, a, n) -> AppSettings.setBoolean("nameHints", n));
         linkPreviews.addListener((o, a, n) -> AppSettings.setBoolean("linkPreviews", n));
+        snapGrid.addListener((o, a, n) -> AppSettings.setBoolean("board.snapGrid", n));
+        snapObjects.addListener((o, a, n) -> AppSettings.setBoolean("board.snapObjects", n));
     }
 }

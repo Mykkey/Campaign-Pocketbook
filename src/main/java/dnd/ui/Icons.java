@@ -86,6 +86,7 @@ public final class Icons {
         def("pin", "s:M8 14 C8 14 3.5 9.5 3.5 6.5 A4.5 4.5 0 0 1 12.5 6.5 C12.5 9.5 8 14 8 14 Z", "f:M8 5.2 A1.5 1.5 0 1 1 7.99 5.2 Z");
         def("light", "s:M8 2 A4 4 0 0 1 10.5 9.3 V11 H5.5 V9.3 A4 4 0 0 1 8 2 Z M6 13 H10 M6.8 14.8 H9.2");
         def("grid", "s:M2.5 2.5 H13.5 V13.5 H2.5 Z M2.5 6.2 H13.5 M2.5 9.8 H13.5 M6.2 2.5 V13.5 M9.8 2.5 V13.5");
+        def("list", "s:M6.5 4 H14 M6.5 8 H14 M6.5 12 H14 M2.5 4 H3.2 M2.5 8 H3.2 M2.5 12 H3.2");
         def("snap", "s:M3 3 V8 A5 5 0 0 0 13 8 V3 H10 V8 A2 2 0 0 1 6 8 V3 Z");
         def("eye", "s:" + EYE);
         def("eye-off", "s:" + EYE, "sr:M3 13 L13 3");

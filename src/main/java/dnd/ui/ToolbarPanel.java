@@ -111,7 +111,36 @@ public class ToolbarPanel extends FlowPane {
                 IconMenu.toggle("snap", "Snap to other objects (their edges and middles, with guide lines)", null, ts.snapObjects),
                 IconMenu.separator(),
                 IconMenu.disableWhen(new MenuItem("Hold Alt while dragging to move freely"), new javafx.beans.property.SimpleBooleanProperty(true)));
-        getChildren().addAll(labelled("Colour", color), labelled("Fill", fill), labelled("Font size", font), bold, italic, lines, snap, new Separator(Orientation.VERTICAL));
+        MenuButton listMenu = IconMenu.create("list", "Lists: bullets and numbers in a text box (Ctrl+Shift+8 bullets, Ctrl+Shift+7 numbers)");
+        Menu bulletStyles = new Menu("Bullets");
+        bulletStyles.setGraphic(Icons.of("list"));
+        for (dnd.text.ListFormat.Style st : dnd.text.ListFormat.BULLETS) {
+            bulletStyles.getItems().add(IconMenu.action(null, st.glyph() + "   " + st.name(), null, () -> startList(current, st)));
+        }
+        Menu numberStyles = new Menu("Numbers and letters");
+        numberStyles.setGraphic(Icons.of("list"));
+        for (dnd.text.ListFormat.Style st : dnd.text.ListFormat.NUMBERED) {
+            numberStyles.getItems().add(IconMenu.action(null, st.name(), null, () -> startList(current, st)));
+        }
+        Menu indentStyles = new Menu("When indented (Tab)");
+        indentStyles.setGraphic(Icons.of("list"));
+        for (dnd.text.ListFormat.Scheme sc : dnd.text.ListFormat.SCHEMES) {
+            CheckMenuItem item = new CheckMenuItem(sc.name());
+            item.setSelected(sc.id().equals(ts.listScheme.get()));
+            item.setOnAction(e -> ts.listScheme.set(sc.id()));
+            ts.listScheme.addListener((o, a, n) -> item.setSelected(sc.id().equals(n)));
+            indentStyles.getItems().add(item);
+        }
+        listMenu.getItems().addAll(
+                IconMenu.toggle("list", "Carry the list on when I press Enter (1. then 2., a bullet then a bullet)", null, ts.listAuto),
+                IconMenu.separator(),
+                row("list", "Bullet list (again to remove)", "text.bullets", v -> v.startList(dnd.text.ListFormat.BULLETS.get(0)), current),
+                row("list", "Numbered list (again to remove)", "text.numbered", v -> v.startList(dnd.text.ListFormat.NUMBER_DOT), current),
+                bulletStyles, numberStyles,
+                IconMenu.separator(),
+                indentStyles,
+                IconMenu.disableWhen(new MenuItem("Tab indents an item and changes its marker; Shift+Tab moves it back"), new javafx.beans.property.SimpleBooleanProperty(true)));
+        getChildren().addAll(labelled("Colour", color), labelled("Fill", fill), labelled("Font size", font), bold, italic, lines, listMenu, snap, new Separator(Orientation.VERTICAL));
 
         // --- links and notes
         MenuButton links = IconMenu.create("link", "Links and notes: link words or objects to other items, add hover notes");
@@ -136,6 +165,11 @@ public class ToolbarPanel extends FlowPane {
         javafx.scene.layout.HBox box = new javafx.scene.layout.HBox(4, new Label(caption), control);
         box.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
         return box;
+    }
+
+    private static void startList(Supplier<BoardView> current, dnd.text.ListFormat.Style style) {
+        BoardView v = current.get();
+        if (v != null) v.startList(style);
     }
 
     private static MenuItem row(String icon, String label, String actionId, Consumer<BoardView> run, Supplier<BoardView> current) {

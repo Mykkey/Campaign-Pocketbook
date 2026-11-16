@@ -63,8 +63,14 @@ final class RichLayout {
      */
     static List<Line> layout(String markup, BoardObject o, double maxWidth, List<dnd.text.NameHints.Hint> hints) {
         Builder b = new Builder(maxWidth);
+        List<Run> runs = RichText.parse(markup);
+        StringBuilder all = new StringBuilder();
+        for (Run r : runs) all.append(r.text());
+        String plain = all.toString();
+        int prefixEnd = listPrefixEnd(plain, 0); // a list item's wrapped lines line up under its text, not under its marker
+        boolean hung = prefixEnd == 0;
         int plainPos = 0;
-        for (Run r : RichText.parse(markup)) {
+        for (Run r : runs) {
             String text = r.text();
             int i = 0;
             while (i < text.length()) {
@@ -72,6 +78,8 @@ final class RichLayout {
                 if (c == '\n') {
                     b.newline();
                     i++;
+                    prefixEnd = listPrefixEnd(plain, plainPos + i);
+                    hung = prefixEnd == plainPos + i;
                     continue;
                 }
                 boolean space = c == ' ';
@@ -93,10 +101,20 @@ final class RichLayout {
                 String piece = text.substring(i, j);
                 b.add(new Piece(piece, r.bold(), r.italic(), width(o, piece, r.bold(), r.italic()), space, r.ref(), hintId, plainPos + i));
                 i = j;
+                if (!hung && plainPos + i >= prefixEnd) {
+                    b.hang();
+                    hung = true;
+                }
             }
             plainPos += text.length();
         }
         return b.finish();
+    }
+
+    /** Where the text of the list item starting at {@code lineStart} begins (its marker and spaces end), or lineStart if it is no item. */
+    private static int listPrefixEnd(String plain, int lineStart) {
+        int end = plain.indexOf('\n', lineStart);
+        return lineStart + dnd.text.ListFormat.prefixLength(plain.substring(lineStart, end < 0 ? plain.length() : end));
     }
 
     /** Width of the widest line. */
@@ -113,6 +131,8 @@ final class RichLayout {
         private List<Seg> cur = new ArrayList<>();
         private final List<Piece> word = new ArrayList<>();
         private double x;
+        /** Where lines that wrap start: under the text of a list item (zero for other text). */
+        private double hang;
 
         Builder(double max) {
             this.max = max;
@@ -125,13 +145,22 @@ final class RichLayout {
 
         void newline() {
             flush();
-            breakLine();
+            lines.add(new Line(cur, x));
+            cur = new ArrayList<>();
+            x = 0;
+            hang = 0;
+        }
+
+        /** The marker of a list item has been laid out: wrapped lines start where its text does. */
+        void hang() {
+            flush();
+            hang = x;
         }
 
         private void breakLine() {
             lines.add(new Line(cur, x));
             cur = new ArrayList<>();
-            x = 0;
+            x = hang;
         }
 
         private void flush() {
@@ -139,7 +168,7 @@ final class RichLayout {
             double wordWidth = 0;
             for (Piece p : word) if (!p.space) wordWidth += p.w;
             // start a new line if this word would stick out (but never leave a line empty)
-            if (max > 0 && !cur.isEmpty() && x + wordWidth > max) breakLine();
+            if (max > 0 && !cur.isEmpty() && x + wordWidth > max && x > hang) breakLine();
             for (Piece p : word) {
                 cur.add(new Seg(p.text, p.bold, p.italic, x, p.w, p.ref, p.hint, p.plainStart));
                 x += p.w;

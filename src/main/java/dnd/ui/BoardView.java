@@ -1,5 +1,6 @@
 package dnd.ui;
 
+import dnd.text.ListFormat;
 import dnd.model.Board;
 import dnd.model.BoardObject;
 import dnd.model.BoardObject.Type;
@@ -1418,6 +1419,20 @@ public class BoardView extends Pane implements ItemView {
             } else if (dnd.keys.Shortcuts.matches(ev, "item.link")) {
                 linkSelected(); // links the selected words
                 ev.consume();
+            } else if (dnd.keys.Shortcuts.matches(ev, "text.bullets")) {
+                startList(ListFormat.BULLETS.get(0));
+                ev.consume();
+            } else if (dnd.keys.Shortcuts.matches(ev, "text.numbered")) {
+                startList(ListFormat.NUMBER_DOT);
+                ev.consume();
+            } else if (ev.getCode() == KeyCode.ENTER && !ev.isShortcutDown() && !ev.isShiftDown() && !ev.isAltDown() && ts.listAuto.get()
+                    && ta.getSelection().getLength() == 0) {
+                if (applyListEdit(ta, ListFormat.enter(ta.getText(), ta.getCaretPosition(), ListFormat.scheme(ts.listScheme.get())))) ev.consume();
+            } else if (ev.getCode() == KeyCode.TAB && !ev.isShortcutDown() && !ev.isAltDown()) {
+                // Tab and Shift+Tab move list items in and out (and change the marker); elsewhere they indent with spaces
+                applyListEdit(ta, ListFormat.shift(ta.getText(), ta.getSelection().getStart(), ta.getSelection().getEnd(),
+                        ev.isShiftDown(), ListFormat.scheme(ts.listScheme.get())));
+                ev.consume(); // Tab never types a tab character or leaves the box
             }
         });
         hover.clear();
@@ -1509,6 +1524,34 @@ public class BoardView extends Pane implements ItemView {
         editor.selectRange(e.selStart(), e.selEnd());
         editor.requestFocus();
         return true;
+    }
+
+    /** Puts a list edit into the editor (one undoable change for the box as a whole is already taken at the start of the edit). */
+    private boolean applyListEdit(TextArea ta, ListFormat.Edit e) {
+        if (e == null) return false;
+        ta.setText(e.text());
+        ta.selectRange(e.selStart(), e.selEnd());
+        return true;
+    }
+
+    /**
+     * Turns the lines being typed (the selected ones, or the caret's line) into a list of this style, or back into plain
+     * lines when they already are one. With no text being edited, a single selected text box or note is changed as a whole.
+     */
+    public boolean startList(ListFormat.Style style) {
+        if (editor == null) {
+            BoardObject o = selected.size() == 1 ? board.find(selected.iterator().next()) : null;
+            if (o == null || (o.type != Type.TEXT && o.type != Type.STICKY) || o.text == null) return false;
+            ListFormat.Edit e = ListFormat.toggle(o.text, 0, o.text.length(), style);
+            if (e == null) return false;
+            checkpoint();
+            o.text = e.text();
+            measure(o);
+            changed();
+            return true;
+        }
+        javafx.scene.control.IndexRange sel = editor.getSelection();
+        return applyListEdit(editor, ListFormat.toggle(editor.getText(), sel.getStart(), sel.getEnd(), style));
     }
 
     private static String cssRgb(Color c) {

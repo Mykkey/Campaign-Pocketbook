@@ -27,6 +27,13 @@ public class ToolState {
     /** Snap things to the edges and middles of the other objects, with guide lines (remembered between sessions). */
     public final BooleanProperty snapObjects = new SimpleBooleanProperty(AppSettings.getBoolean("board.snapObjects", true));
 
+    /** Typing Enter in a list carries the list on (1. then 2., a bullet then another bullet); remembered between sessions. */
+    public final BooleanProperty listAuto = new SimpleBooleanProperty(AppSettings.getBoolean("board.listAuto", true));
+
+    /** The id of the {@link dnd.text.ListFormat.Scheme} that says how the marker changes when an item is indented. */
+    public final javafx.beans.property.StringProperty listScheme =
+            new javafx.beans.property.SimpleStringProperty(AppSettings.getString("board.listScheme", "outline"));
+
     private static Color colourSetting(String key, String standard) {
         try {
             return Color.web(AppSettings.getString(key, standard));
@@ -40,5 +47,7 @@ public class ToolState {
         linkPreviews.addListener((o, a, n) -> AppSettings.setBoolean("linkPreviews", n));
         snapGrid.addListener((o, a, n) -> AppSettings.setBoolean("board.snapGrid", n));
         snapObjects.addListener((o, a, n) -> AppSettings.setBoolean("board.snapObjects", n));
+        listAuto.addListener((o, a, n) -> AppSettings.setBoolean("board.listAuto", n));
+        listScheme.addListener((o, a, n) -> AppSettings.setString("board.listScheme", n));
     }
 }

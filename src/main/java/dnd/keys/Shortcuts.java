@@ -101,6 +101,8 @@ public final class Shortcuts {
         add("item.delete", "Delete the selection", it, Context.ITEM, "Delete", "Backspace");
         add("item.escape", "Deselect / cancel", it, Context.ITEM, "Esc");
         add("item.edit", "Edit the selected text / finish drawing", it, Context.ITEM, false, true, "Enter", "F2");
+        add("text.bullets", "While typing: make the lines a bulleted list (again to remove)", it, Context.BOARD, true, false, "Shortcut+Shift+8");
+        add("text.numbered", "While typing: make the lines a numbered list (again to remove)", it, Context.BOARD, true, false, "Shortcut+Shift+7");
         add("item.fit", "Fit everything in view", it, Context.ITEM, "Shortcut+0");
         add("item.actualSize", "Actual size (100%)", it, Context.ITEM, "Shortcut+1");
         add("item.zoomIn", "Zoom in", it, Context.ITEM, "Shortcut+Equals", "Shortcut+Plus", "Shortcut+Add");

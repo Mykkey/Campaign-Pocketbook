@@ -234,6 +234,7 @@ public class CardEditor extends BorderPane implements ItemView {
             changed();
         };
         name.setOnAction(e -> applyName.run());
+        name.textProperty().addListener((o, a, n) -> applyName.run()); // the card, tree and tabs follow as you type
         name.focusedProperty().addListener((o, was, is) -> {
             if (!is) applyName.run();
         });
@@ -283,7 +284,7 @@ public class CardEditor extends BorderPane implements ItemView {
         VBox alignBox = labelled("Alignment", field(card.alignment, v -> card.alignment = v, "neutral evil"));
         creatureFields = new HBox(8, sizeBox, typeBox);
         alignmentField = alignBox;
-        VBox left = new VBox(8, labelled("Name (press Enter to apply)", name),
+        VBox left = new VBox(8, labelled("Name", name),
                 labelled("Also known as (comma separated, for name hints on whiteboards)", aliases),
                 row(labelled("Kind", kind), creatureFields, alignBox));
         HBox.setHgrow(left, Priority.ALWAYS);

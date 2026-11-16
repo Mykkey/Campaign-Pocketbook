@@ -85,6 +85,8 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Button newQuest = new Button("+ Quest");
         newQuest.setTooltip(IconButtons.tip("Create a quest or plot thread with steps, clues and the people and places it involves"));
         newQuest.setOnAction(e -> newQuest(selectedFolder()));
+        Button newDeity = new Button("+ Deity");
+        newDeity.setOnAction(e -> newDeity(selectedFolder()));
         Button newOrg = new Button("+ Organisation");
         newOrg.setTooltip(IconButtons.tip("Create an organisation: a guild, faction, family or party, with its members"));
         newOrg.setOnAction(e -> newOrganisation(selectedFolder()));
@@ -107,14 +109,15 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         newButton(newSession, TreeNode.KIND_SESSION, "New session: what happened, a recap for next time, and what came up");
         newButton(newWorld, TreeNode.KIND_WORLDMAP, "New world map: paint land, sea and biomes, then add mountains, forests, towns and labels");
         newButton(newEncounter, TreeNode.KIND_ENCOUNTER, "New encounter: pick creatures and see how hard the fight is for your party");
+        newButton(newDeity, "deity", "New deity: a god with a portfolio, domains, alignment, holy symbol, holy days and tenets, who can lead an organisation or have family and rivals");
         newButton(newFolder, "folder", "New folder: to keep related items together");
         // one row per group, with a faint line between the groups: notes, maps and fights, then reference cards and the folder
         VBox treeButtons = new VBox(3,
-                new HBox(4, newBoard, newSession, newQuest),
+                new HBox(4, newBoard, newSession, newQuest, new Separator(javafx.geometry.Orientation.VERTICAL), newFolder),
                 treeDivider(),
                 new HBox(4, newWorld, newMap, newEncounter),
                 treeDivider(),
-                new HBox(4, newCard, newOrg, newSpell, newItem, new Separator(javafx.geometry.Orientation.VERTICAL), newFolder));
+                new HBox(4, newCard, newDeity, newOrg, newSpell, newItem));
         tree.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE); // Ctrl-click or Shift-click to pick several and move them together
         tree.setCellFactory(v -> createTreeCell(true));
         tree.setOnMouseClicked(e -> {
@@ -200,6 +203,9 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
         Button timeline = new Button("Timeline...");
         timeline.setTooltip(IconButtons.tip("Your sessions in order, with the recap of each"));
         timeline.setOnAction(e -> TimelineDialog.show(getScene().getWindow(), store, this::openItem));
+        Button pantheon = new Button("Pantheon...");
+        pantheon.setTooltip(IconButtons.tip("Your gods by alignment, domain, rank and organisation"));
+        pantheon.setOnAction(e -> PantheonDialog.show(getScene().getWindow(), store, this::openItem));
         Button library = new Button("Library...");
         library.setTooltip(IconButtons.tip("Browse imported SRD monsters and spells"));
         library.setOnAction(e -> openLibrary());
@@ -221,6 +227,7 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
                 IconMenu.separator(),
                 menuRow("relations", "Family tree and relationship web", null, relations),
                 menuRow("quest", "Quest board", null, quests),
+                menuRow("sun", "Pantheon: your gods by alignment, domain and rank", null, pantheon),
                 menuRow("calendar", "Session timeline", null, timeline));
         MenuButton historyMenu = IconMenu.create("clock", "History: recent items and what links here");
         historyMenu.getItems().addAll(recentMenu, backlinks);
@@ -1158,6 +1165,19 @@ public class WorkspaceView extends BorderPane implements BoardView.Host {
             store.createQuest(parent, qu);
             refreshTree();
             openItem(qu.id);
+        });
+    }
+
+    private void newDeity(TreeNode parent) {
+        ask("New deity", "Deity name:", "New Deity").ifPresent(name -> {
+            dnd.model.Card god = new dnd.model.Card();
+            god.name = name;
+            god.kind = dnd.model.Card.Kind.DEITY;
+            god.alignment = "true neutral";
+            god.divineRank = "Lesser god";
+            dnd.model.Card made = store.createCard(parent, god);
+            refreshTree();
+            openItem(made.id);
         });
     }
 

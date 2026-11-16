@@ -263,7 +263,9 @@ public final class SearchService {
         }
         for (String alias : c.aliases) if (has(alias, q)) return "also known as: " + alias;
         for (dnd.model.Relation r : c.relations) if (has(r.note, q)) return "relationship: " + excerpt(r.note, q);
-        String[][] fields = {{"notes", c.notes}, {"type", c.creatureType}, {"alignment", c.alignment}, {"languages", c.languages},
+        String[][] fields = {{"portfolio", c.portfolio}, {"domains", c.domains}, {"rank", c.divineRank}, {"symbol", c.symbol}, {"holy days", c.holyDays},
+                {"tenets", c.tenets}, {"rites", c.rites}, {"favoured weapon", c.favouredWeapon},
+                {"notes", c.notes}, {"type", c.creatureType}, {"alignment", c.alignment}, {"languages", c.languages},
                 {"senses", c.senses}, {"skills", c.skills}, {"resistances", c.resistances}, {"immunities", c.immunities},
                 {"vulnerabilities", c.vulnerabilities}, {"saves", c.saves}};
         for (String[] f : fields) if (has(f[1], q)) return f[0] + ": " + excerpt(f[1], q);

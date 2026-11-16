@@ -33,6 +33,7 @@ public class OrganisationCardView extends VBox {
                 case PLAYER -> "Player";
                 case NPC -> "NPC";
                 case MONSTER -> "Monster";
+                case DEITY -> "Deity";
             };
         }
         return "";

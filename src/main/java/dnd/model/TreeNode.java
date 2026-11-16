@@ -29,6 +29,8 @@ public class TreeNode {
     public List<TreeNode> children = new ArrayList<>();
     /** Chosen colour as "#RRGGBB", or null for the default colour of its kind. */
     public String color;
+    /** True for a card that is a deity (it gets its own icon and colour in the tree). */
+    public boolean divine;
 
     public TreeNode() { }
 

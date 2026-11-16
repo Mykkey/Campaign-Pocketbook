@@ -49,6 +49,7 @@ public final class MarkdownExport {
 
     /** A creature or character as a stat block. */
     public static String card(Card c) {
+        if (c.kind == Card.Kind.DEITY) return deity(c);
         StringBuilder sb = new StringBuilder();
         line(sb, "# " + c.name);
         line(sb, "*" + c.size + " " + c.creatureType + ", " + c.alignment + "*");
@@ -172,6 +173,39 @@ public final class MarkdownExport {
             line(sb, "## Notes");
             line(sb, "");
             line(sb, q.notes.trim());
+        }
+        return sb.toString().trim() + "\n";
+    }
+
+    /** A deity: what it governs, its symbol, domains, rites and holy days. */
+    static String deity(Card c) {
+        StringBuilder sb = new StringBuilder();
+        line(sb, "# " + c.name);
+        String sub = (has(c.divineRank) ? c.divineRank.trim() : "Deity") + (has(c.alignment) ? ", " + c.alignment.trim() : "");
+        line(sb, "*" + sub + "*");
+        line(sb, "");
+        field(sb, "Portfolio", c.portfolio);
+        field(sb, "Domains", c.domains);
+        field(sb, "Holy symbol", c.symbol);
+        field(sb, "Favoured weapon", c.favouredWeapon);
+        field(sb, "Holy days", c.holyDays);
+        if (has(c.tenets)) {
+            line(sb, "");
+            line(sb, "## Tenets");
+            line(sb, "");
+            line(sb, c.tenets.trim());
+        }
+        if (has(c.rites)) {
+            line(sb, "");
+            line(sb, "## Rites and taboos");
+            line(sb, "");
+            line(sb, c.rites.trim());
+        }
+        if (has(c.notes)) {
+            line(sb, "");
+            line(sb, "## Notes");
+            line(sb, "");
+            line(sb, c.notes.trim());
         }
         return sb.toString().trim() + "\n";
     }

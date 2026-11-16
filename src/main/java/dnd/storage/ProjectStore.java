@@ -277,12 +277,22 @@ public final class ProjectStore {
     }
 
     /** Adds a card to the project under {@code parent}. The card gets a fresh id and becomes the tree node's id. */
+    /** Keeps the tree's deity icon in step with the card's kind (call after the kind of a card was changed). */
+    public void syncDivine(Card c) {
+        TreeNode n = project.root.find(c.id);
+        if (n != null && n.divine != (c.kind == Card.Kind.DEITY)) {
+            n.divine = c.kind == Card.Kind.DEITY;
+            markProjectDirty();
+        }
+    }
+
     public Card createCard(TreeNode parent, Card card) {
         Card c = card;
         c.id = java.util.UUID.randomUUID().toString();
         TreeNode n = new TreeNode(c.name, false);
         n.id = c.id;
         n.kind = TreeNode.KIND_CARD;
+        n.divine = c.kind == Card.Kind.DEITY;
         parent.children.add(n);
         cardCache.put(c.id, c);
         markCardDirty(c);

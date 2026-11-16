@@ -38,6 +38,10 @@ public class StatBlockView extends VBox {
 
     public void refresh(Card c) {
         getChildren().clear();
+        if (c.kind == Card.Kind.DEITY) {
+            refreshDeity(c);
+            return;
+        }
 
         HBox head = new HBox(8);
         VBox titles = new VBox(1);
@@ -96,6 +100,46 @@ public class StatBlockView extends VBox {
         if (!c.legendary.isEmpty()) {
             getChildren().add(sectionTitle("Legendary Actions"));
             for (Feature f : c.legendary) getChildren().add(feature(f));
+        }
+        if (!c.notes.isBlank()) {
+            getChildren().add(rule());
+            getChildren().add(flow(styled("Notes. ", 12, FontWeight.BOLD, FontPosture.ITALIC, "#222"),
+                    styled(c.notes.trim(), 12, FontWeight.NORMAL, FontPosture.REGULAR, "#222")));
+        }
+    }
+
+    /** A deity is shown as a page of what it governs and how it is worshipped, not as a stat block. */
+    private void refreshDeity(Card c) {
+        HBox head = new HBox(8);
+        VBox titles = new VBox(1);
+        Text name = styled(c.name.isBlank() ? "(unnamed)" : c.name, 22, FontWeight.BOLD, FontPosture.REGULAR, RED);
+        StringBuilder sub = new StringBuilder(c.divineRank == null || c.divineRank.isBlank() ? "Deity" : c.divineRank.trim());
+        if (c.alignment != null && !c.alignment.isBlank()) sub.append(", ").append(c.alignment.trim());
+        titles.getChildren().addAll(new TextFlow(name), new TextFlow(styled(sub.toString(), 12, FontWeight.NORMAL, FontPosture.ITALIC, "#222")));
+        HBox.setHgrow(titles, Priority.ALWAYS);
+        head.getChildren().add(titles);
+        Node portrait = portrait(c);
+        if (portrait != null) head.getChildren().add(portrait);
+        getChildren().addAll(head, rule());
+        addProp("Portfolio", c.portfolio);
+        addProp("Domains", c.domains);
+        addProp("Holy symbol", c.symbol);
+        addProp("Favoured weapon", c.favouredWeapon);
+        addProp("Holy days", c.holyDays);
+        if (c.tenets != null && !c.tenets.isBlank()) {
+            getChildren().add(sectionTitle("Tenets"));
+            getChildren().add(flow(styled(c.tenets.trim(), 12, FontWeight.NORMAL, FontPosture.REGULAR, "#222")));
+        }
+        if (c.rites != null && !c.rites.isBlank()) {
+            getChildren().add(sectionTitle("Rites and taboos"));
+            getChildren().add(flow(styled(c.rites.trim(), 12, FontWeight.NORMAL, FontPosture.REGULAR, "#222")));
+        }
+        List<dnd.model.Organisation> groups = store.organisationsOf(c.id);
+        if (!groups.isEmpty()) {
+            StringBuilder names = new StringBuilder();
+            for (dnd.model.Organisation o : groups) names.append(names.length() == 0 ? "" : ", ").append(o.name);
+            getChildren().add(rule());
+            getChildren().add(prop("Part of", names.toString()));
         }
         if (!c.notes.isBlank()) {
             getChildren().add(rule());

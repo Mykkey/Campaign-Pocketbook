@@ -129,6 +129,7 @@ final class HierarchyChart extends BorderPane {
             OverviewGraph.NodeKind nk = switch (kind) {
                 case "Player" -> OverviewGraph.NodeKind.PLAYER;
                 case "Monster" -> OverviewGraph.NodeKind.MONSTER;
+                case "Deity" -> OverviewGraph.NodeKind.DEITY;
                 case "Organisation" -> OverviewGraph.NodeKind.ORGANISATION;
                 default -> OverviewGraph.NodeKind.NPC;
             };

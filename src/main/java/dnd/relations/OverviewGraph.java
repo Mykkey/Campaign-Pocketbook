@@ -17,7 +17,7 @@ import java.util.Set;
  * and organisations. Only things that are connected to something appear.
  */
 public final class OverviewGraph {
-    public enum NodeKind { PLAYER, NPC, MONSTER, ORGANISATION }
+    public enum NodeKind { PLAYER, NPC, MONSTER, DEITY, ORGANISATION }
 
     public enum EdgeKind {
         PARENT(Group.FAMILY), SPOUSE(Group.FAMILY), SIBLING(Group.FAMILY),
@@ -63,6 +63,7 @@ public final class OverviewGraph {
                 case PLAYER -> NodeKind.PLAYER;
                 case NPC -> NodeKind.NPC;
                 case MONSTER -> NodeKind.MONSTER;
+                case DEITY -> NodeKind.DEITY;
             };
             String sub = c.creatureType == null || c.creatureType.isBlank() ? c.kind.name().toLowerCase() : c.creatureType;
             all.put(c.id, new Node(c.id, c.name, sub, k));

@@ -27,12 +27,13 @@ public final class NodeColors {
     public static final String SESSION = "#6b7fd6";
     public static final String WORLD_MAP = "#2f9e8f";
     public static final String ORGANISATION = "#a0568c";
+    public static final String DEITY = "#d4a017";
 
     /** The colour a node has unless the DM picked one. */
     public static String defaultFor(TreeNode n) {
         if (n.folder) return FOLDER;
         if (n.isBattleMap()) return BATTLEMAP;
-        if (n.isCard()) return CARD;
+        if (n.isCard()) return n.divine ? DEITY : CARD;
         if (n.isEncounter()) return ENCOUNTER;
         if (n.isSpell()) return SPELL;
         if (n.isMagicItem()) return MAGIC_ITEM;

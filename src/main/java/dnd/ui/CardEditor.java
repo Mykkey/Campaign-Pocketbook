@@ -54,11 +54,17 @@ public class CardEditor extends BorderPane implements ItemView {
 
         VBox form = new VBox(14);
         form.setPadding(new Insets(14));
-        form.getChildren().addAll(identitySection(), defenseSection(), abilitySection(), detailsSection(),
-                new FeatureList("Traits", card.traits), attackSection(),
+        Node identity = identitySection();
+        divinity = divinitySection();
+        statSections = List.of(defenseSection(), abilitySection(), detailsSection(), new FeatureList("Traits", card.traits), attackSection(),
                 new FeatureList("Other actions", card.actions), new FeatureList("Reactions", card.reactions),
-                new FeatureList("Legendary actions", card.legendary), notesSection());
+                new FeatureList("Legendary actions", card.legendary));
+        form.getChildren().add(identity);
+        form.getChildren().add(divinity);
+        form.getChildren().addAll(statSections);
+        form.getChildren().add(notesSection());
         if (portraits) form.getChildren().add(relationsSection()); // shared library creatures have no relationships
+        applyKind();
         ScrollPane formScroll = new ScrollPane(form);
         formScroll.setFitToWidth(true);
 
@@ -71,6 +77,81 @@ public class CardEditor extends BorderPane implements ItemView {
         Panels.remember(split, "editor.card", 0.6);
         setCenter(split);
         changedQuietly();
+    }
+
+    // ================================================================ deities
+
+    private Node divinity;
+    private List<Node> statSections = List.of();
+    private Node creatureFields;
+    private Node alignmentField;
+    private Button portraitChoose;
+
+    /** Shows the divinity section and hides the stat-block sections for a deity, and the other way round for anything else. */
+    private void applyKind() {
+        boolean deity = card.kind == Card.Kind.DEITY;
+        if (divinity != null) {
+            divinity.setVisible(deity);
+            divinity.setManaged(deity);
+        }
+        for (Node n : statSections) {
+            n.setVisible(!deity);
+            n.setManaged(!deity);
+        }
+        if (creatureFields != null) {
+            creatureFields.setVisible(!deity);
+            creatureFields.setManaged(!deity);
+        }
+        if (alignmentField != null) {
+            alignmentField.setVisible(!deity);
+            alignmentField.setManaged(!deity);
+        }
+        if (portraitChoose != null) portraitChoose.setText(deity ? "Image..." : "Portrait...");
+    }
+
+    private static final String[] ALIGNMENTS = {"lawful good", "neutral good", "chaotic good", "lawful neutral", "true neutral", "chaotic neutral",
+            "lawful evil", "neutral evil", "chaotic evil", "unaligned"};
+    private static final String[] RANKS = {"Greater god", "Intermediate god", "Lesser god", "Demigod", "Saint or hero", "Archfey", "Ancestor spirit", "Primordial"};
+
+    /** What makes a deity: what it governs, its domains and alignment, symbol, holy days, tenets and rites. */
+    private Node divinitySection() {
+        ComboBox<String> rank = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(RANKS));
+        rank.setEditable(true);
+        rank.setValue(card.divineRank == null ? "" : card.divineRank);
+        rank.setPrefWidth(180);
+        rank.getEditor().textProperty().addListener((o, a, n) -> {
+            card.divineRank = n == null ? "" : n;
+            changed();
+        });
+        ComboBox<String> alignment = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(ALIGNMENTS));
+        alignment.setEditable(true);
+        alignment.setValue(card.alignment == null ? "" : card.alignment);
+        alignment.setPrefWidth(180);
+        alignment.getEditor().textProperty().addListener((o, a, n) -> {
+            card.alignment = n == null ? "" : n;
+            changed();
+        });
+        TextField portfolio = field(card.portfolio, v -> card.portfolio = v, "e.g. the sea, storms and sailors");
+        TextField domains = field(card.domains, v -> card.domains = v, "e.g. Tempest, Nature");
+        domains.setTooltip(IconButtons.tip("The domains this god grants, separated by commas. The Pantheon overview lists which god covers which domain."));
+        TextField symbol = field(card.symbol, v -> card.symbol = v, "e.g. a silver trident over three waves");
+        TextField weapon = field(card.favouredWeapon, v -> card.favouredWeapon = v, "e.g. trident");
+        TextField holyDays = field(card.holyDays, v -> card.holyDays = v, "e.g. Midsummer tide; the first storm of autumn");
+        TextArea tenets = FormKit.area(card.tenets, v -> card.tenets = v, "What the faithful believe and are asked to do", 4, this::changed);
+        TextArea rites = FormKit.area(card.rites, v -> card.rites = v, "Rites, offerings, taboos", 4, this::changed);
+        Label hint = new Label("Gods can be members of an organisation (a pantheon, a court of lesser gods) and have family ties and rivalries "
+                + "like any card: see Relationships below.");
+        hint.setWrapText(true);
+        hint.setStyle("-fx-text-fill: -t-text3; -fx-font-size: 0.917em;");
+        return section("Divinity",
+                row(labelled("Divine rank", rank), labelled("Alignment", alignment), labelled("Favoured weapon", weapon)),
+                labelled("Portfolio (what it governs)", portfolio),
+                labelled("Domains", domains),
+                labelled("Holy symbol", symbol),
+                labelled("Holy days", holyDays),
+                labelled("Tenets", tenets),
+                labelled("Rites and taboos", rites),
+                hint);
     }
 
     // ================================================================ helpers
@@ -162,6 +243,8 @@ public class CardEditor extends BorderPane implements ItemView {
         kind.setValue(card.kind);
         kind.setOnAction(e -> {
             card.kind = kind.getValue();
+            store.syncDivine(card);
+            applyKind();
             changed();
         });
         ComboBox<String> size = new ComboBox<>();
@@ -177,6 +260,7 @@ public class CardEditor extends BorderPane implements ItemView {
         portraitView.setPreserveRatio(true);
         updatePortrait();
         Button choose = new Button("Portrait...");
+        portraitChoose = choose;
         choose.setOnAction(e -> choosePortrait());
         Button clear = new Button("Clear");
         clear.setOnAction(e -> {
@@ -194,11 +278,14 @@ public class CardEditor extends BorderPane implements ItemView {
         }, "e.g. Jasper, Jas, Captain Egan");
         aliases.setTooltip(IconButtons.tip("Other names this card goes by, separated by commas. On whiteboards, typing one of them "
                 + "(at least 2 letters) offers to link or preview this card, just like its full name."));
+        VBox sizeBox = labelled("Size", size);
+        VBox typeBox = labelled("Creature type", field(card.creatureType, v -> card.creatureType = v, "humanoid"));
+        VBox alignBox = labelled("Alignment", field(card.alignment, v -> card.alignment = v, "neutral evil"));
+        creatureFields = new HBox(8, sizeBox, typeBox);
+        alignmentField = alignBox;
         VBox left = new VBox(8, labelled("Name (press Enter to apply)", name),
                 labelled("Also known as (comma separated, for name hints on whiteboards)", aliases),
-                row(labelled("Kind", kind), labelled("Size", size),
-                        labelled("Creature type", field(card.creatureType, v -> card.creatureType = v, "humanoid")),
-                        labelled("Alignment", field(card.alignment, v -> card.alignment = v, "neutral evil"))));
+                row(labelled("Kind", kind), creatureFields, alignBox));
         HBox.setHgrow(left, Priority.ALWAYS);
         return section("Identity", row(left, portraitBox));
     }

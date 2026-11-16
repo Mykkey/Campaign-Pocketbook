@@ -36,6 +36,10 @@ public final class NodeIcons {
         } else if (n.isBattleMap()) {
             p.getChildren().addAll(fill("M1 3.5 L5.5 2 L10.5 3.5 L15 2 V12.5 L10.5 14 L5.5 12.5 L1 14 Z", c),
                     line("M5.5 2.5 V12.5 M10.5 3.5 V13.5", Color.web("#ffffff", 0.8), 1));
+        } else if (n.isCard() && n.divine) { // a card with a halo
+            p.getChildren().addAll(fill("M2.5 4.5 H13.5 A1 1 0 0 1 14.5 5.5 V13.5 A1 1 0 0 1 13.5 14.5 H2.5 A1 1 0 0 1 1.5 13.5 V5.5 A1 1 0 0 1 2.5 4.5 Z", c),
+                    line("M4.6 2.4 C6.6 0.8 9.4 0.8 11.4 2.4", Color.web("#ffffff", 0.95), 1.4),
+                    fill("M8 6.6 A1.6 1.6 0 1 1 7.99 6.6 Z M5.2 12.6 C5.2 10.2 6.6 9.2 8 9.2 C9.4 9.2 10.8 10.2 10.8 12.6 Z", Color.web("#ffffff", 0.92)));
         } else if (n.isCard()) {
             p.getChildren().addAll(fill("M2.5 1.5 H13.5 A1 1 0 0 1 14.5 2.5 V13.5 A1 1 0 0 1 13.5 14.5 H2.5 A1 1 0 0 1 1.5 13.5 V2.5 A1 1 0 0 1 2.5 1.5 Z", c),
                     fill("M3.5 3.5 H12.5 V5.2 H3.5 Z", Color.web("#ffffff", 0.9)),
@@ -75,7 +79,12 @@ public final class NodeIcons {
     /** The icon of a kind of item (null kind = whiteboard, "folder" = folder) with a small green plus, for the "new..." buttons. */
     public static Node newIcon(String kind) {
         TreeNode n = new TreeNode("", "folder".equals(kind));
-        if (!"folder".equals(kind)) n.kind = kind;
+        if ("deity".equals(kind)) {
+            n.kind = TreeNode.KIND_CARD;
+            n.divine = true;
+        } else if (!"folder".equals(kind)) {
+            n.kind = kind;
+        }
         Node base = icon(n, false);
         SVGPath halo = new SVGPath();
         halo.setContent("M12.5 8.5 V15.5 M9 12 H16");

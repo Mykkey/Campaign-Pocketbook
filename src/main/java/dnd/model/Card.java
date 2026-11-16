@@ -9,7 +9,7 @@ import java.util.UUID;
  * Combatants in a battle copy their HP/AC from a card and look up its attacks.
  */
 public class Card {
-    public enum Kind { PLAYER, NPC, MONSTER }
+    public enum Kind { PLAYER, NPC, MONSTER, DEITY }
 
     public String id = UUID.randomUUID().toString();
     public String name = "New Card";
@@ -52,6 +52,23 @@ public class Card {
     public List<Feature> reactions = new ArrayList<>();
     public List<Feature> legendary = new ArrayList<>();
     public String notes = "";
+
+    // ---- the fields of a deity (used when kind is DEITY; the alignment field holds the deity's alignment)
+    /** What the deity governs ("the sea and storms"). */
+    public String portfolio = "";
+    /** The domains it grants, written as a list ("Tempest, Nature"). */
+    public String domains = "";
+    /** Greater god, lesser god, demigod... as typed. */
+    public String divineRank = "";
+    /** What the holy symbol looks like. */
+    public String symbol = "";
+    public String favouredWeapon = "";
+    /** The festivals and holy days, as typed. */
+    public String holyDays = "";
+    /** What the faithful believe and are asked to do. */
+    public String tenets = "";
+    /** Rites, offerings and taboos. */
+    public String rites = "";
 
     public Card() { }
 
@@ -111,6 +128,8 @@ public class Card {
         immunities = o.immunities; conditionImmunities = o.conditionImmunities;
         senses = o.senses; languages = o.languages; challenge = o.challenge; xp = o.xp; autoChallenge = o.autoChallenge;
         portrait = o.portrait; notes = o.notes;
+        portfolio = o.portfolio; domains = o.domains; divineRank = o.divineRank; symbol = o.symbol;
+        favouredWeapon = o.favouredWeapon; holyDays = o.holyDays; tenets = o.tenets; rites = o.rites;
         traits.clear(); attacks.clear(); actions.clear(); reactions.clear(); legendary.clear();
         for (Feature f : o.traits) traits.add(f.copy());
         for (Attack a : o.attacks) attacks.add(a.copy());

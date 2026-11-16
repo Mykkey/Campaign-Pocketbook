@@ -21,6 +21,7 @@ final class ChartKit {
             case PLAYER -> Color.web("#3b82f6");
             case NPC -> Color.web("#d99a2b");
             case MONSTER -> Color.web("#cf4b4b");
+            case DEITY -> Color.web(NodeColors.DEITY);
             case ORGANISATION -> Color.web(NodeColors.ORGANISATION);
         };
     }

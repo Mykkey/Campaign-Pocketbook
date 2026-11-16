@@ -22,6 +22,8 @@ public final class OverviewGraph {
     public enum EdgeKind {
         PARENT(Group.FAMILY), SPOUSE(Group.FAMILY), SIBLING(Group.FAMILY),
         ALLY(Group.RELATIONSHIPS), RIVAL(Group.RELATIONSHIPS), MENTOR(Group.RELATIONSHIPS), EMPLOYER(Group.RELATIONSHIPS), OTHER(Group.RELATIONSHIPS),
+        /** Any of the other kinds of relationship, and the custom links: the line carries its own name, colour and direction. */
+        LINK(Group.RELATIONSHIPS),
         MEMBER(Group.ORGANISATIONS), REPORTS(Group.ORGANISATIONS);
 
         public final Group group;
@@ -36,7 +38,11 @@ public final class OverviewGraph {
     public record Node(String id, String name, String subtitle, NodeKind kind) { }
 
     /** A link in its standard direction: PARENT, MENTOR, EMPLOYER and REPORTS point from the senior one; MEMBER from the organisation to its member. */
-    public record Edge(String from, String to, EdgeKind kind, String label) { }
+    public record Edge(String from, String to, EdgeKind kind, String label, String name, String colour, boolean directed) {
+        public Edge(String from, String to, EdgeKind kind, String label) {
+            this(from, to, kind, label, "", null, false);
+        }
+    }
 
     /** Which kinds of link to include. */
     public record Options(boolean family, boolean relationships, boolean organisations) {
@@ -57,6 +63,11 @@ public final class OverviewGraph {
     private OverviewGraph() { }
 
     public static OverviewGraph build(Map<String, Card> cards, Map<String, Organisation> orgs, Options options) {
+        return build(cards, orgs, List.of(), options);
+    }
+
+    /** @param linkTypes the custom links of the campaign, so relationships that use them are drawn in their own colour */
+    public static OverviewGraph build(Map<String, Card> cards, Map<String, Organisation> orgs, List<dnd.model.LinkType> linkTypes, Options options) {
         Map<String, Node> all = new LinkedHashMap<>();
         for (Card c : cards.values()) {
             NodeKind k = switch (c.kind) {
@@ -65,7 +76,8 @@ public final class OverviewGraph {
                 case MONSTER -> NodeKind.MONSTER;
                 case DEITY -> NodeKind.DEITY;
             };
-            String sub = c.creatureType == null || c.creatureType.isBlank() ? c.kind.name().toLowerCase() : c.creatureType;
+            String sub = c.kind == Card.Kind.DEITY ? (c.divineRank == null || c.divineRank.isBlank() ? "deity" : c.divineRank.trim())
+                    : c.creatureType == null || c.creatureType.isBlank() ? c.kind.name().toLowerCase() : c.creatureType;
             all.put(c.id, new Node(c.id, c.name, sub, k));
         }
         for (Organisation o : orgs.values()) {
@@ -73,7 +85,7 @@ public final class OverviewGraph {
         }
 
         List<Edge> found = new ArrayList<>();
-        for (RelationGraph.Edge e : new RelationGraph(cards).edges()) {
+        for (RelationGraph.Edge e : new RelationGraph(cards, linkTypes).edges()) {
             EdgeKind kind = switch (e.type) {
                 case PARENT, CHILD -> EdgeKind.PARENT;
                 case SPOUSE -> EdgeKind.SPOUSE;
@@ -83,8 +95,9 @@ public final class OverviewGraph {
                 case ALLY -> EdgeKind.ALLY;
                 case RIVAL -> EdgeKind.RIVAL;
                 case OTHER -> EdgeKind.OTHER;
+                default -> EdgeKind.LINK; // the newer kinds of relationship and custom links carry their own name and colour
             };
-            found.add(new Edge(e.from, e.to, kind, e.note));
+            found.add(new Edge(e.from, e.to, kind, e.note, e.name, e.colour, e.directed));
         }
         for (Organisation o : orgs.values()) {
             for (Organisation.Member m : o.members) {

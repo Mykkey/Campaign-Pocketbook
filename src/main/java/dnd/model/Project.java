@@ -13,6 +13,8 @@ public class Project {
     /** Ids of the items opened most recently, newest first (see RecentItems). */
     public List<String> recent = new ArrayList<>();
     /** The adventuring party the encounter builder rates fights against. */
+    /** The kinds of link between cards that were made up for this campaign (see LinkType). */
+    public List<LinkType> linkTypes = new ArrayList<>();
     public int partySize = 4;
     public int partyLevel = 3;
 

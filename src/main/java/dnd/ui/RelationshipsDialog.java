@@ -148,7 +148,13 @@ public final class RelationshipsDialog {
             refreshChoices.run();
             redraw[0].run();
         });
-        HBox bar = new HBox(8, family, web, hierarchy, everything, new Label("Show"), focus, filters, refresh);
+        Button customLinks = new Button("Custom links...");
+        customLinks.setTooltip(IconButtons.tip("Make up your own kinds of link, with your own name and colour"));
+        customLinks.setOnAction(e -> LinkTypesDialog.show(open, store, () -> {
+            refreshChoices.run();
+            redraw[0].run();
+        }));
+        HBox bar = new HBox(8, family, web, hierarchy, everything, new Label("Show"), focus, filters, refresh, customLinks);
         bar.setAlignment(Pos.CENTER_LEFT);
         bar.setPadding(new Insets(8, 10, 4, 10));
         message.setPadding(new Insets(0, 10, 6, 10));
@@ -199,7 +205,7 @@ public final class RelationshipsDialog {
             dnd.model.Organisation o = store.organisation(id);
             if (o != null) orgs.put(id, o);
         }
-        return OverviewGraph.build(cards, orgs, options);
+        return OverviewGraph.build(cards, orgs, store.project.linkTypes, options);
     }
 
     private static RelationGraph graph(ProjectStore store) {
@@ -208,7 +214,7 @@ public final class RelationshipsDialog {
             Card c = store.card(id);
             if (c != null) cards.put(id, c);
         }
-        return new RelationGraph(cards);
+        return new RelationGraph(cards, store.project.linkTypes);
     }
 
     private static Hit hit(List<Hit> hits, double x, double y) {
@@ -383,14 +389,13 @@ public final class RelationshipsDialog {
 
     // ---------------------------------------------------------------- web
 
-    private static Color edgeColor(RelationType t) {
-        return switch (t) {
-            case ALLY -> Color.web("#2f9e5f");
-            case RIVAL -> Color.web("#d64545");
-            case MENTOR -> Color.web("#8b5cf6");
-            case EMPLOYER -> Color.web("#1aa3a3");
-            default -> Color.web("#8a94a3");
-        };
+    /** A line colour written as "#RRGGBB" (grey if it cannot be read). */
+    private static Color lineColour(String hex) {
+        try {
+            return Color.web(hex == null ? "#8a94a3" : hex);
+        } catch (IllegalArgumentException e) {
+            return Color.web("#8a94a3");
+        }
     }
 
     private static void drawWeb(Canvas canvas, List<Hit> hits, RelationGraph g, List<List<String>> comps,
@@ -432,18 +437,18 @@ public final class RelationshipsDialog {
             double[] a = at.get(e.from), b = at.get(e.to);
             if (a == null || b == null) continue;
             double ax = a[0] + NODE_W / 2, ay = a[1] + NODE_H / 2, bx = b[0] + NODE_W / 2, by = b[1] + NODE_H / 2;
-            Color c = edgeColor(e.type);
+            Color c = lineColour(e.colour);
             gc.setStroke(c);
             gc.setLineWidth(2.2);
             gc.strokeLine(ax, ay, bx, by);
-            if (!e.type.symmetric()) { // arrow head at the student / employee end
+            if (e.directed) { // arrow head at the receiving end (student, employee, the one who is ruled, hunted, worshipped by...)
                 double ang = Math.atan2(by - ay, bx - ax);
                 double tipX = bx - Math.cos(ang) * (NODE_H / 2 + 6), tipY = by - Math.sin(ang) * (NODE_H / 2 + 6);
                 gc.setFill(c);
                 gc.fillPolygon(new double[]{tipX, tipX - 11 * Math.cos(ang - 0.4), tipX - 11 * Math.cos(ang + 0.4)},
                         new double[]{tipY, tipY - 11 * Math.sin(ang - 0.4), tipY - 11 * Math.sin(ang + 0.4)}, 3);
             }
-            String label = e.type == RelationType.OTHER && !e.note.isBlank() ? e.note : shortLabel(e.type);
+            String label = e.type == RelationType.OTHER && !e.note.isBlank() ? e.note : withNote(e.name, e.note);
             double mx = (ax + bx) / 2, my = (ay + by) / 2;
             Text t = new Text(label);
             t.setFont(Font.font("System", 11));
@@ -539,6 +544,7 @@ public final class RelationshipsDialog {
             case OTHER -> note.isEmpty() ? "connected" : note;
             case MEMBER -> note.isEmpty() ? "member" : note;
             case REPORTS -> "reports to";
+            case LINK -> withNote(e.name(), note);
         };
     }
 
@@ -603,6 +609,10 @@ public final class RelationshipsDialog {
                 switch (e.kind()) {
                     case PARENT, MENTOR, EMPLOYER, REPORTS, MEMBER -> down.add(pair);
                     case SPOUSE, SIBLING -> level.add(pair);
+                    case LINK -> {
+                        if (e.directed()) down.add(pair);
+                        else loose.add(pair);
+                    }
                     default -> loose.add(pair);
                 }
             }
@@ -648,7 +658,8 @@ public final class RelationshipsDialog {
             int index = seen.merge(pair, 1, Integer::sum) - 1;
             double acx = a[0] + NODE_W / 2, acy = a[1] + NODE_H / 2, bcx = b[0] + NODE_W / 2, bcy = b[1] + NODE_H / 2;
             boolean sameRow = Math.abs(acy - bcy) < 1, far = Math.abs(acx - bcx) > SLOT * 1.5;
-            Color c = e.kind() == OverviewGraph.EdgeKind.PARENT || e.kind() == OverviewGraph.EdgeKind.SIBLING ? line : overviewColor(e.kind());
+            Color c = e.kind() == OverviewGraph.EdgeKind.LINK ? lineColour(e.colour())
+                    : e.kind() == OverviewGraph.EdgeKind.PARENT || e.kind() == OverviewGraph.EdgeKind.SIBLING ? line : overviewColor(e.kind());
             gc.setStroke(c);
             gc.setFill(c);
             double x1, y1, x2, y2, mx, my, ang;
@@ -704,10 +715,10 @@ public final class RelationshipsDialog {
                 mx = (x1 + x2) / 2;
                 my = (y1 + y2) / 2;
             }
-            boolean arrow = !(sameRow && far) && switch (e.kind()) {
+            boolean arrow = !(sameRow && far) && (e.directed() || switch (e.kind()) {
                 case PARENT, MENTOR, EMPLOYER, REPORTS -> true;
                 default -> false;
-            };
+            });
             if (arrow) {
                 gc.fillPolygon(new double[]{x2, x2 - 11 * Math.cos(ang - 0.4), x2 - 11 * Math.cos(ang + 0.4)},
                         new double[]{y2, y2 - 11 * Math.sin(ang - 0.4), y2 - 11 * Math.sin(ang + 0.4)}, 3);
@@ -751,13 +762,4 @@ public final class RelationshipsDialog {
         for (Runnable r : labels) r.run();
     }
 
-    private static String shortLabel(RelationType t) {
-        return switch (t) {
-            case ALLY -> "ally";
-            case RIVAL -> "rival";
-            case MENTOR -> "mentor";
-            case EMPLOYER -> "employer";
-            default -> "connected";
-        };
-    }
 }

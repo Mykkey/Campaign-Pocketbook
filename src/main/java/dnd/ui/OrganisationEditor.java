@@ -72,7 +72,7 @@ public class OrganisationEditor extends BorderPane implements ItemView {
                 changed();
             }
         });
-        Label hint = new Label("Double-click a member to open its card. Hover it for a preview. \"Reports to\" builds the chain of command shown on the Hierarchy tab, and this list follows it: the top of the group first, then the people who report to them, indented.");
+        Label hint = new Label("Double-click a member to open its card. Hover it for a preview. \"Reports to\" builds the chain of command shown on the Hierarchy tab, and this list follows it: the top of the group first, then the people who report to them, indented. Other organisations can be members too (a god can lead lesser gods, who lead religions): double-click an organisation here, or click its box on the Hierarchy tab, to open it.");
         hint.setStyle("-fx-font-size: 0.917em; -fx-text-fill: -t-text3;");
         hint.setWrapText(true);
         Theme.darkProperty().addListener(new WeakChangeListener<>(themeListener));

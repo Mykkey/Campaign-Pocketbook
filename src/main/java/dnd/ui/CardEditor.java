@@ -494,10 +494,10 @@ public class CardEditor extends BorderPane implements ItemView {
                 dnd.model.Card c = store.card(id);
                 if (c != null) all.put(id, c);
             }
-            dnd.relations.RelationGraph g = new dnd.relations.RelationGraph(all);
+            dnd.relations.RelationGraph g = new dnd.relations.RelationGraph(all, store.project.linkTypes);
             for (dnd.relations.RelationGraph.Link l : g.linksOf(card.id)) {
                 if (l.listedOnThis()) continue;
-                Label lab = new Label(l.type().label + " " + g.nameOf(l.otherId()) + (l.note().isBlank() ? "" : "  (" + l.note() + ")")
+                Label lab = new Label(l.label() + " " + g.nameOf(l.otherId()) + (l.note().isBlank() ? "" : "  (" + l.note() + ")")
                         + "   - set on their card");
                 lab.setStyle("-fx-text-fill: -t-text2;");
                 incoming.getChildren().add(lab);
@@ -526,13 +526,73 @@ public class CardEditor extends BorderPane implements ItemView {
         });
         rebuild[0].run();
         relationsRefresh = rebuild[0];
-        return section("Relationships", rows, add, incoming, hint);
+        Button manage = new Button("Custom links...");
+        manage.setTooltip(IconButtons.tip("Make up your own kinds of link, with your own name and colour, and change or delete them"));
+        manage.setOnAction(e -> LinkTypesDialog.show(getScene() == null ? null : getScene().getWindow(), store, () -> rebuild[0].run()));
+        return section("Relationships", rows, row(add, manage), incoming, hint);
+    }
+
+    /** One entry of the relationship type box: a built-in type, one of the campaign's custom links, or "New custom link...". */
+    private record TypeChoice(dnd.model.RelationType type, dnd.model.LinkType custom, String label, String colour, boolean makeNew) {
+        @Override
+        public String toString() {
+            return label;
+        }
+    }
+
+    private List<TypeChoice> typeChoices() {
+        List<TypeChoice> out = new java.util.ArrayList<>();
+        for (dnd.model.RelationType t : dnd.model.RelationType.values()) {
+            if (t != dnd.model.RelationType.CUSTOM) out.add(new TypeChoice(t, null, t.label, t.colour, false));
+        }
+        for (dnd.model.LinkType lt : store.project.linkTypes) {
+            out.add(new TypeChoice(dnd.model.RelationType.CUSTOM, lt, lt.name + (lt.directed() ? "  /  " + lt.reverseName : ""), lt.colour, false));
+        }
+        out.add(new TypeChoice(dnd.model.RelationType.CUSTOM, null, "New custom link...", "#8a94a3", true));
+        return out;
+    }
+
+    private TypeChoice choiceFor(dnd.model.Relation r, List<TypeChoice> choices) {
+        if (r.type == dnd.model.RelationType.CUSTOM) {
+            for (TypeChoice c : choices) if (c.custom() != null && c.custom().id.equals(r.linkTypeId)) return c;
+            return new TypeChoice(dnd.model.RelationType.CUSTOM, null, "(deleted custom link)", "#8a94a3", false);
+        }
+        for (TypeChoice c : choices) if (!c.makeNew() && c.custom() == null && c.type() == r.type) return c;
+        return choices.get(0);
+    }
+
+    private static ListCell<TypeChoice> typeCell() {
+        return new ListCell<>() {
+            @Override
+            protected void updateItem(TypeChoice c, boolean empty) {
+                super.updateItem(c, empty);
+                if (empty || c == null) {
+                    setText(null);
+                    setGraphic(null);
+                    return;
+                }
+                setText(c.label());
+                javafx.scene.shape.Rectangle swatch = new javafx.scene.shape.Rectangle(18, 6);
+                swatch.setArcWidth(3);
+                swatch.setArcHeight(3);
+                try {
+                    swatch.setFill(javafx.scene.paint.Color.web(c.colour()));
+                } catch (IllegalArgumentException e) {
+                    swatch.setFill(javafx.scene.paint.Color.GRAY);
+                }
+                setGraphic(c.makeNew() ? null : swatch);
+                setStyle(c.makeNew() ? "-fx-font-style: italic;" : "");
+            }
+        };
     }
 
     private Node relationRow(dnd.model.Relation r, List<CardRef> others, Runnable rebuild, Runnable refreshIncoming) {
-        ComboBox<dnd.model.RelationType> type = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(dnd.model.RelationType.values()));
-        type.setValue(r.type);
-        type.setPrefWidth(190);
+        ComboBox<TypeChoice> type = new ComboBox<>();
+        type.setCellFactory(v -> typeCell());
+        type.setButtonCell(typeCell());
+        type.getItems().setAll(typeChoices());
+        type.setValue(choiceFor(r, type.getItems()));
+        type.setPrefWidth(210);
         List<CardRef> choices = new java.util.ArrayList<>(others);
         CardRef current = choices.stream().filter(c -> c.id().equals(r.targetCardId)).findFirst().orElse(null);
         if (current == null) { // the other card was deleted
@@ -549,7 +609,22 @@ public class CardEditor extends BorderPane implements ItemView {
         remove.setTooltip(IconButtons.tip("Remove this relationship from this card"));
         type.valueProperty().addListener((o, a, n) -> {
             if (n == null) return;
-            r.type = n;
+            if (n.makeNew()) { // "New custom link...": make it, then use it for this relationship
+                java.util.Optional<dnd.model.LinkType> made = LinkTypeDialog.show(getScene() == null ? null : getScene().getWindow(), null);
+                if (made.isPresent()) {
+                    store.project.linkTypes.add(made.get());
+                    store.markProjectDirty();
+                    r.type = dnd.model.RelationType.CUSTOM;
+                    r.linkTypeId = made.get().id;
+                    changed();
+                    rebuild.run();
+                } else {
+                    type.setValue(a);
+                }
+                return;
+            }
+            r.type = n.type();
+            r.linkTypeId = n.custom() == null ? null : n.custom().id;
             changed();
             refreshIncoming.run();
         });

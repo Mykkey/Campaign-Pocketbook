@@ -4,6 +4,8 @@ package dnd.model;
 public class Relation {
     public String targetCardId;
     public RelationType type = RelationType.OTHER;
+    /** For a custom link (type CUSTOM): the id of its {@link LinkType} in the project. */
+    public String linkTypeId;
     /** Optional detail, e.g. "since the war" or "owes him money". */
     public String note = "";
 
@@ -16,6 +18,8 @@ public class Relation {
     }
 
     public Relation copy() {
-        return new Relation(targetCardId, type, note);
+        Relation r = new Relation(targetCardId, type, note);
+        r.linkTypeId = linkTypeId;
+        return r;
     }
 }
